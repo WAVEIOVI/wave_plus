@@ -1,0 +1,393 @@
+{
+  "catalog": {
+    "nav": {
+      "title": "Catalog",
+      "items": "Catalog Items",
+      "blueprints": "Equipment Blueprints",
+      "guidelines": "Maintenance Guidelines"
+    },
+    "dashboard": {
+      "title": "Catalog Dashboard",
+      "subtitle": "Overview of your products, blueprints, and guidelines.",
+      "blueprints": "Blueprints",
+      "new_item": "New Item",
+      "items_by_type": "Catalog Items by Type",
+      "items_by_type_sub": "Distribution of your catalog inventory",
+      "blueprints_by_category": "Equipment Blueprints by Category",
+      "blueprints_by_category_sub": "Blueprint distribution across categories",
+      "recent_activity": "Recent Activity",
+      "recent_activity_sub": "Recently updated items and blueprints",
+      "no_data": "No catalog items yet",
+      "no_blueprints": "No blueprint data",
+      "total_items": "Total Items"
+    },
+    "items": {
+      "list": {
+        "title": "Catalog Items",
+        "subtitle": "Manage catalog products, consumables, equipment servicing, pricing and variants",
+        "actions": {
+          "add_new": "Add Item",
+          "export_pdf": "Export PDF",
+          "send_mail": "Email List",
+          "send_single_mail": "Send Email",
+          "view": "View Item",
+          "edit": "Edit Item",
+          "delete": "Delete Item",
+          "grid_view": "Grid View",
+          "list_view": "List View"
+        },
+        "kpis": {
+          "total_items": "Total Items",
+          "active": "Active",
+          "products": "Products",
+          "consumables": "Consumables",
+          "servicing": "Servicing"
+        },
+        "filter": {
+          "title": "Filter Items",
+          "item_type": "Item Type",
+          "category": "Category",
+          "status": "Status",
+          "brand": "Brand",
+          "all_types": "All Types",
+          "all_categories": "All Categories",
+          "all_statuses": "All Statuses"
+        },
+        "table": {
+          "code": "Code",
+          "name": "Name",
+          "type": "Type",
+          "subtype": "Subtype",
+          "category": "Category",
+          "price": "Price Range",
+          "stock": "Stock",
+          "status": "Status",
+          "actions": "Actions",
+          "non_stockable": "Non-Stockable"
+        },
+        "messages": {
+          "delete_success": "Catalog item deleted successfully.",
+          "delete_error": "Failed to delete catalog item.",
+          "create_success": "Catalog item {ref} created successfully.",
+          "update_success": "Catalog item {ref} updated successfully.",
+          "export_pdf_success": "Catalog PDF exported successfully.",
+          "export_pdf_error": "Failed to export catalog PDF.",
+          "email_success": "Email queued successfully.",
+          "email_error": "Failed to send email."
+        },
+        "delete_dialog": {
+          "title": "Delete Catalog Item",
+          "description": "Are you sure you want to delete this catalog item? This action cannot be undone."
+        },
+        "empty": {
+          "category": "Uncategorized",
+          "price": "No price configured",
+          "stock": "N/A"
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "Home",
+        "breadcrumb_catalog": "Catalog",
+        "breadcrumb_items": "Items",
+        "title_new": "New Catalog Item",
+        "title_edit": "Edit Catalog Item",
+        "sections": {
+          "classification": "Classification",
+          "general": "General Info",
+          "specifications": "Specifications",
+          "commerce": "Commerce",
+          "media": "Media & Files",
+          "variants": "Variants"
+        },
+        "actions": {
+          "save": "Save Item",
+          "saving": "Saving...",
+          "cancel": "Cancel",
+          "back_to_list": "Back to List"
+        },
+        "validation": {
+          "select_category": "Please select a category.",
+          "general_errors": "Please fix errors in General Information.",
+          "save_error": "Error saving catalog item."
+        }
+      },
+      "types": {
+        "product": "Product",
+        "consumable": "Consumable",
+        "eq_servicing": "Equipment Servicing"
+      },
+      "statuses": {
+        "active": "Active",
+        "draft": "Draft",
+        "discontinued": "Discontinued"
+      }
+    },
+    "blueprints": {
+      "list": {
+        "title": "Equipment Blueprints",
+        "subtitle": "Define technical configurations, maintenance cycles, and service tasks for equipment classes",
+        "actions": {
+          "add_new": "Add Blueprint",
+          "test_bench": "Technician Test Bench",
+          "view": "View Blueprint",
+          "edit": "Edit Blueprint",
+          "delete": "Delete Blueprint",
+          "grid_view": "Grid View",
+          "list_view": "List View",
+          "table_view": "Table View"
+        },
+        "kpis": {
+          "total_blueprints": "Total Blueprints",
+          "active": "Active",
+          "draft": "Draft",
+          "inactive": "Inactive"
+        },
+        "filter": {
+          "title": "Filter Blueprints",
+          "status": "Status",
+          "equipment_class": "Equipment Class",
+          "all_statuses": "All Statuses",
+          "all_classes": "All Equipment Classes"
+        },
+        "table": {
+          "code": "Code",
+          "name": "Name",
+          "equipment_class": "Equipment Class",
+          "options": "Options",
+          "cycles": "Cycles",
+          "servicing": "Services",
+          "status": "Status",
+          "created_at": "Created",
+          "actions": "Actions"
+        },
+        "delete_dialog": {
+          "title": "Delete Equipment Blueprint",
+          "description": "Are you sure you want to delete this blueprint? This action cannot be undone."
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "Home",
+        "breadcrumb_catalog": "Catalog",
+        "breadcrumb_blueprints": "Blueprints",
+        "title_new": "New Equipment Blueprint",
+        "title_edit": "Edit Blueprint",
+        "tabs": {
+          "general": "General Info",
+          "options": "Options Engine",
+          "cycles": "Intervention Cycles",
+          "servicing": "Servicing & Consumables",
+          "test_bench": "Test Bench",
+          "guidelines": "Guidelines"
+        },
+        "actions": {
+          "save": "Save Blueprint",
+          "saving": "Saving...",
+          "cancel": "Cancel",
+          "back_to_list": "Back to List",
+          "change_status": "Change Status",
+          "add_option": "Add Option",
+          "add_interval": "Add Interval",
+          "add_service_task": "Add Service Task"
+        },
+        "option": {
+          "add_title": "Add Custom Option",
+          "edit_title": "Edit Option",
+          "subtitle": "Configure equipment option and allowed values",
+          "code": "Option Code *",
+          "code_hint": "Used in calculation formulas",
+          "code_required": "Option code is required",
+          "data_type": "Data Type *",
+          "data_type_select": "Dropdown Select",
+          "data_type_number": "Numeric input",
+          "data_type_text": "Text string",
+          "data_type_boolean": "Boolean (Yes/No)",
+          "name": "Option Name",
+          "values": "Configured Option Values",
+          "add_value": "Add Value",
+          "add_value_title": "Add Choice Value",
+          "edit_value": "Edit Choice Value",
+          "add_first_value": "Add First Value",
+          "empty_values": "No values added yet. Define choices such as 1kg, 6kg or specific agents.",
+          "display_label": "Display Label",
+          "value_code": "Code *",
+          "numeric_value": "Numeric Value",
+          "unit": "Unit of Measure",
+          "save": "Save Changes",
+          "add": "Add Option",
+          "update": "Update",
+          "add_short": "Add"
+        },
+        "interval": {
+          "add_title": "Add Maintenance Interval",
+          "edit_title": "Edit Maintenance Interval",
+          "type": "Intervention Type *",
+          "first": "First Interval (months) *",
+          "first_hint": "When should the first intervention occur?",
+          "recurring": "Recurring Interval (months)",
+          "recurring_hint": "How often should it repeat after the first?",
+          "notes": "Notes / Instructions",
+          "preview": "Timeline Preview",
+          "first_label": "First:",
+          "then_every": "Then every:",
+          "months": "months",
+          "months_after": "months after installation",
+          "one_time": "One-time only"
+        },
+        "status": {
+          "apply": "Apply Status",
+          "hint": "Select the operational status for this equipment blueprint.",
+          "active_hint": "Available for client equipment and maintenance.",
+          "draft_hint": "Under construction, not yet published.",
+          "inactive_hint": "Archived / Deactivated."
+        },
+        "guidelines": {
+          "title": "Maintenance Guidelines",
+          "subtitle": "Standard operating procedures linked to this blueprint",
+          "attach": "Attach Guideline",
+          "attach_first": "Attach First Guideline",
+          "search_title": "Attach Maintenance Guideline",
+          "already_attached": "Guideline is already attached.",
+          "attach_success": "Guideline attached successfully",
+          "attach_error": "Failed to attach guideline",
+          "detach_success": "Guideline detached",
+          "detach_error": "Failed to detach guideline",
+          "empty_title": "No guidelines attached",
+          "empty_text": "Link maintenance checklists and verification protocols for technicians.",
+          "hide_steps": "Hide Steps",
+          "view_steps": "View Steps",
+          "detach": "Detach Guideline",
+          "no_steps": "No steps registered in this guideline."
+        }
+      }
+    },
+    "guidelines": {
+      "list": {
+        "title": "Maintenance Guidelines",
+        "subtitle": "Manage standard operating procedures, technical steps, and verification instructions",
+        "actions": {
+          "add_new": "Add Guideline",
+          "view": "View Guideline",
+          "edit": "Edit Guideline",
+          "delete": "Delete Guideline",
+          "grid_view": "Grid View",
+          "list_view": "List View",
+          "table_view": "Table View"
+        },
+        "kpis": {
+          "total_guidelines": "Total Guidelines",
+          "active": "Active",
+          "inactive": "Inactive",
+          "total_steps": "Total Steps"
+        },
+        "filter": {
+          "title": "Filter Guidelines",
+          "status": "Status",
+          "all_statuses": "All Statuses",
+          "active": "Active",
+          "inactive": "Inactive"
+        },
+        "table": {
+          "code": "Code",
+          "name": "Name",
+          "steps": "Steps",
+          "status": "Status",
+          "actions": "Actions"
+        },
+        "delete_dialog": {
+          "title": "Delete Guideline",
+          "description": "Are you sure you want to delete this guideline? This action cannot be undone."
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "Home",
+        "breadcrumb_catalog": "Catalog",
+        "breadcrumb_guidelines": "Guidelines",
+        "title_new": "New Guideline",
+        "title_edit": "Edit Guideline",
+        "tabs": {
+          "base": "Identification",
+          "steps": "Steps & Instructions"
+        },
+        "actions": {
+          "save": "Save Guideline",
+          "saving": "Saving...",
+          "cancel": "Cancel",
+          "back_to_list": "Back to List",
+          "add_step": "Add Step"
+        },
+        "scope": "Scope & Description",
+        "empty_steps": "No steps defined in this guideline.",
+        "step": {
+          "add_title": "Add Verification Step",
+          "edit_title": "Edit Verification Step",
+          "subtitle": "Technical verification instruction for the technician",
+          "instruction": "Instruction",
+          "type": "Step Response Type *",
+          "expected": "Expected Value (optional)",
+          "required": "Mandatory / Required step during intervention",
+          "update": "Update Step",
+          "save": "Save Step",
+          "mandatory": "Mandatory",
+          "optional": "Optional"
+        }
+      }
+    },
+    "test_bench": {
+      "title": "Technician Test Bench",
+      "subtitle": "Simulate equipment configurations, calculate maintenance labor, and verify consumable formulas in real-time",
+      "select_blueprint": "Select Blueprint",
+      "choose_options": "Configure Options",
+      "equipment_qty": "Equipment Quantity",
+      "run_simulation": "Run Simulation",
+      "reset": "Reset",
+      "results": "Simulation Results",
+      "labor_lines": "Service & Labor Tasks",
+      "consumables": "Required Consumables",
+      "checklist": "Technical Verification Checklist",
+      "controls": "Workbench Simulation Controls",
+      "controls_hint": "Pick a blueprint, configure options, and set batch quantity",
+      "include_tasks": "Include Servicing Tasks",
+      "print": "Print Sheet",
+      "resolving": "Resolving formulas and consumable lines...",
+      "load_error": "Failed to load blueprints list",
+      "details_error": "Failed to load blueprint details",
+      "calc_error": "Calculation error occurred",
+      "no_consumables": "No consumables required for the selected configuration.",
+      "no_services": "No service tasks resolved.",
+      "no_guidelines": "No maintenance guidelines linked to this equipment blueprint.",
+      "kpi_units": "Equipment Units",
+      "total_lines": "Total Output Lines",
+      "empty_title": "Ready for Technical Simulation",
+      "empty_text": "Select an equipment blueprint to test options, labor, and spare parts."
+    },
+    "blueprints": {
+      "edit": {
+        "title_new": "New Equipment Blueprint",
+        "title_edit": "Edit Blueprint",
+        "breadcrumb_home": "Home",
+        "breadcrumb_catalog": "Catalog",
+        "breadcrumb_blueprints": "Blueprints",
+        "tabs": {
+          "general": "General Info",
+          "options": "Options Engine",
+          "cycles": "Intervention Cycles",
+          "servicing": "Servicing & Consumables",
+          "test_bench": "Test Bench",
+          "guidelines": "Guidelines"
+        },
+        "options": {
+          "allowed_values_count": "{count} allowed value choices configured"
+        },
+        "cycles": {
+          "first_interval": "1st: {months} mo",
+          "repeats_every": "repeats every {months} mo"
+        },
+        "servicing": {
+          "item_code": "Item Code: {code}",
+          "required_consumables_count": "Required Consumables & Spare Parts ({count}):",
+          "formula_quantity": "Formula / Quantity"
+        }
+      }
+    }
+  }
+}

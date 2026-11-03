@@ -1,0 +1,17 @@
+includes:
+    - ./vendor/larastan/larastan/extension.neon
+
+parameters:
+
+    paths:
+        - app/
+        - app/Modules/
+
+    # Level 5 is the intermediate level of rule strictness
+    level: 5
+
+#    ignoreErrors:
+#        - '#PHPDoc tag @var# '
+
+    excludePaths:
+        - ./*/*/FileToBeExcluded.php

@@ -1,0 +1,984 @@
+{
+  "Approved": "Approuvé",
+  "Back": "Retour",
+  "Clear": "Effacer",
+  "Confirm": "Confirmer",
+  "Date": "Date",
+  "Employee": "Employé",
+  "Filters": "Filtres",
+  "Pending": "En attente",
+  "Position": "Poste",
+  "Refresh": "Actualiser",
+  "Rejected": "Refusé",
+  "Reset": "Réinitialiser",
+  "Saved": "Enregistré",
+  "Submit": "Soumettre",
+  "Today": "Aujourd'hui",
+  "Total": "Total",
+  "more": "Plus",
+
+  "common": {
+    "refresh": "Actualiser"
+  },
+
+  "hr": {
+    "attendance": {
+      "badge_hint": "Présentez votre badge QR devant le lecteur",
+      "camera_unavailable_hint": "Aucune caméra détectée. Utilisez le clavier PIN.",
+      "geotag_on": "Capture de la position activée",
+      "manual_code": "Code badge manuel",
+      "punch": "Pointer",
+      "auto_toggle_hint": "Bascule automatiquement entrée/sortie",
+      "badge_qr": "QR du Badge",
+      "enter_pin": "Saisissez votre numéro de badge",
+      "no_punches_yet": "Aucun pointage enregistré aujourd'hui.",
+      "pin_fallback": "Clavier PIN (badge perdu)",
+      "pin_hint": "Les chiffres après EMP- sur votre badge",
+      "punch_now": "Pointer maintenant",
+      "scanning": "Scan en cours",
+      "start_camera": "Démarrer la caméra"
+    },
+    "dashboard": {
+      "headcount_subtitle": "Statut d'emploi dans toute l'organisation.",
+      "total_staff_records": "Total des dossiers du personnel",
+      "logged_today": "Pointés",
+      "total_logged": "Total pointés",
+      "no_attendance_data": "Aucune présence enregistrée aujourd'hui.",
+      "certifications_subtitle": "Radar de conformité sécurité & réglementaire.",
+      "certs_expired_alert": "{count} certification(s) expirée(s). Renouvellement requis.",
+      "certs_expiring_alert": "{count} certification(s) expirant sous 30 jours. Renouvellement nécessaire.",
+      "view_certifications_matrix": "Voir la Matrice des Certifications",
+      "pipeline_title": "Vivier de Talents",
+      "pipeline_subtitle": "Entonnoir de recrutement et développement des effectifs.",
+      "recruitment_pipeline": "Recrutement",
+      "training_snapshot": "Formations",
+      "clock_employee_label": "Employé à pointer",
+      "clock_not_linked": "Votre compte n'est pas lié à un dossier employé. Sélectionnez un employé ci-dessus (RH/Admin), ou modifiez un employé et définissez « Lier un compte » sur votre compte.",
+      "clock_failed": "Impossible d'enregistrer l'entrée / sortie.",
+      "status_load_failed": "Impossible de charger le statut du pointage.",
+      "employee_label": "Employé",
+      "team_label": "Équipe",
+      "not_selected": "Non sélectionné",
+      "people_operations": "Opérations RH",
+      "people_operations_subtitle": "Accédez directement à la zone RH dont vous avez besoin.",
+      "active_employees_section": "Employés actifs",
+      "active_employees_subtitle": "Vue actuelle de l'annuaire des collaborateurs.",
+      "view_all": "Voir tout",
+      "no_active_employees": "Aucun employé actif trouvé.",
+      "next_training_session": "Prochaine session de formation",
+      "training_session": "Session de formation",
+      "location_tbc": "Lieu à confirmer",
+      "open_training": "Ouvrir la formation",
+      "no_upcoming_training": "Aucune session de formation planifiée."
+    }
+  },
+
+  "employees": {
+    "list": {
+      "title": "Annuaire des Employés",
+      "subtitle": "Registre officiel du personnel, des postes, des qualifications et de l'historique de carrière.",
+      "add_employee": "Ajouter un Employé",
+      "select": "Sélectionner l'employé",
+      "actions": {
+        "print": "Imprimer les employés",
+        "email": "Envoyer un e-mail aux employés sélectionnés"
+      },
+      "stats": {
+        "total": "Total des Employés",
+        "active": "Actifs",
+        "on_leave": "En Congé",
+        "suspended": "Suspendus",
+        "terminated": "Contrats Terminés"
+      },
+      "col": {
+        "employee": "Employé",
+        "department": "Département",
+        "position": "Poste",
+        "contact": "Contact",
+        "hire_date": "Date d'Embauche",
+        "status": "Statut"
+      },
+      "filter": {
+        "title": "Filtrer les Employés",
+        "status": "Statut",
+        "department": "Département"
+      }
+    },
+    "add": {
+      "title": "Ajouter un Employé",
+      "submit": "Créer l'Employé"
+    },
+    "edit": {
+      "title": "Profil de l'Employé",
+      "change_photo": "Changer la Photo",
+      "change_status": "Changer le Statut",
+      "linked_user": "Compte Lié",
+      "first_name": "Prénom",
+      "last_name": "Nom",
+      "email": "E-mail Professionnel",
+      "phone": "Tél. Professionnel",
+      "date_of_birth": "Date de Naissance",
+      "gender": "Genre",
+      "address": "Adresse",
+      "employee_number": "Matricule",
+      "hire_date": "Date d'Embauche",
+      "department": "Département",
+      "position": "Poste",
+      "team": "Équipe",
+      "manager": "Responsable Hiérarchique",
+      "status": "Statut d'Emploi",
+      "linked_user_hint": "Associer cet employé à un compte utilisateur du système",
+      "notes": "Notes Internes",
+      "notes_hint": "Notes internes concernant cet employé",
+      "section": {
+        "personal": "Informations Personnelles",
+        "employment": "Informations Professionnelles",
+        "system_access": "Accès au Système",
+        "notes": "Notes",
+        "personal_contact": "Informations Personnelles & Contact",
+        "role_org": "Rôle & Structure Organisationnelle"
+      },
+      "load_error": "Échec du chargement du profil employé.",
+      "photo_success": "Photo de profil mise à jour.",
+      "photo_error": "Échec de la mise à jour de la photo.",
+      "save": "Enregistrer l'Employé",
+      "save_success": "Employé enregistré avec succès.",
+      "save_error": "Échec de l'enregistrement de l'employé.",
+      "fields": {
+        "team": "Équipe"
+      },
+      "profile_media": "Photo de Profil",
+      "avatar_hint": "Cliquez sur l'icône caméra pour télécharger ou changer la photo",
+      "no_photo": "Pas de Photo",
+      "employee_number_label": "Matricule",
+      "last_updated": "Dernière mise à jour",
+      "preferred_name_label": "Connu comme",
+      "save_changes": "Enregistrer les Modifications",
+      "work_email": "E-mail Professionnel",
+      "personal_email": "E-mail Personnel",
+      "work_phone": "Tél. Professionnel",
+      "personal_phone": "Tél. Personnel",
+      "nationality": "Nationalité",
+      "termination_date": "Date de Fin de Contrat",
+      "department_hint": "Sélectionnez le département auquel appartient cet employé",
+      "position_hint": "Sélectionnez le poste/rôle",
+      "team_hint": "Sélectionnez l'équipe de travail",
+      "manager_hint": "Sélectionnez le responsable hiérarchique direct",
+      "status_hint": "Statut d'emploi actuel",
+      "first_name_required": "Le prénom est requis",
+      "last_name_required": "Le nom est requis",
+      "email_invalid": "Veuillez entrer une adresse e-mail valide"
+    },
+    "delete": {
+      "title": "Archiver l'Employé",
+      "confirm": "Êtes-vous sûr de vouloir archiver cet employé ?",
+      "description": "Le dossier de l'employé sera archivé. Les historiques de présence, congés et paie sont conservés."
+    },
+    "actions": {
+      "activate": "Activer",
+      "on_leave": "Mettre en Congé",
+      "suspend": "Suspendre",
+      "terminate": "Mettre Fin au Contrat",
+      "status_success": "Statut de l'employé mis à jour : {status}.",
+      "status_error": "Échec de la mise à jour du statut de l'employé.",
+      "create_success": "{name} a été créé avec succès.",
+      "create_success_fallback": "L'employé",
+      "create_error": "Échec de la création de l'employé.",
+      "delete_success": "Employé archivé avec succès.",
+      "delete_error": "Échec de l'archivage de l'employé."
+    },
+    "status": {
+      "activate_title": "Activer l'Employé",
+      "suspend_title": "Suspendre l'Employé",
+      "terminate_title": "Mettre Fin au Contrat",
+      "reason": "Motif",
+      "reason_ph": "Motif de ce changement de statut…",
+      "termination_date": "Date d'Effet"
+    },
+    "form": {
+      "first_name": "Prénom",
+      "first_name_ph": "ex. Jeanne",
+      "middle_name": "Deuxième Prénom",
+      "last_name": "Nom",
+      "last_name_ph": "ex. Dupont",
+      "preferred_name": "Nom Préféré",
+      "gender": "Genre",
+      "date_of_birth": "Date de Naissance",
+      "nationality": "Nationalité",
+      "work_email": "E-mail Professionnel",
+      "personal_email": "E-mail Personnel",
+      "work_phone": "Tél. Professionnel",
+      "personal_phone": "Tél. Personnel",
+      "address": "Adresse",
+      "hire_date": "Date d'Embauche",
+      "employee_number": "Matricule",
+      "status": "Statut d'Emploi",
+      "department": "Département",
+      "position": "Poste",
+      "team": "Équipe Actuelle",
+      "manager": "Responsable Hiérarchique",
+      "linked_user": "Compte d'Accès Lié",
+      "linked_user_hint": "Associer cet employé à un compte utilisateur du système.",
+      "notes": "Notes Internes",
+      "notes_ph": "Notes internes concernant cet employé…"
+    },
+    "view": {
+      "title": "Profil de l'Employé",
+      "contact": "Contact",
+      "no_contact": "Aucune information de contact disponible.",
+      "department": "Département",
+      "position": "Poste",
+      "manager": "Responsable",
+      "team": "Équipe",
+      "hire_date": "Date d'Embauche",
+      "status": "Statut",
+      "skills": "Compétences",
+      "leave_balances": "Soldes de Congés",
+      "recent_attendance": "Présences Récentes",
+      "employment": "Emploi",
+      "present": "Présent",
+      "more": "Plus",
+      "of": "sur",
+      "att_in": "Entrée",
+      "att_out": "Sortie",
+      "att_hours": "Heures",
+      "att_status": "Statut",
+      "emp_hist_position": "Poste",
+      "emp_hist_dept": "Département",
+      "emp_hist_from": "Du",
+      "emp_hist_to": "Au",
+      "emp_hist_reason": "Motif"
+    }
+  },
+
+  "departments": {
+    "list": {
+      "title": "Départements & Postes",
+      "subtitle": "Structure organisationnelle : départements, lignes hiérarchiques et postes.",
+      "tab_departments": "Départements",
+      "tab_positions": "Postes",
+      "view_mode": "Changer l'affichage de la liste",
+      "view_table": "Vue liste",
+      "view_grid": "Vue grille"
+    },
+    "filter": {
+      "title": "Filtrer les départements"
+    },
+    "view": {
+      "title": "Détails du département",
+      "positions": "Postes",
+      "employees": "Employés",
+      "teams": "Équipes de travail",
+      "child_departments": "Sous-départements"
+    },
+    "add": "Ajouter un Département",
+    "edit": "Modifier le Département",
+    "create_success": "Département créé avec succès.",
+    "save_success": "Département mis à jour avec succès.",
+    "save_error": "Échec de l'enregistrement du département.",
+    "load_error": "Échec du chargement du département.",
+    "delete_success": "Département supprimé avec succès.",
+    "delete_error": "Échec de la suppression du département.",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer ce département ?",
+    "kpi": {
+      "total": "Total des départements",
+      "active": "Départements actifs",
+      "with_manager": "Avec responsable",
+      "positions": "Postes"
+    },
+    "col": {
+      "name": "Nom",
+      "code": "Code",
+      "parent": "Département parent",
+      "manager": "Responsable",
+      "positions": "Postes",
+      "employees": "Employés",
+      "teams": "Équipes",
+      "created_at": "Créé le",
+      "description": "Description",
+      "status": "Statut"
+    },
+    "form": {
+      "name": "Nom du Département",
+      "code": "Code",
+      "parent": "Département parent",
+      "manager": "Responsable",
+      "positions": "Postes",
+      "sort_order": "Ordre de tri",
+      "status": "Statut",
+      "description": "Description",
+      "active": "Actif",
+      "create": "Créer le département",
+      "save": "Enregistrer les modifications"
+    },
+    "validation": {
+      "required": "Ce champ est obligatoire",
+      "non_negative": "Doit être supérieur ou égal à 0"
+    }
+  },
+
+  "positions": {
+    "filter": {
+      "title": "Filtrer les postes"
+    },
+    "view": {
+      "title": "Détails du poste",
+      "employees": "Employés"
+    },
+    "add": "Ajouter un Poste",
+    "edit": "Modifier le Poste",
+    "create_success": "Poste créé avec succès.",
+    "save_success": "Poste mis à jour avec succès.",
+    "save_error": "Échec de l'enregistrement du poste.",
+    "load_error": "Échec du chargement du poste.",
+    "delete_success": "Poste supprimé avec succès.",
+    "delete_error": "Échec de la suppression du poste.",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer ce poste ?",
+    "kpi": {
+      "total": "Total des postes",
+      "active": "Postes actifs",
+      "with_rate": "Avec taux horaire",
+      "employees": "Employés"
+    },
+    "col": {
+      "title": "Intitulé",
+      "code": "Code",
+      "department": "Département",
+      "rate": "Taux horaire",
+      "employees": "Employés",
+      "created_at": "Créé le",
+      "status": "Statut"
+    },
+    "form": {
+      "title": "Intitulé du Poste",
+      "code": "Code",
+      "department": "Département",
+      "standard_hourly_rate": "Taux horaire standard",
+      "description": "Description",
+      "requirements": "Exigences",
+      "status": "Statut",
+      "active": "Actif",
+      "create": "Créer le poste",
+      "save": "Enregistrer les modifications"
+    }
+  },
+
+  "teams": {
+    "list": {
+      "title": "Équipes de Travail",
+      "subtitle": "Équipes opérationnelles, responsables et composition.",
+      "add": "Ajouter une Équipe",
+      "edit": "Modifier l'Équipe",
+      "view_mode": "Changer l'affichage de la liste",
+      "view_table": "Vue liste",
+      "view_grid": "Vue grille"
+    },
+    "filter": {
+      "title": "Filtrer les équipes",
+      "with_leader": "Avec un responsable",
+      "without_leader": "Sans responsable"
+    },
+    "kpi": {
+      "total": "Total des équipes",
+      "active": "Équipes actives",
+      "with_leader": "Avec un responsable",
+      "total_members": "Affectations actives"
+    },
+    "view": {
+      "title": "Détails de l'Équipe",
+      "team_lead": "Chef d'Équipe",
+      "primary_member": "Équipe principale",
+      "joined_at": "Depuis le",
+      "members": "Membres",
+      "no_members": "Aucun membre affecté à cette équipe pour le moment."
+    },
+    "validation": {
+      "required": "Ce champ est obligatoire."
+    },
+    "options_error": "Impossible de charger les options du formulaire d'équipe.",
+    "form": {
+      "subtitle": "Définissez l'identité, le rattachement organisationnel et le statut de l'équipe.",
+      "name": "Nom de l'équipe",
+      "code": "Code",
+      "department": "Département",
+      "team_leader": "Responsable de l'équipe",
+      "team_type": "Type d'équipe",
+      "description": "Description",
+      "active": "Active",
+      "create": "Créer l'équipe",
+      "save": "Enregistrer les modifications",
+      "current_leader": "Responsable actuel",
+      "sections": {
+        "identity": "Identité de l'équipe",
+        "organization": "Organisation",
+        "settings": "Paramètres"
+      }
+    },
+    "type": {
+      "operational": "Opérationnelle",
+      "general": "Générale",
+      "project": "Projet",
+      "shift": "Équipe postée",
+      "department": "Département",
+      "cross_functional": "Transversale"
+    },
+    "add": "Ajouter une Équipe",
+    "edit": "Modifier l'Équipe",
+    "create_success": "Équipe créée avec succès.",
+    "save_success": "Équipe mise à jour avec succès.",
+    "save_error": "Échec de l'enregistrement de l'équipe.",
+    "load_error": "Échec du chargement des équipes.",
+    "delete_success": "Équipe supprimée avec succès.",
+    "delete_error": "Échec de la suppression de l'équipe.",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette équipe ?",
+    "col": {
+      "name": "Nom",
+      "code": "Code",
+      "type": "Type",
+      "department": "Département",
+      "leader": "Responsable",
+      "position": "Poste",
+      "members": "Membres",
+      "status": "Statut",
+      "created_at": "Créée le",
+      "updated_at": "Modifiée le"
+    }
+  },
+
+  "skills": {
+    "tab_skills": "Compétences",
+    "tab_certifications": "Certifications",
+    "list": {
+      "title": "Compétences & Certifications",
+      "subtitle": "Catalogue de référence des compétences et des types de certifications.",
+      "tab_skills": "Compétences",
+      "tab_certifications": "Certifications"
+    },
+    "add": "Ajouter une Compétence",
+    "edit": "Modifier la Compétence",
+    "create_success": "Compétence créée avec succès.",
+    "save_success": "Compétence mise à jour avec succès.",
+    "save_error": "Échec de l'enregistrement de la compétence.",
+    "delete_success": "Compétence supprimée avec succès.",
+    "delete_error": "Échec de la suppression de la compétence.",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette compétence ?",
+    "col": {
+      "name": "Nom",
+      "code": "Code",
+      "category": "Catégorie",
+      "status": "Statut"
+    },
+    "form": {
+      "name": "Nom de la Compétence",
+      "code": "Code",
+      "category": "Catégorie",
+      "description": "Description",
+      "active": "Actif"
+    }
+  },
+
+  "certifications": {
+    "add": "Ajouter une Certification",
+    "edit": "Modifier la Certification",
+    "create_success": "Certification créée avec succès.",
+    "save_success": "Certification mise à jour avec succès.",
+    "save_error": "Échec de l'enregistrement de la certification.",
+    "delete_success": "Certification supprimée avec succès.",
+    "delete_error": "Échec de la suppression de la certification.",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer cette certification ?",
+    "no_expiry": "Sans expiration",
+    "col": {
+      "name": "Nom",
+      "code": "Code",
+      "body": "Organisme Délivrant",
+      "validity": "Validité",
+      "status": "Statut"
+    },
+    "form": {
+      "name": "Nom de la Certification",
+      "code": "Code",
+      "issuing_body": "Organisme Délivrant",
+      "validity_months": "Validité (Mois)",
+      "description": "Description",
+      "active": "Actif"
+    }
+  },
+
+  "attendance": {
+    "list": {
+      "title": "Temps & Présence",
+      "subtitle": "Borne de pointage, registre des événements et présences journalières calculées.",
+      "navigation": "Sections de présence"
+    },
+    "punch_console": {
+      "title": "Console de pointage",
+      "subtitle": "Enregistrez les présences par badge, code PIN, saisie manuelle ou équipe.",
+      "return_to_list": "Liste des présences",
+      "navigation": "Modes de la console de pointage"
+    },
+    "punch_console_modes": {
+      "badge_qr": "Badge QR",
+      "manual": "Manuel",
+      "pin_pad": "Pavé PIN",
+      "crew": "Équipe",
+      "quick_clock": "Pointage rapide"
+    },
+    "kpi": {
+      "present": "Présents",
+      "late": "En retard",
+      "absent": "Absents",
+      "on_leave": "En congé",
+      "on_duty": "En service"
+    },
+    "load_error": "Échec du chargement des pointages.",
+    "load_kpis_error": "Échec du chargement des statistiques de présence.",
+    "load_employees_error": "Échec du chargement des employés pour le suivi des présences.",
+    "timeline": "Chronologie des Pointages",
+    "timeline_empty": "Aucun pointage enregistré pour le {date}.",
+    "timeline_load_failed": "Échec du chargement de la chronologie des présences.",
+    "badge_qr_failed": "Échec de la génération du code QR du badge employé.",
+    "col": {
+      "employee": "Employé",
+      "date": "Date",
+      "in": "Entrée",
+      "out": "Sortie",
+      "hours": "Heures",
+      "status": "Statut"
+    },
+    "filter": {
+      "date": "Date",
+      "status": "Statut"
+    },
+    "status": {
+      "present": "Présent",
+      "late": "En Retard",
+      "absent": "Absent",
+      "partial": "Journée Partielle",
+      "excused": "Excusé"
+    },
+    "view": {
+      "title": "Détail du Pointage",
+      "worked": "Travaillé",
+      "late": "Retard",
+      "overtime": "Heures Supp."
+    },
+    "correct": "Corriger",
+    "correction_title": "Demander une Correction",
+    "correction_reason": "Motif de la Correction",
+    "correction_success": "Demande de correction envoyée.",
+    "correction_error": "Échec de l'envoi de la demande de correction.",
+    "config": {
+      "title": "Configuration de la Présence",
+      "subtitle": "Tolérances globales d'entrée/sortie et unité minimale de congé.",
+      "saved": "Configuration de présence mise à jour.",
+      "save_error": "Échec de la mise à jour de la configuration.",
+      "checkin_tolerances": "Tolérances d'Entrée",
+      "checkout_tolerances": "Tolérances de Sortie",
+      "leave_policy": "Politique de Congé Horaire & Partiel",
+      "late_checkin_grace": "Tolérance Retard Entrée (Minutes)",
+      "late_checkin_grace_hint": "Une arrivée dans cette marge est marquée Présent",
+      "early_checkin_grace": "Tolérance Arrivée Anticipée",
+      "early_checkin_grace_hint": "Marge avant le début du créneau",
+      "early_checkout_grace": "Tolérance Départ Anticipé",
+      "early_checkout_grace_hint": "Un départ dans cette marge est pardonné",
+      "late_checkout_grace": "Tolérance Départ Tardif",
+      "late_checkout_grace_hint": "Marge avant déclenchement des heures supplémentaires",
+      "hourly_leave_tolerance": "Tolérance Congé Horaire (Minutes)",
+      "hourly_leave_tolerance_hint": "Tolérance d'arrondi appliquée aux congés horaires",
+      "min_hourly_leave_unit": "Unité Minimale de Congé Horaire (Minutes)",
+      "min_hourly_leave_unit_hint": "Plus petit incrément de congé autorisé",
+      "info_title": "Note de Politique",
+      "info_message": "Ces tolérances s'appliquent globalement aux présences calculées et aux congés horaires."
+    },
+    "exception": {
+      "list": {
+        "title": "Anomalies de Présence",
+        "subtitle": "Analyser et résoudre les écarts de présence par rapport aux plannings et aux congés autorisés."
+      },
+      "filter": {
+        "review_status": "Statut de Traitement",
+        "type": "Type d'Anomalie",
+        "department": "Département",
+        "date": "Date"
+      },
+      "col": {
+        "employee": "Employé",
+        "date": "Date",
+        "type": "Type",
+        "expected_vs_actual": "Prévu vs Réel",
+        "deviation": "Écart",
+        "leave_link": "Congé Justificatif",
+        "review_status": "Statut"
+      },
+      "expected": "Prévu",
+      "actual": "Réel",
+      "no_leave": "Aucun congé justificatif",
+      "acknowledge": "Prendre Connaissance",
+      "resolve": "Résoudre",
+      "dismiss": "Rejeter",
+      "acknowledged": "Anomalie prise en compte.",
+      "resolved": "Anomalie résolue.",
+      "dismissed": "Anomalie rejetée.",
+      "acknowledge_error": "Échec de la prise en compte de l'anomalie.",
+      "resolve_error": "Échec de la résolution de l'anomalie.",
+      "dismiss_error": "Échec du rejet de l'anomalie.",
+      "resolve_note_prompt": "Note de résolution (optionnelle) :",
+      "dismiss_note_prompt": "Motif du rejet :",
+      "review_status": {
+        "open": "Ouverte / Non résolue",
+        "acknowledged": "Prise en compte",
+        "resolved": "Résolue",
+        "dismissed": "Rejetée",
+        "all": "Tous les statuts"
+      },
+      "late_arrival": "Arrivée Tardive",
+      "early_arrival": "Arrivée Anticipée",
+      "early_departure": "Départ Anticipé",
+      "overtime": "Heures Supplémentaires",
+      "missing_checkout": "Sortie Manquante",
+      "missing_checkin": "Entrée Manquante",
+      "leave_mismatch": "Écart de Congé"
+    }
+  },
+
+  "kiosk": {
+    "title": "Borne de Pointage",
+    "subtitle": "Libre-service employé",
+    "attendance": "Présence",
+    "scan_badge": "Scannez votre badge",
+    "scan_help": "Présentez votre badge QR dans le cadre. Votre présence sera enregistrée automatiquement.",
+    "start_scan": "Démarrer le scan",
+    "use_pin": "Utiliser le PIN",
+    "enter_pin": "Saisissez votre numéro de badge",
+    "pin_help": "Utilisez le clavier uniquement si vous n'avez pas votre badge.",
+    "pin_mode": "Clavier PIN",
+    "back_to_scanner": "Retour au scanner",
+    "ready": "Prêt à scanner",
+    "offline": "Hors ligne",
+    "processing": "Traitement",
+    "clocked_in": "Entrée enregistrée",
+    "clocked_out": "Sortie enregistrée",
+    "badge_not_recognized": "Badge non reconnu. Réessayez ou utilisez le clavier PIN.",
+    "check_ins": "Entrées",
+    "check_outs": "Sorties",
+    "recent_activity": "Activité récente",
+    "no_activity": "Aucun pointage enregistré aujourd'hui.",
+    "in": "Entrée",
+    "out": "Sortie"
+  },
+
+  "time_off": {
+    "list": {
+      "title": "Congés & Absences",
+      "subtitle": "Demandes de congé, calendrier d'équipe, approbations et suivi des soldes."
+    },
+    "load_error": "Échec du chargement des demandes de congé.",
+    "add": "Nouvelle Demande de Congé",
+    "approve": "Approuver",
+    "approve_success": "Demande de congé approuvée.",
+    "approve_error": "Échec de l'approbation de la demande.",
+    "reject": "Refuser",
+    "reject_title": "Refuser la Demande de Congé",
+    "reject_reason": "Motif du Refus",
+    "reject_reason_required": "Veuillez indiquer le motif du refus.",
+    "reject_success": "Demande de congé refusée.",
+    "reject_error": "Échec du refus de la demande.",
+    "cancel": "Annuler la Demande",
+    "cancel_confirm": "Êtes-vous sûr de vouloir annuler cette demande de congé ?",
+    "cancel_success": "Demande de congé annulée.",
+    "cancel_error": "Échec de l'annulation de la demande.",
+    "create_success": "Demande de congé soumise avec succès.",
+    "create_error": "Échec de la soumission de la demande.",
+    "approved": "Approuvé",
+    "rejected": "Refusé",
+    "submitted": "Soumis",
+    "kpi": {
+      "pending": "En attente d'approbation",
+      "approved": "Approuvés",
+      "on_leave_today": "En congé aujourd'hui",
+      "rejected": "Refusés",
+      "total": "Total Demandes",
+      "days_taken": "Jours Approuvés"
+    },
+    "tabs": {
+      "requests": "Demandes",
+      "calendar": "Calendrier",
+      "balances": "Soldes & Quotas",
+      "navigation": "Sections Congés"
+    },
+    "calendar_view": "Vue Calendrier",
+    "calendar_summary": "Calendrier des Congés d'Équipe",
+    "col": {
+      "reference": "Référence",
+      "employee": "Employé",
+      "department": "Département",
+      "type": "Type de Congé",
+      "from": "Du",
+      "to": "Au",
+      "dates": "Dates",
+      "duration": "Durée",
+      "days": "Jours",
+      "status": "Statut",
+      "approver": "Approbateur",
+      "actions": "Actions"
+    },
+    "form": {
+      "title": "Nouvelle Demande de Congé",
+      "employee": "Employé",
+      "select_employee": "Sélectionner un employé",
+      "type": "Type de Congé",
+      "select_type": "Sélectionner un type de congé",
+      "duration_type": "Type de Durée",
+      "from": "Date de Début",
+      "to": "Date de Fin",
+      "start_time": "Heure de Début",
+      "end_time": "Heure de Fin",
+      "reason": "Motif / Justification",
+      "reason_placeholder": "Précisez le motif du congé...",
+      "days_requested": "Jours Calculés",
+      "available_balance": "Solde Disponible",
+      "submit_approval": "Soumettre pour Approbation",
+      "hourly_hint": "Le congé horaire est déduit selon l'unité minimale configurée."
+    },
+    "duration_type": {
+      "full_day": "Journée Complète",
+      "partial_day": "Journée Partielle",
+      "hourly": "Horaire"
+    },
+    "filter": {
+      "title": "Filtrer les Demandes de Congé",
+      "status": "Statut",
+      "type": "Type de Congé",
+      "department": "Département",
+      "employee": "Employé",
+      "date_range": "Période",
+      "from_date": "Date de début",
+      "to_date": "Date de fin"
+    },
+    "status": {
+      "pending": "En attente",
+      "submitted": "En attente d'approbation",
+      "approved": "Approuvé",
+      "rejected": "Refusé",
+      "cancelled": "Annulé",
+      "draft": "Brouillon",
+      "taken": "Pris"
+    },
+    "view": {
+      "title": "Détail de la Demande",
+      "reference": "Référence",
+      "employee": "Informations de l'Employé",
+      "dates": "Dates & Durée",
+      "reason": "Motif",
+      "decision_note": "Notes de Décision",
+      "rejection_reason": "Motif du Refus",
+      "audit": "Détails d'Approbation",
+      "approved_by": "Approuvé par",
+      "on_date": "le"
+    },
+    "balances": {
+      "title": "Soldes & Droits à Congés",
+      "subtitle": "Droits à congés des employés, quotas acquis et jours restants.",
+      "year": "Année",
+      "accrued": "Alloué",
+      "used": "Pris",
+      "pending": "Réservé",
+      "available": "Disponible",
+      "select_employee": "Filtrer par Employé",
+      "select_department": "Filtrer par Département",
+      "no_balances": "Aucun solde de congé trouvé pour les filtres sélectionnés."
+    }
+  },
+
+  "recruitment": {
+    "list": {
+      "title": "Recrutement & Embauche",
+      "subtitle": "Vivier de candidats, entretiens et décisions d'embauche."
+    },
+    "pipeline_title": "Vivier de Talents",
+    "pipeline_subtitle": "Suivez les candidats à chaque étape du recrutement.",
+    "open_pipeline": "Ouvrir le vivier",
+    "return_to_list": "Retour au recrutement",
+    "schedule_interview": "Planifier un entretien",
+    "candidates": "Candidats",
+    "no_candidates": "Aucun candidat ne correspond aux filtres.",
+    "load_error": "Échec du chargement des candidats.",
+    "add_candidate": "Ajouter un Candidat",
+    "reject": "Refuser",
+    "stage_updated": "Étape du candidat mise à jour.",
+    "stage_error": "Échec de la mise à jour de l'étape du candidat.",
+    "col": {
+      "applicant": "Candidat",
+      "position": "Poste",
+      "stage": "Étape",
+      "applied": "Candidature"
+    },
+    "filter": {
+      "stage": "Étape"
+    },
+    "stage": {
+      "applied": "Candidature Reçue",
+      "screening": "Présélection",
+      "interview": "Entretien",
+      "offer": "Offre",
+      "hired": "Embauché",
+      "evaluated": "Évalué",
+      "selected": "Sélectionné",
+      "rejected": "Refusé"
+    }
+  },
+
+  "workforce": {
+    "list": {
+      "title": "Planification des Effectifs",
+      "subtitle": "Planification des créneaux, plannings et publication des rosters."
+    },
+    "tab_shifts": "Créneaux",
+    "tab_schedules": "Plannings",
+    "add_shift": "Ajouter un Créneau",
+    "edit_shift": "Modifier le Créneau",
+    "delete_shift_confirm": "Êtes-vous sûr de vouloir supprimer ce créneau ?",
+    "shift_saved": "Créneau enregistré avec succès.",
+    "shift_created": "Créneau créé avec succès.",
+    "shift_error": "Échec de l'enregistrement du créneau.",
+    "shift_deleted": "Créneau supprimé avec succès.",
+    "shift_delete_error": "Échec de la suppression du créneau.",
+    "col": {
+      "employee": "Employé",
+      "date": "Date",
+      "shift": "Créneau",
+      "shift_name": "Nom du Créneau",
+      "start": "Début",
+      "end": "Fin",
+      "break": "Pause",
+      "status": "Statut",
+      "sch_status": "Statut du Planning"
+    },
+    "form": {
+      "name": "Nom du Créneau",
+      "start_time": "Heure de Début",
+      "end_time": "Heure de Fin",
+      "break_minutes": "Pause (Minutes)",
+      "active": "Actif"
+    },
+    "availability": {
+      "title": "Disponibilité des Effectifs",
+      "subtitle": "Trouver le personnel disponible pour une plage horaire donnée.",
+      "search": "Rechercher des Collaborateurs Disponibles",
+      "query_form": "Requête de Disponibilité",
+      "start_time": "Début de Mission",
+      "end_time": "Fin de Mission",
+      "time_range": "Plage Horaire",
+      "department": "Département",
+      "team": "Équipe",
+      "required_skills": "Compétences Requises",
+      "required_certifications": "Certifications Requises",
+      "results": "Personnel Disponible",
+      "evaluated": "Évalués",
+      "available": "Disponibles",
+      "skill_match": "Adéquation Compétences",
+      "cert_match": "Certifications Valides",
+      "status": "Statut",
+      "reason": "Raison d'Indisponibilité",
+      "no_results": "Aucun personnel évalué pour le moment",
+      "no_results_hint": "Définissez une plage horaire et lancez la recherche de disponibilité.",
+      "query_failed": "Échec de la recherche des disponibilités du personnel."
+    }
+  },
+
+  "hire_wizard": {
+    "title": "Embaucher un Candidat",
+    "step1": "Emploi",
+    "step1_subtitle": "Conditions d'Emploi",
+    "step1_desc": "Définissez le type de contrat, le poste et la date de début.",
+    "step2": "Organisation",
+    "step2_subtitle": "Affectation Organisationnelle",
+    "step2_desc": "Affectez le nouveau collaborateur à un département et une équipe.",
+    "step3": "Rémunération",
+    "step3_subtitle": "Rémunération",
+    "step3_desc": "Définissez le salaire et la période de paie.",
+    "step4": "Confirmation",
+    "step4_subtitle": "Vérification & Confirmation",
+    "step4_desc": "Vérifiez les informations avant de créer le dossier employé.",
+    "full_name": "Nom Complet",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "employee_number": "Matricule",
+    "employee_number_hint": "Laisser vide pour génération automatique.",
+    "department": "Département",
+    "team": "Équipe",
+    "position": "Poste",
+    "employment_type": "Type de Contrat",
+    "hire_date": "Date d'Embauche",
+    "salary": "Salaire",
+    "currency": "Devise",
+    "period": "Période de Paie",
+    "work_location": "Lieu de Travail",
+    "notes": "Notes",
+    "full_time": "Temps Plein",
+    "part_time": "Temps Partiel",
+    "contract": "Contrat",
+    "intern": "Stagiaire",
+    "temporary": "Temporaire",
+    "hourly": "Horaire",
+    "monthly": "Mensuel",
+    "annually": "Annuel",
+    "confirm_hire": "Confirmer l'Embauche",
+    "hire": "Embaucher le Candidat",
+    "success": "Candidat embauché avec succès.",
+    "error": "Échec de l'embauche du candidat."
+  },
+
+  "appraisals": {
+    "title": "Évaluations de Performance",
+    "cycles_load_failed": "Échec du chargement des cycles d'évaluation.",
+    "subtitle": "Cycles d'évaluation, entretiens et notation des effectifs.",
+    "cycles": "Cycles d'Évaluation",
+    "appraisals_list": "Évaluations de Performance",
+    "create_cycle": "Créer un Cycle",
+    "create_appraisal": "Créer une Évaluation",
+    "create_first_cycle": "Créer le Premier Cycle",
+    "cycle_name": "Nom du Cycle",
+    "cycle_type": "Type de Cycle",
+    "start_date": "Date de Début",
+    "end_date": "Date de Fin",
+    "cycle": "Cycle",
+    "employee": "Employé",
+    "reviewer": "Évaluateur",
+    "overall_score": "Score Global",
+    "manager_feedback": "Retour du Manager",
+    "employee_feedback": "Retour de l'Employé",
+    "annual": "Annuel",
+    "quarterly": "Trimestriel",
+    "probation": "Période d'Essai",
+    "project_based": "Par Projet",
+    "draft": "Brouillon",
+    "active": "Actif",
+    "in_review": "En Évaluation",
+    "completed": "Terminé",
+    "submitted": "Soumis",
+    "reviewed": "Évalué",
+    "acknowledged": "Pris en Compte",
+    "reviews": "Évaluations",
+    "filter_by_cycle": "Filtrer par Cycle",
+    "no_cycles": "Aucun cycle d'évaluation",
+    "no_cycles_hint": "Créez un cycle pour lancer les évaluations de performance.",
+    "no_appraisals": "Aucune évaluation trouvée",
+    "no_appraisals_hint": "Les évaluations apparaissent ici dès qu'un cycle est actif.",
+    "cycle_created": "Cycle d'évaluation créé.",
+    "appraisal_saved": "Évaluation enregistrée."
+  },
+
+  "fleet": {
+    "mileage": "Kilométrage",
+    "assigned": "Affecté",
+    "unassigned": "Non affecté",
+    "storage": "Parc de stockage",
+    "no_vehicles": "Aucun véhicule trouvé",
+    "no_vehicles_hint": "Ajustez vos filtres ou vos mots-clés de recherche.",
+    "delete_title": "Supprimer le Véhicule",
+    "delete_confirm": "Êtes-vous sûr de vouloir supprimer le véhicule {plate} ? Cette action est définitive. Un véhicule ayant un historique d'affectation ne peut pas être supprimé.",
+    "view_mode_table": "Vue Tableau / Liste",
+    "view_mode_grid": "Vue Cartes / Grille"
+  }
+}

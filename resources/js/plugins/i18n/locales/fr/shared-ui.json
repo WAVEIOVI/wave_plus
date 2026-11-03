@@ -1,0 +1,144 @@
+{
+  "wp": {
+    "snackbar": {
+      "close": "Fermer",
+      "dismiss": "Ignorer",
+      "retry": "Réessayer"
+    },
+    "confirm": {
+      "delete_title": "Confirmer la suppression",
+      "delete_text": "Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.",
+      "delete": "Supprimer",
+      "default_title": "Êtes-vous sûr ?",
+      "default_text": "Veuillez confirmer cette opération pour continuer.",
+      "confirm": "Confirmer",
+      "discard_title": "Abandonner les modifications ?",
+      "discard_text": "Vous avez des modifications non enregistrées. Quitter maintenant entraînera la perte de vos saisies.",
+      "discard": "Abandonner",
+      "cancel": "Annuler",
+      "keep_editing": "Continuer l'édition"
+    },
+    "states": {
+      "loading": "Chargement des données...",
+      "error_title": "Échec du chargement",
+      "error_text": "Une erreur est survenue lors de la récupération des informations.",
+      "retry": "Réessayer",
+      "empty_title": "Rien à afficher",
+      "empty_text": "Aucun enregistrement disponible pour le moment.",
+      "forbidden_title": "Accès restreint",
+      "forbidden_text": "Vous n'avez pas l'autorisation d'accéder à cette section.",
+      "back": "Retour"
+    },
+    "zoom": {
+      "open": "Agrandir l'affichage",
+      "close": "Fermer l'affichage agrandi",
+      "fullscreen": "Plein écran",
+      "exit_fullscreen": "Quitter le plein écran"
+    },
+    "wizard": {
+      "progress": "Progression de l'assistant",
+      "step_of": "Étape {current} sur {total}",
+      "to_fix": "{count} à corriger",
+      "finish": "Terminer & Soumettre",
+      "next": "Suivant",
+      "back": "Retour",
+      "cancel": "Annuler",
+      "close": "Fermer l'assistant",
+      "review": "Vérifier & Confirmer",
+      "required": "Ce champ est obligatoire",
+      "invalid": "Veuillez fournir une valeur valide",
+      "yes": "Oui",
+      "no": "Non",
+      "edit_step": "Modifier l'étape",
+      "empty_value": "Non renseigné",
+      "show_advanced": "Afficher les options avancées",
+      "hide_advanced": "Masquer les options avancées"
+    },
+    "picker": {
+      "entity_default": "enregistrement",
+      "title": "Sélectionner {entity}",
+      "results": "{count} résultat(s) trouvé(s)",
+      "search_placeholder": "Rechercher {entity}...",
+      "filters": "Filtres",
+      "sort_by": "Trier par",
+      "sort_asc": "Croissant",
+      "sort_desc": "Décroissant",
+      "view": "Mode d'affichage",
+      "view_table": "Vue tableau",
+      "view_list": "Vue liste",
+      "view_grid": "Vue grille",
+      "hide_advanced": "Masquer les filtres avancés",
+      "show_advanced": "Filtres avancés",
+      "reset_filters": "Réinitialiser les filtres",
+      "filter_summary": "Filtres actifs ({count}) :",
+      "clear_all": "Tout effacer",
+      "no_results_title": "Aucun résultat trouvé",
+      "no_results_text": "Aucun enregistrement ne correspond à vos critères de recherche. Essayez de modifier vos termes ou filtres.",
+      "empty_text": "Aucun enregistrement disponible actuellement.",
+      "selected_count": "{count} sélectionné(s)",
+      "limit_reached": "Limite de sélection ({max}) atteinte",
+      "clear_selection": "Effacer la sélection",
+      "confirm": "Valider la sélection",
+      "type_to_search": "Tapez au moins {count} caractères pour rechercher",
+      "select": "Sélectionner"
+    },
+    "edit": {
+      "sections": "Sections de page",
+      "main_sections": "Sections principales",
+      "related": "Informations connexes",
+      "fix_errors": "Veuillez corriger les {count} erreur(s) avant d'enregistrer.",
+      "unsaved": "Modifications non enregistrées",
+      "saved": "Modifications enregistrées",
+      "discard": "Abandonner",
+      "close": "Fermer",
+      "save": "Enregistrer"
+    },
+    "cards": {
+      "view": "Voir les détails",
+      "edit": "Modifier",
+      "collapse": "Réduire",
+      "expand": "Développer",
+      "change": "Changer",
+      "clear": "Effacer",
+      "locked": "Verrouillé",
+      "address": {
+        "title": "Adresse & Sites",
+        "entity": "Adresse",
+        "select": "Sélectionner une adresse",
+        "linked_sites": "Sites associés",
+        "no_sites": "Aucun site associé à cette adresse"
+      },
+      "partner": {
+        "default_label": "Partenaire commercial",
+        "email": "Adresse e-mail",
+        "phone": "Numéro de téléphone",
+        "select": "Sélectionner {label}"
+      },
+      "contacts": {
+        "title": "Contacts du partenaire",
+        "entity": "Contact",
+        "select_dialog": "Rechercher un contact",
+        "add": "Ajouter un contact",
+        "empty_title": "Aucun contact disponible",
+        "empty_text": "Aucun contact n'est associé à ce partenaire.",
+        "primary": "Principal",
+        "make_primary": "Définir comme contact principal",
+        "unnamed": "Contact sans nom"
+      },
+      "doc_lines": {
+        "title": "Lignes du document",
+        "add_line": "Ajouter une ligne",
+        "empty_title": "Aucun article ajouté",
+        "empty_text": "Commencez par ajouter des produits ou services à ce document.",
+        "actions": "Actions",
+        "unnamed_item": "Article sans nom",
+        "discount": "Remise",
+        "tax": "TVA",
+        "subtotal": "Sous-total HT",
+        "discount_total": "Total remises",
+        "tax_total": "Total TVA",
+        "grand_total": "Total TTC"
+      }
+    }
+  }
+}

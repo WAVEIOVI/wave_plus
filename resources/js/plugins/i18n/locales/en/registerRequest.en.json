@@ -1,0 +1,161 @@
+{
+  "registerRequest": {
+    "panel": {
+      "title": "Every extinguisher, inspection and certificate in one portal.",
+      "subtitle": "Request access and our team will set up your sites, equipment and users.",
+      "tag": {
+        "name": "Powder extinguisher 6 kg",
+        "serial": "Serial",
+        "site": "Site",
+        "siteValue": "Sfax plant",
+        "nextService": "Next service",
+        "nextServiceValue": "12 Mar 2027",
+        "status": "Status",
+        "statusValue": "Compliant"
+      }
+    },
+    "header": {
+      "title": "Request portal access",
+      "subtitle": "It takes about 2 minutes. Our team reviews every request before activating an account.",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in"
+    },
+    "stepOf": "Step {current} of {total}",
+    "steps": {
+      "identity": {
+        "title": "Identity & Role",
+        "subtitle": "Personal & Account Type"
+      },
+      "organization": {
+        "title": "Organization",
+        "subtitle": "Company Information"
+      },
+      "scope": {
+        "title": "Scope & Details",
+        "subtitle": "Facility & Notes"
+      }
+    },
+    "identity": {
+      "heading": "Applicant & Account Type",
+      "intro": "Tell us who you are and the type of portal access you need.",
+      "firstName": "First Name",
+      "firstNamePh": "John",
+      "lastName": "Last Name",
+      "lastNamePh": "Doe",
+      "email": "Professional Email",
+      "phone": "Phone / Mobile Number",
+      "accountType": "Select your account type"
+    },
+    "accountTypes": {
+      "standard_client": {
+        "title": "Standard Client",
+        "desc": "Company or enterprise with firefighting equipment on site"
+      },
+      "site_responsible": {
+        "title": "Site Responsible (Sub-Client)",
+        "desc": "Responsible for a specific branch, factory, or commercial site"
+      },
+      "client_group": {
+        "title": "Client Group / Holding",
+        "desc": "Managing multiple entities or partner companies"
+      },
+      "organisation": {
+        "title": "Public Organisation / Civil Protection",
+        "desc": "Civil protection, inspection agency, or safety authority"
+      },
+      "supplier": {
+        "title": "Supplier / Partner",
+        "desc": "Equipment supplier, manufacturer, or maintenance partner"
+      }
+    },
+    "organization": {
+      "heading": "Company & Organization",
+      "intro": "Provide legal and contact information for your business or organization.",
+      "companyName": "Legal Company / Entity Name",
+      "taxId": "Tax Identification / Matricule Fiscale",
+      "industry": "Industry Sector",
+      "industryPh": "Select sector",
+      "website": "Website",
+      "address": "Street Address / Headquarters",
+      "addressPh": "Zone Industrielle, Route de Sousse",
+      "city": "City",
+      "cityPh": "Tunis",
+      "country": "Country",
+      "countryPh": "Tunisia"
+    },
+    "industries": {
+      "manufacturing": "Manufacturing & Heavy Industry",
+      "energy": "Oil & Gas / Energy",
+      "logistics": "Logistics & Warehousing",
+      "healthcare": "Healthcare & Pharmaceuticals",
+      "hospitality": "Hospitality & Tourism",
+      "retail": "Retail & Commercial Malls",
+      "public": "Public Sector & Government",
+      "safety": "Firefighting & Safety Services",
+      "other": "Other"
+    },
+    "scope": {
+      "heading": "Operational Scope & Notes",
+      "intro": "Tell us about your facilities to speed up verification.",
+      "positionTitle": "Your Job Title / Position",
+      "positionTitlePh": "HSE Manager / Safety Director",
+      "siteCount": "Number of Sites / Facilities",
+      "equipmentEstimate": "Estimated Firefighting Equipment Count",
+      "equipmentEstimatePh": "e.g. 150 extinguishers, 12 hose reels, 4 hydrants...",
+      "notes": "Special Requirements or Message for Admin",
+      "notesPh": "Describe any particular access scopes, specific branches, or urgent compliance deadlines..."
+    },
+    "siteCounts": {
+      "one": "1 site",
+      "few": "2 - 5 sites",
+      "many": "6 - 20 sites",
+      "enterprise": "20+ sites"
+    },
+    "actions": {
+      "next": {
+        "organization": "Next: Organization",
+        "scope": "Next: Scope & Details"
+      },
+      "previous": "Previous",
+      "submit": "Send registration request"
+    },
+    "validation": {
+      "firstName": "First name is required",
+      "lastName": "Last name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Enter a valid email",
+      "phoneRequired": "Phone number is required",
+      "phoneInvalid": "Enter a valid phone number",
+      "urlInvalid": "Enter a valid website address",
+      "companyName": "Company name is required"
+    },
+    "errors": {
+      "generic": "We couldn't send your request. Check your connection and try again."
+    },
+    "success": {
+      "title": "Registration request submitted",
+      "intro": "Thank you for requesting access to {app}. Your request is in the queue for administrative review.",
+      "reference": "Tracking reference",
+      "copy": "Copy reference",
+      "copied": "Copied",
+      "confirmation": "A confirmation has been logged for {email}. Once verified, our team will activate your profile and send your login details.",
+      "nextTitle": "What happens next",
+      "steps": {
+        "review": {
+          "title": "Review",
+          "text": "Our team checks your company details and account type."
+        },
+        "verify": {
+          "title": "Verification",
+          "text": "We may contact you to confirm a few details."
+        },
+        "activate": {
+          "title": "Activation",
+          "text": "Your login details are sent to your email."
+        }
+      },
+      "home": "Return home",
+      "login": "Go to login"
+    }
+  }
+}

@@ -1,0 +1,393 @@
+{
+  "catalog": {
+    "nav": {
+      "title": "Catalogue",
+      "items": "Articles du catalogue",
+      "blueprints": "Plans d'équipement",
+      "guidelines": "Directives de maintenance"
+    },
+    "dashboard": {
+      "title": "Tableau de Bord Catalogue",
+      "subtitle": "Vue d'ensemble de vos produits, plans de référence et directives.",
+      "blueprints": "Plans d'équipement",
+      "new_item": "Nouvel article",
+      "items_by_type": "Articles par type",
+      "items_by_type_sub": "Répartition de votre inventaire de catalogue",
+      "blueprints_by_category": "Plans d'équipement par catégorie",
+      "blueprints_by_category_sub": "Répartition des plans dans les catégories",
+      "recent_activity": "Activité récente",
+      "recent_activity_sub": "Articles et plans récemment mis à jour",
+      "no_data": "Aucun article de catalogue pour le moment",
+      "no_blueprints": "Aucune donnée de plan",
+      "total_items": "Total Articles"
+    },
+    "items": {
+      "list": {
+        "title": "Articles du catalogue",
+        "subtitle": "Gérez les produits, consommables, services d'équipement, tarifs et variantes",
+        "actions": {
+          "add_new": "Ajouter un article",
+          "export_pdf": "Exporter en PDF",
+          "send_mail": "Envoyer la liste par e-mail",
+          "send_single_mail": "Envoyer par e-mail",
+          "view": "Voir l'article",
+          "edit": "Modifier l'article",
+          "delete": "Supprimer l'article",
+          "grid_view": "Vue Grille",
+          "list_view": "Vue Liste"
+        },
+        "kpis": {
+          "total_items": "Total Articles",
+          "active": "Actifs",
+          "products": "Produits",
+          "consumables": "Consommables",
+          "servicing": "Services"
+        },
+        "filter": {
+          "title": "Filtrer les articles",
+          "item_type": "Type d'article",
+          "category": "Catégorie",
+          "status": "Statut",
+          "brand": "Marque",
+          "all_types": "Tous les types",
+          "all_categories": "Toutes les catégories",
+          "all_statuses": "Tous les statuts"
+        },
+        "table": {
+          "code": "Code",
+          "name": "Nom",
+          "type": "Type",
+          "subtype": "Sous-type",
+          "category": "Catégorie",
+          "price": "Plage de prix",
+          "stock": "Stock",
+          "status": "Statut",
+          "actions": "Actions",
+          "non_stockable": "Non stockable"
+        },
+        "messages": {
+          "delete_success": "Article du catalogue supprimé avec succès.",
+          "delete_error": "Échec de la suppression de l'article.",
+          "create_success": "Article {ref} créé avec succès.",
+          "update_success": "Article {ref} mis à jour avec succès.",
+          "export_pdf_success": "PDF du catalogue exporté avec succès.",
+          "export_pdf_error": "Échec de l'exportation du PDF.",
+          "email_success": "E-mail mis en file d'attente avec succès.",
+          "email_error": "Échec de l'envoi de l'e-mail."
+        },
+        "delete_dialog": {
+          "title": "Supprimer l'article du catalogue",
+          "description": "Êtes-vous sûr de vouloir supprimer cet article ? Cette action est irréversible."
+        },
+        "empty": {
+          "category": "Non catégorisé",
+          "price": "Aucun prix configuré",
+          "stock": "N/D"
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "Accueil",
+        "breadcrumb_catalog": "Catalogue",
+        "breadcrumb_items": "Articles",
+        "title_new": "Nouvel article de catalogue",
+        "title_edit": "Modifier l'article de catalogue",
+        "sections": {
+          "classification": "Classification",
+          "general": "Informations générales",
+          "specifications": "Spécifications",
+          "commerce": "Commerce",
+          "media": "Médias et fichiers",
+          "variants": "Variantes"
+        },
+        "actions": {
+          "save": "Enregistrer l'article",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler",
+          "back_to_list": "Retour à la liste"
+        },
+        "validation": {
+          "select_category": "Veuillez sélectionner une catégorie.",
+          "general_errors": "Veuillez corriger les erreurs dans les informations générales.",
+          "save_error": "Erreur lors de l'enregistrement de l'article."
+        }
+      },
+      "types": {
+        "product": "Produit",
+        "consumable": "Consommable",
+        "eq_servicing": "Entretien d'équipement"
+      },
+      "statuses": {
+        "active": "Actif",
+        "draft": "Brouillon",
+        "discontinued": "Abandonné"
+      }
+    },
+    "blueprints": {
+      "list": {
+        "title": "Plans d'équipement",
+        "subtitle": "Définir les configurations techniques, cycles de maintenance et tâches d'entretien pour les classes d'équipement",
+        "actions": {
+          "add_new": "Ajouter un plan",
+          "test_bench": "Banc d'essai technicien",
+          "view": "Voir le plan",
+          "edit": "Modifier le plan",
+          "delete": "Supprimer le plan",
+          "grid_view": "Vue Grille",
+          "list_view": "Vue Liste",
+          "table_view": "Vue Tableau"
+        },
+        "kpis": {
+          "total_blueprints": "Total Plans",
+          "active": "Actifs",
+          "draft": "Brouillons",
+          "inactive": "Inactifs"
+        },
+        "filter": {
+          "title": "Filtrer les plans",
+          "status": "Statut",
+          "equipment_class": "Classe d'équipement",
+          "all_statuses": "Tous les statuts",
+          "all_classes": "Toutes les classes d'équipement"
+        },
+        "table": {
+          "code": "Code",
+          "name": "Nom",
+          "equipment_class": "Classe d'équipement",
+          "options": "Options",
+          "cycles": "Cycles",
+          "servicing": "Services",
+          "status": "Statut",
+          "created_at": "Créé le",
+          "actions": "Actions"
+        },
+        "delete_dialog": {
+          "title": "Supprimer le plan d'équipement",
+          "description": "Êtes-vous sûr de vouloir supprimer ce plan ? Cette action est irréversible."
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "Accueil",
+        "breadcrumb_catalog": "Catalogue",
+        "breadcrumb_blueprints": "Plans",
+        "title_new": "Nouveau plan d'équipement",
+        "title_edit": "Modifier le plan",
+        "tabs": {
+          "general": "Informations générales",
+          "options": "Moteur d'options",
+          "cycles": "Cycles d'intervention",
+          "servicing": "Services & Consommables",
+          "test_bench": "Banc d'essai",
+          "guidelines": "Directives"
+        },
+        "actions": {
+          "save": "Enregistrer le plan",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler",
+          "back_to_list": "Retour à la liste",
+          "change_status": "Changer le statut",
+          "add_option": "Ajouter une option",
+          "add_interval": "Ajouter un intervalle",
+          "add_service_task": "Ajouter une tâche"
+        },
+        "option": {
+          "add_title": "Ajouter une option personnalisée",
+          "edit_title": "Modifier l'option",
+          "subtitle": "Configurer l'option d'équipement et les valeurs autorisées",
+          "code": "Code option *",
+          "code_hint": "Utilisé dans les formules de calcul",
+          "code_required": "Le code option est requis",
+          "data_type": "Type de donnée *",
+          "data_type_select": "Liste déroulante",
+          "data_type_number": "Saisie numérique",
+          "data_type_text": "Texte",
+          "data_type_boolean": "Booléen (Oui/Non)",
+          "name": "Nom de l'option",
+          "values": "Valeurs configurées",
+          "add_value": "Ajouter une valeur",
+          "add_value_title": "Ajouter une valeur",
+          "edit_value": "Modifier la valeur",
+          "add_first_value": "Ajouter la première valeur",
+          "empty_values": "Aucune valeur. Définissez des choix comme 1kg, 6kg ou un agent.",
+          "display_label": "Libellé",
+          "value_code": "Code *",
+          "numeric_value": "Valeur numérique",
+          "unit": "Unité",
+          "save": "Enregistrer",
+          "add": "Ajouter l'option",
+          "update": "Mettre à jour",
+          "add_short": "Ajouter"
+        },
+        "interval": {
+          "add_title": "Ajouter un intervalle",
+          "edit_title": "Modifier l'intervalle",
+          "type": "Type d'intervention *",
+          "first": "Premier intervalle (mois) *",
+          "first_hint": "Quand doit avoir lieu la première intervention ?",
+          "recurring": "Intervalle récurrent (mois)",
+          "recurring_hint": "Fréquence après la première intervention",
+          "notes": "Notes / Instructions",
+          "preview": "Aperçu du calendrier",
+          "first_label": "Premier :",
+          "then_every": "Puis tous les :",
+          "months": "mois",
+          "months_after": "mois après l'installation",
+          "one_time": "Ponctuel uniquement"
+        },
+        "status": {
+          "apply": "Appliquer le statut",
+          "hint": "Sélectionnez le statut opérationnel de ce plan d'équipement.",
+          "active_hint": "Disponible pour les équipements clients et la maintenance.",
+          "draft_hint": "En construction, pas encore publié.",
+          "inactive_hint": "Archivé / Désactivé."
+        },
+        "guidelines": {
+          "title": "Directives de maintenance",
+          "subtitle": "Procédures standard liées à ce plan",
+          "attach": "Attacher une directive",
+          "attach_first": "Attacher la première directive",
+          "search_title": "Attacher une directive de maintenance",
+          "already_attached": "Cette directive est déjà attachée.",
+          "attach_success": "Directive attachée",
+          "attach_error": "Échec de l'attachement",
+          "detach_success": "Directive détachée",
+          "detach_error": "Échec du détachement",
+          "empty_title": "Aucune directive attachée",
+          "empty_text": "Liez des checklists et protocoles de vérification.",
+          "hide_steps": "Masquer les étapes",
+          "view_steps": "Voir les étapes",
+          "detach": "Détacher",
+          "no_steps": "Aucune étape enregistrée."
+        }
+      }
+    },
+    "guidelines": {
+      "list": {
+        "title": "Directives de maintenance",
+        "subtitle": "Gérez les procédures opérationnelles standard, étapes techniques et instructions de vérification",
+        "actions": {
+          "add_new": "Ajouter une directive",
+          "view": "Voir la directive",
+          "edit": "Modifier la directive",
+          "delete": "Supprimer la directive",
+          "grid_view": "Vue Grille",
+          "list_view": "Vue Liste",
+          "table_view": "Vue Tableau"
+        },
+        "kpis": {
+          "total_guidelines": "Total Directives",
+          "active": "Actives",
+          "inactive": "Inactives",
+          "total_steps": "Total Étapes"
+        },
+        "filter": {
+          "title": "Filtrer les directives",
+          "status": "Statut",
+          "all_statuses": "Tous les statuts",
+          "active": "Active",
+          "inactive": "Inactive"
+        },
+        "table": {
+          "code": "Code",
+          "name": "Nom",
+          "steps": "Étapes",
+          "status": "Statut",
+          "actions": "Actions"
+        },
+        "delete_dialog": {
+          "title": "Supprimer la directive",
+          "description": "Êtes-vous sûr de vouloir supprimer cette directive ? Cette action est irréversible."
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "Accueil",
+        "breadcrumb_catalog": "Catalogue",
+        "breadcrumb_guidelines": "Directives",
+        "title_new": "Nouvelle directive",
+        "title_edit": "Modifier la directive",
+        "tabs": {
+          "base": "Identification",
+          "steps": "Étapes & Instructions"
+        },
+        "actions": {
+          "save": "Enregistrer la directive",
+          "saving": "Enregistrement...",
+          "cancel": "Annuler",
+          "back_to_list": "Retour à la liste",
+          "add_step": "Ajouter une étape"
+        },
+        "scope": "Périmètre & description",
+        "empty_steps": "Aucune étape définie dans cette directive.",
+        "step": {
+          "add_title": "Ajouter une étape",
+          "edit_title": "Modifier l'étape",
+          "subtitle": "Instruction de vérification pour le technicien",
+          "instruction": "Instruction",
+          "type": "Type de réponse *",
+          "expected": "Valeur attendue (optionnel)",
+          "required": "Étape obligatoire pendant l'intervention",
+          "update": "Mettre à jour",
+          "save": "Enregistrer l'étape",
+          "mandatory": "Obligatoire",
+          "optional": "Optionnel"
+        }
+      }
+    },
+    "test_bench": {
+      "title": "Banc d'essai technicien",
+      "subtitle": "Simulez les configurations d'équipement, calculez la main-d'œuvre et vérifiez les formules de consommables en temps réel",
+      "select_blueprint": "Sélectionner un plan",
+      "choose_options": "Configurer les options",
+      "equipment_qty": "Quantité d'équipement",
+      "run_simulation": "Lancer la simulation",
+      "reset": "Réinitialiser",
+      "results": "Résultats de la simulation",
+      "labor_lines": "Tâches de service & main-d'œuvre",
+      "consumables": "Consommables requis",
+      "checklist": "Liste de vérification technique",
+      "controls": "Contrôles de simulation",
+      "controls_hint": "Choisissez un plan, configurez les options et la quantité",
+      "include_tasks": "Inclure les tâches de service",
+      "print": "Imprimer",
+      "resolving": "Résolution des formules et consommables...",
+      "load_error": "Échec du chargement des plans",
+      "details_error": "Échec du chargement du plan",
+      "calc_error": "Erreur de calcul",
+      "no_consumables": "Aucun consommable requis pour cette configuration.",
+      "no_services": "Aucune tâche de service résolue.",
+      "no_guidelines": "Aucune directive liée à ce plan.",
+      "kpi_units": "Unités d'équipement",
+      "total_lines": "Lignes générées",
+      "empty_title": "Prêt pour la simulation",
+      "empty_text": "Sélectionnez un plan d'équipement pour tester les options, la main-d'œuvre et les pièces."
+    },
+    "blueprints": {
+      "edit": {
+        "title_new": "Nouveau plan d'équipement",
+        "title_edit": "Modifier le plan",
+        "breadcrumb_home": "Accueil",
+        "breadcrumb_catalog": "Catalogue",
+        "breadcrumb_blueprints": "Plans",
+        "tabs": {
+          "general": "Informations générales",
+          "options": "Moteur d'options",
+          "cycles": "Cycles d'intervention",
+          "servicing": "Entretien & consommables",
+          "test_bench": "Banc d'essai",
+          "guidelines": "Directives"
+        },
+        "options": {
+          "allowed_values_count": "{count} choix de valeurs configurés"
+        },
+        "cycles": {
+          "first_interval": "1er: {months} mois",
+          "repeats_every": "répète tous les {months} mois"
+        },
+        "servicing": {
+          "item_code": "Code article: {code}",
+          "required_consumables_count": "Consommables & pièces requises ({count}):",
+          "formula_quantity": "Formule / Quantité"
+        }
+      }
+    }
+  }
+}

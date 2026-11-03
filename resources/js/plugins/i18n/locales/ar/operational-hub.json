@@ -1,0 +1,70 @@
+{
+  "operational_hub": {
+    "nav": {
+      "title": "مركز العمليات",
+      "dashboard": "لوحة متابعة العمليات",
+      "planning": "جدول التخطيط",
+      "forecast": "توقعات الخدمات",
+      "swos": "أوامر عمل الخدمة",
+      "missions": "مهام التدخل",
+      "delivery_notes": "بطاقات التسليم للخدمة"
+    },
+    "common": {
+      "reference": "المرجع",
+      "swo_number": "رقم أمر الخدمة",
+      "mission_number": "رقم المهمة",
+      "sales_order": "طلب المبيعات",
+      "client": "العميل",
+      "site": "موقع الخدمة",
+      "team": "الفريق",
+      "technician": "الفني الرئيسي",
+      "vehicle": "المركبة",
+      "workshop_unit": "وحدة الورشة",
+      "mode": "طريقة الإنجاز",
+      "field_service": "خدمة ميدانية",
+      "workshop": "ورشة عمل",
+      "status": "الحالة",
+      "priority": "الأولوية",
+      "scheduled_date": "التاريخ المجدول",
+      "planned_date": "التاريخ المخطط",
+      "planned_time": "وقت البدء",
+      "duration": "المدة (ساعات)",
+      "started_at": "بدأ في",
+      "completed_at": "اكتمل في",
+      "closed_at": "أغلق في",
+      "notes": "ملاحظات",
+      "actions": "إجراءات",
+      "save": "حفظ التغييرات",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد",
+      "create": "إنشاء",
+      "edit": "تعديل",
+      "view": "عرض التفاصيل",
+      "delete": "حذف",
+      "search": "بحث...",
+      "filter": "تصفية",
+      "all": "الكل",
+      "loading": "جاري التحميل...",
+      "no_data": "لا توجد سجلات",
+      "export": "تصدير",
+      "overview": "نظرة عامة",
+      "history": "سجل الحالات"
+    },
+    "swo": {
+      "title": "أوامر عمل الخدمة",
+      "subtitle": "إدارة تنفيذ الخدمات والتخطيط والتكليفات الميدانية.",
+      "create_new": "أمر عمل خدمة جديد",
+      "create_from_so": "إنشاء أمر خدمة من طلب مبيعات",
+      "create_modal_title": "بدء أمر عمل خدمة",
+      "select_so": "اختر طلب مبيعات مقبول",
+      "eligible_lines": "بنود الخدمة المؤهلة"
+    },
+    "workshop": {
+      "title": "ورشة الصيانة",
+      "units": "وحدات الورشة",
+      "receptions": "استلام المعدات",
+      "work_board": "لوحة الصيانة",
+      "history": "سجل التتبع والمعدات"
+    }
+  }
+}

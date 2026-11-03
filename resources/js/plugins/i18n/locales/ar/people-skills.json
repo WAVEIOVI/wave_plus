@@ -1,0 +1,984 @@
+{
+  "Approved": "معتمد",
+  "Back": "رجوع",
+  "Clear": "مسح",
+  "Confirm": "تأكيد",
+  "Date": "التاريخ",
+  "Employee": "الموظف",
+  "Filters": "عوامل التصفية",
+  "Pending": "قيد الانتظار",
+  "Position": "المنصب",
+  "Refresh": "تحديث",
+  "Rejected": "مرفوض",
+  "Reset": "إعادة تعيين",
+  "Saved": "تم الحفظ",
+  "Submit": "إرسال",
+  "Today": "اليوم",
+  "Total": "الإجمالي",
+  "more": "المزيد",
+
+  "common": {
+    "refresh": "تحديث"
+  },
+
+  "hr": {
+    "attendance": {
+      "badge_hint": "اعرض رمز الاستجابة السريعة الخاص بك أمام الماسح",
+      "camera_unavailable_hint": "لم يتم الكشف عن كاميرا. استخدم لوحة الرمز السري بدلاً من ذلك.",
+      "geotag_on": "تسجيل الموقع مُفعّل",
+      "manual_code": "رمز الشارة اليدوي",
+      "punch": "تسجيل",
+      "auto_toggle_hint": "يتبدّل تلقائياً بين الدخول والخروج",
+      "badge_qr": "رمز الشارة",
+      "enter_pin": "أدخل رقم شارتك",
+      "no_punches_yet": "لا توجد بصمات اليوم.",
+      "pin_fallback": "لوحة الرمز السري (شارة مفقودة)",
+      "pin_hint": "الأرقام بعد EMP- على شارتك",
+      "punch_now": "تسجيل الآن",
+      "scanning": "جارٍ المسح",
+      "start_camera": "تشغيل الكاميرا"
+    },
+    "dashboard": {
+      "headcount_subtitle": "حالة التوظيف في جميع أنحاء المؤسسة.",
+      "total_staff_records": "إجمالي سجلات الموظفين",
+      "logged_today": "تم التسجيل",
+      "total_logged": "إجمالي المسجلين",
+      "no_attendance_data": "لا يوجد حضور مسجل اليوم.",
+      "certifications_subtitle": "رادار الامتثال للسلامة والأنظمة.",
+      "certs_expired_alert": "{count} شهادة منتهية الصلاحية. يلزم التجديد.",
+      "certs_expiring_alert": "{count} شهادة تنتهي خلال 30 يوماً. يلزم التجديد.",
+      "view_certifications_matrix": "عرض مصفوفة الشهادات",
+      "pipeline_title": "مسار المواهب",
+      "pipeline_subtitle": "قمع التوظيف وتطوير القوى العاملة.",
+      "recruitment_pipeline": "التوظيف",
+      "training_snapshot": "التدريب",
+      "clock_employee_label": "الموظف المطلوب تسجيله",
+      "clock_not_linked": "حسابك غير مرتبط بملف موظف. اختر موظفاً أعلاه (الموارد البشرية/المدير)، أو حرّر موظفاً واضبط «ربط المستخدم» على حسابك.",
+      "clock_failed": "تعذّر تسجيل الدخول / الخروج.",
+      "status_load_failed": "تعذّر تحميل حالة تسجيل الحضور.",
+      "employee_label": "الموظف",
+      "team_label": "الفريق",
+      "not_selected": "غير محدد",
+      "people_operations": "عمليات الموارد البشرية",
+      "people_operations_subtitle": "انتقل مباشرة إلى قسم الموارد البشرية الذي تحتاجه.",
+      "active_employees_section": "الموظفون النشطون",
+      "active_employees_subtitle": "لقطة حالية من دليل القوى العاملة.",
+      "view_all": "عرض الكل",
+      "no_active_employees": "لا يوجد موظفون نشطون.",
+      "next_training_session": "جلسة التدريب القادمة",
+      "training_session": "جلسة تدريب",
+      "location_tbc": "الموقع يُحدد لاحقاً",
+      "open_training": "فتح التدريب",
+      "no_upcoming_training": "لا توجد جلسات تدريب قادمة مجدولة."
+    }
+  },
+
+  "employees": {
+    "list": {
+      "title": "دليل الموظفين",
+      "subtitle": "السجل الرسمي للكوادر والمناصب والمؤهلات والتاريخ الوظيفي.",
+      "add_employee": "إضافة موظف",
+      "select": "تحديد الموظف",
+      "actions": {
+        "print": "طباعة الموظفين",
+        "email": "مراسلة الموظفين المحددين"
+      },
+      "stats": {
+        "total": "إجمالي الموظفين",
+        "active": "نشط",
+        "on_leave": "في إجازة",
+        "suspended": "معلق",
+        "terminated": "منتهي الخدمة"
+      },
+      "col": {
+        "employee": "الموظف",
+        "department": "القسم",
+        "position": "المنصب",
+        "contact": "التواصل",
+        "hire_date": "تاريخ التوظيف",
+        "status": "الحالة"
+      },
+      "filter": {
+        "title": "تصفية الموظفين",
+        "status": "الحالة",
+        "department": "القسم"
+      }
+    },
+    "add": {
+      "title": "إضافة موظف",
+      "submit": "إنشاء الموظف"
+    },
+    "edit": {
+      "title": "ملف الموظف",
+      "change_photo": "تغيير الصورة",
+      "change_status": "تغيير الحالة",
+      "linked_user": "المستخدم المرتبط",
+      "first_name": "الاسم الأول",
+      "last_name": "اللقب",
+      "email": "البريد الإلكتروني المهني",
+      "phone": "هاتف العمل",
+      "date_of_birth": "تاريخ الميلاد",
+      "gender": "الجنس",
+      "address": "العنوان",
+      "employee_number": "الرقم الوظيفي",
+      "hire_date": "تاريخ التوظيف",
+      "department": "القسم",
+      "position": "المنصب",
+      "team": "الفريق",
+      "manager": "المسؤول المباشر",
+      "status": "حالة العمل",
+      "linked_user_hint": "ربط هذا الموظف بحساب مستخدم في النظام",
+      "notes": "ملاحظات داخلية",
+      "notes_hint": "أي ملاحظات داخلية عن هذا الموظف",
+      "section": {
+        "personal": "المعلومات الشخصية",
+        "employment": "معلومات التوظيف",
+        "system_access": "الوصول إلى النظام",
+        "notes": "ملاحظات",
+        "personal_contact": "المعلومات الشخصية والتواصل",
+        "role_org": "المنصب والهيكل التنظيمي"
+      },
+      "load_error": "فشل تحميل ملف الموظف.",
+      "photo_success": "تم تحديث صورة الملف الشخصي.",
+      "photo_error": "فشل تحديث صورة الملف الشخصي.",
+      "save": "حفظ الموظف",
+      "save_success": "تم حفظ بيانات الموظف بنجاح.",
+      "save_error": "فشل حفظ بيانات الموظف.",
+      "fields": {
+        "team": "الفريق"
+      },
+      "profile_media": "صورة الملف الشخصي",
+      "avatar_hint": "انقر على أيقونة الكاميرا لتحميل أو تغيير الصورة",
+      "no_photo": "لا توجد صورة",
+      "employee_number_label": "الرقم الوظيفي",
+      "last_updated": "آخر تحديث",
+      "preferred_name_label": "معروف باسم",
+      "save_changes": "حفظ التغييرات",
+      "work_email": "البريد الإلكتروني المهني",
+      "personal_email": "البريد الإلكتروني الشخصي",
+      "work_phone": "هاتف العمل",
+      "personal_phone": "الهاتف الشخصي",
+      "nationality": "الجنسية",
+      "termination_date": "تاريخ إنهاء الخدمة",
+      "department_hint": "اختر القسم الذي ينتمي إليه هذا الموظف",
+      "position_hint": "اختر المنصب/الدور",
+      "team_hint": "اختر فريق العمل",
+      "manager_hint": "اختر المسؤول المباشر",
+      "status_hint": "حالة التوظيف الحالية",
+      "first_name_required": "الاسم الأول مطلوب",
+      "last_name_required": "اللقب مطلوب",
+      "email_invalid": "يرجى إدخال بريد إلكتروني صالح"
+    },
+    "delete": {
+      "title": "أرشفة الموظف",
+      "confirm": "هل أنت متأكد من أرشفة هذا الموظف؟",
+      "description": "سيتم أرشفة ملف الموظف مع الاحتفاظ بسجلات الحضور والإجازات والرواتب."
+    },
+    "actions": {
+      "activate": "تفعيل",
+      "on_leave": "تعيين في إجازة",
+      "suspend": "تعليق",
+      "terminate": "إنهاء العقد",
+      "status_success": "تم تحديث حالة الموظف إلى {status}.",
+      "status_error": "تعذر تحديث حالة الموظف.",
+      "create_success": "تم إنشاء {name} بنجاح.",
+      "create_success_fallback": "الموظف",
+      "create_error": "تعذر إنشاء الموظف.",
+      "delete_success": "تمت أرشفة الموظف بنجاح.",
+      "delete_error": "تعذرت أرشفة الموظف."
+    },
+    "status": {
+      "activate_title": "تفعيل الموظف",
+      "suspend_title": "تعليق الموظف",
+      "terminate_title": "إنهاء خدمة الموظف",
+      "reason": "السبب",
+      "reason_ph": "سبب تغيير الحالة…",
+      "termination_date": "تاريخ النفاذ"
+    },
+    "form": {
+      "first_name": "الاسم الأول",
+      "first_name_ph": "مثال: محمد",
+      "middle_name": "اسم الأب",
+      "last_name": "اللقب",
+      "last_name_ph": "مثال: العتيبي",
+      "preferred_name": "الاسم المفضل",
+      "gender": "الجنس",
+      "date_of_birth": "تاريخ الميلاد",
+      "nationality": "الجنسية",
+      "work_email": "البريد الإلكتروني المهني",
+      "personal_email": "البريد الإلكتروني الشخصي",
+      "work_phone": "هاتف العمل",
+      "personal_phone": "الهاتف الشخصي",
+      "address": "العنوان",
+      "hire_date": "تاريخ التوظيف",
+      "employee_number": "الرقم الوظيفي",
+      "status": "حالة العمل",
+      "department": "القسم",
+      "position": "المنصب",
+      "team": "الفريق الحالي",
+      "manager": "المسؤول المباشر",
+      "linked_user": "حساب النظام المرتبط",
+      "linked_user_hint": "ربط هذا الموظف بحساب مستخدم في النظام.",
+      "notes": "ملاحظات داخلية",
+      "notes_ph": "أي ملاحظات داخلية عن هذا الموظف…"
+    },
+    "view": {
+      "title": "ملف الموظف",
+      "contact": "بيانات التواصل",
+      "no_contact": "لا تتوفر بيانات تواصل.",
+      "department": "القسم",
+      "position": "المنصب",
+      "manager": "المسؤول",
+      "team": "الفريق",
+      "hire_date": "تاريخ التوظيف",
+      "status": "الحالة",
+      "skills": "المهارات",
+      "leave_balances": "أرصدة الإجازات",
+      "recent_attendance": "سجل الحضور الأخير",
+      "employment": "التوظيف",
+      "present": "حاضر",
+      "more": "المزيد",
+      "of": "من",
+      "att_in": "دخول",
+      "att_out": "خروج",
+      "att_hours": "الساعات",
+      "att_status": "الحالة",
+      "emp_hist_position": "المنصب",
+      "emp_hist_dept": "القسم",
+      "emp_hist_from": "من",
+      "emp_hist_to": "إلى",
+      "emp_hist_reason": "السبب"
+    }
+  },
+
+  "departments": {
+    "list": {
+      "title": "الأقسام والرتب الوظيفية",
+      "subtitle": "الهيكل التنظيمي: الأقسام، خطوط التبعية، والوظائف.",
+      "tab_departments": "الأقسام",
+      "tab_positions": "الرتب الوظيفية",
+      "view_mode": "تغيير عرض القائمة",
+      "view_table": "عرض القائمة",
+      "view_grid": "عرض الشبكة"
+    },
+    "filter": {
+      "title": "تصفية الأقسام"
+    },
+    "view": {
+      "title": "تفاصيل القسم",
+      "positions": "الوظائف",
+      "employees": "الموظفون",
+      "teams": "فرق العمل",
+      "child_departments": "الأقسام الفرعية"
+    },
+    "add": "إضافة قسم",
+    "edit": "تعديل القسم",
+    "create_success": "تم إنشاء القسم بنجاح.",
+    "save_success": "تم تحديث القسم بنجاح.",
+    "save_error": "فشل حفظ القسم.",
+    "load_error": "فشل تحميل القسم.",
+    "delete_success": "تم حذف القسم بنجاح.",
+    "delete_error": "فشل حذف القسم.",
+    "delete_confirm": "هل أنت متأكد من حذف هذا القسم؟",
+    "kpi": {
+      "total": "إجمالي الأقسام",
+      "active": "الأقسام النشطة",
+      "with_manager": "بها مدير",
+      "positions": "الوظائف"
+    },
+    "col": {
+      "name": "الاسم",
+      "code": "الرمز",
+      "parent": "القسم الرئيسي",
+      "manager": "المدير",
+      "positions": "الوظائف",
+      "employees": "الموظفون",
+      "teams": "الفرق",
+      "created_at": "تاريخ الإنشاء",
+      "description": "الوصف",
+      "status": "الحالة"
+    },
+    "form": {
+      "name": "اسم القسم",
+      "code": "الرمز",
+      "parent": "القسم الرئيسي",
+      "manager": "المدير",
+      "positions": "الوظائف",
+      "sort_order": "ترتيب العرض",
+      "status": "الحالة",
+      "description": "الوصف",
+      "active": "نشط",
+      "create": "إنشاء قسم",
+      "save": "حفظ التغييرات"
+    },
+    "validation": {
+      "required": "هذا الحقل مطلوب",
+      "non_negative": "يجب أن تكون القيمة 0 أو أكبر"
+    }
+  },
+
+  "positions": {
+    "filter": {
+      "title": "تصفية الوظائف"
+    },
+    "view": {
+      "title": "تفاصيل الوظيفة",
+      "employees": "الموظفون"
+    },
+    "add": "إضافة رتبة",
+    "edit": "تعديل الرتبة",
+    "create_success": "تم إنشاء الرتبة بنجاح.",
+    "save_success": "تم تحديث الرتبة بنجاح.",
+    "save_error": "فشل حفظ الرتبة.",
+    "load_error": "فشل تحميل الوظيفة.",
+    "delete_success": "تم حذف الرتبة بنجاح.",
+    "delete_error": "فشل حذف الرتبة.",
+    "delete_confirm": "هل أنت متأكد من حذف هذه الرتبة؟",
+    "kpi": {
+      "total": "إجمالي الوظائف",
+      "active": "الوظائف النشطة",
+      "with_rate": "بها أجر بالساعة",
+      "employees": "الموظفون"
+    },
+    "col": {
+      "title": "المسمى",
+      "code": "الرمز",
+      "department": "القسم",
+      "rate": "الأجر بالساعة",
+      "employees": "الموظفون",
+      "created_at": "تاريخ الإنشاء",
+      "status": "الحالة"
+    },
+    "form": {
+      "title": "مسمى الرتبة",
+      "code": "الرمز",
+      "department": "القسم",
+      "standard_hourly_rate": "الأجر القياسي بالساعة",
+      "description": "الوصف",
+      "requirements": "المتطلبات",
+      "status": "الحالة",
+      "active": "نشط",
+      "create": "إنشاء وظيفة",
+      "save": "حفظ التغييرات"
+    }
+  },
+
+  "teams": {
+    "list": {
+      "title": "فرق العمل",
+      "subtitle": "الفرق التشغيلية وقادتها وأعضاؤها.",
+      "add": "إضافة فريق",
+      "edit": "تعديل الفريق",
+      "view_mode": "تغيير عرض القائمة",
+      "view_table": "عرض القائمة",
+      "view_grid": "عرض الشبكة"
+    },
+    "filter": {
+      "title": "تصفية الفرق",
+      "with_leader": "له قائد",
+      "without_leader": "بلا قائد"
+    },
+    "kpi": {
+      "total": "إجمالي الفرق",
+      "active": "الفرق النشطة",
+      "with_leader": "الفرق ذات القائد",
+      "total_members": "العضويات النشطة"
+    },
+    "view": {
+      "title": "تفاصيل الفريق",
+      "team_lead": "قائد الفريق",
+      "primary_member": "الفريق الأساسي",
+      "joined_at": "تاريخ الانضمام",
+      "members": "الأعضاء",
+      "no_members": "لا يوجد أعضاء في هذا الفريق بعد."
+    },
+    "validation": {
+      "required": "هذا الحقل مطلوب."
+    },
+    "options_error": "تعذر تحميل خيارات نموذج الفريق.",
+    "form": {
+      "subtitle": "حدد هوية الفريق وارتباطه التنظيمي وحالته.",
+      "name": "اسم الفريق",
+      "code": "الرمز",
+      "department": "القسم",
+      "team_leader": "قائد الفريق",
+      "team_type": "نوع الفريق",
+      "description": "الوصف",
+      "active": "نشط",
+      "create": "إنشاء الفريق",
+      "save": "حفظ التغييرات",
+      "current_leader": "قائد الفريق الحالي",
+      "sections": {
+        "identity": "هوية الفريق",
+        "organization": "التنظيم",
+        "settings": "الإعدادات"
+      }
+    },
+    "type": {
+      "operational": "تشغيلي",
+      "general": "عام",
+      "project": "مشروع",
+      "shift": "ورديات",
+      "department": "قسم",
+      "cross_functional": "متعدد الوظائف"
+    },
+    "add": "إضافة فريق",
+    "edit": "تعديل الفريق",
+    "create_success": "تم إنشاء الفريق بنجاح.",
+    "save_success": "تم تحديث الفريق بنجاح.",
+    "save_error": "فشل حفظ الفريق.",
+    "load_error": "فشل تحميل الفرق.",
+    "delete_success": "تم حذف الفريق بنجاح.",
+    "delete_error": "فشل حذف الفريق.",
+    "delete_confirm": "هل أنت متأكد من حذف هذا الفريق؟",
+    "col": {
+      "name": "الاسم",
+      "code": "الرمز",
+      "type": "النوع",
+      "department": "القسم",
+      "leader": "قائد الفريق",
+      "position": "المنصب",
+      "members": "الأعضاء",
+      "status": "الحالة",
+      "created_at": "تاريخ الإنشاء",
+      "updated_at": "تاريخ التحديث"
+    }
+  },
+
+  "skills": {
+    "tab_skills": "المهارات",
+    "tab_certifications": "الشهادات",
+    "list": {
+      "title": "المهارات والشهادات",
+      "subtitle": "دليل مرجعي لمهارات الكوادر وأنواع الشهادات.",
+      "tab_skills": "المهارات",
+      "tab_certifications": "الشهادات"
+    },
+    "add": "إضافة مهارة",
+    "edit": "تعديل المهارة",
+    "create_success": "تم إنشاء المهارة بنجاح.",
+    "save_success": "تم تحديث المهارة بنجاح.",
+    "save_error": "فشل حفظ المهارة.",
+    "delete_success": "تم حذف المهارة بنجاح.",
+    "delete_error": "فشل حذف المهارة.",
+    "delete_confirm": "هل أنت متأكد من حذف هذه المهارة؟",
+    "col": {
+      "name": "الاسم",
+      "code": "الرمز",
+      "category": "الفئة",
+      "status": "الحالة"
+    },
+    "form": {
+      "name": "اسم المهارة",
+      "code": "الرمز",
+      "category": "الفئة",
+      "description": "الوصف",
+      "active": "نشط"
+    }
+  },
+
+  "certifications": {
+    "add": "إضافة شهادة",
+    "edit": "تعديل الشهادة",
+    "create_success": "تم إنشاء الشهادة بنجاح.",
+    "save_success": "تم تحديث الشهادة بنجاح.",
+    "save_error": "فشل حفظ الشهادة.",
+    "delete_success": "تم حذف الشهادة بنجاح.",
+    "delete_error": "فشل حذف الشهادة.",
+    "delete_confirm": "هل أنت متأكد من حذف هذه الشهادة؟",
+    "no_expiry": "بدون انتهاء صلاحية",
+    "col": {
+      "name": "الاسم",
+      "code": "الرمز",
+      "body": "الجهة المانحة",
+      "validity": "الصلاحية",
+      "status": "الحالة"
+    },
+    "form": {
+      "name": "اسم الشهادة",
+      "code": "الرمز",
+      "issuing_body": "الجهة المانحة",
+      "validity_months": "الصلاحية (أشهر)",
+      "description": "الوصف",
+      "active": "نشط"
+    }
+  },
+
+  "attendance": {
+    "list": {
+      "title": "إدارة الحضور والانصراف",
+      "subtitle": "شاشة الحضور، سجل العمليات، وساعات العمل اليومية المحتسبة.",
+      "navigation": "أقسام الحضور"
+    },
+    "punch_console": {
+      "title": "وحدة تسجيل الحضور",
+      "subtitle": "سجّل الحضور باستخدام البطاقة أو رمز PIN أو الإدخال اليدوي أو تسجيل الفريق.",
+      "return_to_list": "قائمة الحضور",
+      "navigation": "أوضاع وحدة تسجيل الحضور"
+    },
+    "punch_console_modes": {
+      "badge_qr": "رمز QR للبطاقة",
+      "manual": "يدوي",
+      "pin_pad": "لوحة PIN",
+      "crew": "الفريق",
+      "quick_clock": "تسجيل سريع"
+    },
+    "kpi": {
+      "present": "الحاضرون",
+      "late": "المتأخرون",
+      "absent": "الغائبون",
+      "on_leave": "في إجازة",
+      "on_duty": "على رأس العمل"
+    },
+    "load_error": "فشل تحميل سجلات الحضور.",
+    "load_kpis_error": "فشل تحميل إحصاءات الحضور.",
+    "load_employees_error": "فشل تحميل الموظفين للحضور.",
+    "timeline": "الخط الزمني للبصمات",
+    "timeline_empty": "لا توجد بصمات مسجلة في {date}.",
+    "timeline_load_failed": "فشل تحميل الخط الزمني للحضور.",
+    "badge_qr_failed": "فشل إنشاء رمز QR لبطاقة الموظف.",
+    "col": {
+      "employee": "الموظف",
+      "date": "التاريخ",
+      "in": "الدخول",
+      "out": "الخروج",
+      "hours": "الساعات",
+      "status": "الحالة"
+    },
+    "filter": {
+      "date": "التاريخ",
+      "status": "الحالة"
+    },
+    "status": {
+      "present": "حاضر",
+      "late": "متأخر",
+      "absent": "غائب",
+      "partial": "يوم جزئي",
+      "excused": "بعذر"
+    },
+    "view": {
+      "title": "تفاصيل الحضور",
+      "worked": "العمل الفعلي",
+      "late": "التأخير",
+      "overtime": "الساعات الإضافية"
+    },
+    "correct": "تصحيح",
+    "correction_title": "طلب تصحيح",
+    "correction_reason": "سبب التصحيح",
+    "correction_success": "تم إرسال طلب التصحيح.",
+    "correction_error": "فشل إرسال طلب التصحيح.",
+    "config": {
+      "title": "تهيئة الحضور",
+      "subtitle": "هوامش السماح العامة للدخول والخروج والحد الأدنى لوحدة الإجازة.",
+      "saved": "تم تحديث تهيئة الحضور بنجاح.",
+      "save_error": "فشل تحديث تهيئة الحضور.",
+      "checkin_tolerances": "هوامش الدخول",
+      "checkout_tolerances": "هوامش الخروج",
+      "leave_policy": "سياسة الإجازة بالساعة واليوم الجزئي",
+      "late_checkin_grace": "هامش التأخير في الدخول (دقائق)",
+      "late_checkin_grace_hint": "الوصول ضمن هذا الهامش يُسجّل كحاضر",
+      "early_checkin_grace": "هامش الوصول المبكر",
+      "early_checkin_grace_hint": "هامش قبل بداية الوردية",
+      "early_checkout_grace": "هامش المغادرة المبكرة",
+      "early_checkout_grace_hint": "المغادرة ضمن هذا الهامش تُتجاوز",
+      "late_checkout_grace": "هامش الخروج المتأخر",
+      "late_checkout_grace_hint": "هامش قبل احتساب الساعات الإضافية",
+      "hourly_leave_tolerance": "هامش الإجازة بالساعة (دقائق)",
+      "hourly_leave_tolerance_hint": "هامش التقريب المطبق على الإجازات بالساعة",
+      "min_hourly_leave_unit": "الحد الأدنى لوحدة الإجازة بالساعة (دقائق)",
+      "min_hourly_leave_unit_hint": "أصغر زيادة مسموح بها للإجازة",
+      "info_title": "ملاحظة السياسة",
+      "info_message": "تُطبّق هذه الهوامش على مستوى النظام على الحضور المحتسب والإجازات بالساعة."
+    },
+    "exception": {
+      "list": {
+        "title": "ملاحظات الحضور",
+        "subtitle": "مراجعة ومعالجة الانحرافات في الحضور مقابل الجداول المخططة والإجازات المعتمدة."
+      },
+      "filter": {
+        "review_status": "حالة المعالجة",
+        "type": "نوع الملاحظة",
+        "department": "القسم",
+        "date": "التاريخ"
+      },
+      "col": {
+        "employee": "الموظف",
+        "date": "التاريخ",
+        "type": "النوع",
+        "expected_vs_actual": "المتوقع مقابل الفعلي",
+        "deviation": "الانحراف",
+        "leave_link": "الإجازة المبررة",
+        "review_status": "حالة المعالجة"
+      },
+      "expected": "المتوقع",
+      "actual": "الفعلي",
+      "no_leave": "لا توجد إجازة مبررة",
+      "acknowledge": "إقرار",
+      "resolve": "معالجة",
+      "dismiss": "تجاهل",
+      "acknowledged": "تم الإقرار بالملاحظة.",
+      "resolved": "تمت معالجة الملاحظة.",
+      "dismissed": "تم تجاهل الملاحظة.",
+      "acknowledge_error": "فشل الإقرار بالملاحظة.",
+      "resolve_error": "فشلت معالجة الملاحظة.",
+      "dismiss_error": "فشل تجاهل الملاحظة.",
+      "resolve_note_prompt": "ملاحظة المعالجة (اختياري):",
+      "dismiss_note_prompt": "سبب التجاهل:",
+      "review_status": {
+        "open": "مفتوحة / غير معالجة",
+        "acknowledged": "تم الإقرار",
+        "resolved": "تمت المعالجة",
+        "dismissed": "متجاهلة",
+        "all": "كل الحالات"
+      },
+      "late_arrival": "وصول متأخر",
+      "early_arrival": "وصول مبكر",
+      "early_departure": "مغادرة مبكرة",
+      "overtime": "ساعات إضافية",
+      "missing_checkout": "خروج مفقود",
+      "missing_checkin": "دخول مفقود",
+      "leave_mismatch": "تعارض مع الإجازة"
+    }
+  },
+
+  "kiosk": {
+    "title": "شاشة الحضور",
+    "subtitle": "خدمة ذاتية للموظف",
+    "attendance": "الحضور",
+    "scan_badge": "امسح شارتك",
+    "scan_help": "اعرض رمز الشارة داخل الإطار. سيتم تسجيل حضورك تلقائياً.",
+    "start_scan": "بدء المسح",
+    "use_pin": "استخدام الرمز السري",
+    "enter_pin": "أدخل رقم شارتك",
+    "pin_help": "استخدم لوحة الأرقام فقط عند عدم توفر الشارة.",
+    "pin_mode": "لوحة الرمز السري",
+    "back_to_scanner": "رجوع إلى الماسح",
+    "ready": "جاهز للمسح",
+    "offline": "غير متصل",
+    "processing": "جارٍ المعالجة",
+    "clocked_in": "تم تسجيل الدخول",
+    "clocked_out": "تم تسجيل الخروج",
+    "badge_not_recognized": "لم يتم التعرف على الشارة. أعد المحاولة أو استخدم لوحة الرمز السري.",
+    "check_ins": "الدخول",
+    "check_outs": "الخروج",
+    "recent_activity": "النشاط الأخير",
+    "no_activity": "لا توجد بصمات اليوم.",
+    "in": "دخول",
+    "out": "خروج"
+  },
+
+  "time_off": {
+    "list": {
+      "title": "الإجازات والغياب",
+      "subtitle": "طلبات الإجازة، تقويم الفريق، الموافقات ومتابعة الأرصدة."
+    },
+    "load_error": "فشل تحميل طلبات الإجازة.",
+    "add": "طلب إجازة جديد",
+    "approve": "موافقة",
+    "approve_success": "تمت الموافقة على طلب الإجازة.",
+    "approve_error": "فشلت الموافقة على الطلب.",
+    "reject": "رفض",
+    "reject_title": "رفض طلب الإجازة",
+    "reject_reason": "سبب الرفض",
+    "reject_reason_required": "يرجى تقديم سبب للرفض.",
+    "reject_success": "تم رفض طلب الإجازة.",
+    "reject_error": "فشل رفض الطلب.",
+    "cancel": "إلغاء الطلب",
+    "cancel_confirm": "هل أنت متأكد من رغبتك في إلغاء طلب الإجازة هذا؟",
+    "cancel_success": "تم إلغاء طلب الإجازة.",
+    "cancel_error": "فشل إلغاء الطلب.",
+    "create_success": "تم إرسال طلب الإجازة بنجاح.",
+    "create_error": "فشل إرسال طلب الإجازة.",
+    "approved": "معتمد",
+    "rejected": "مرفوض",
+    "submitted": "مرسل",
+    "kpi": {
+      "pending": "قيد الاعتماد",
+      "approved": "معتمدة",
+      "on_leave_today": "في إجازة اليوم",
+      "rejected": "مرفوضة",
+      "total": "إجمالي الطلبات",
+      "days_taken": "الأيام المعتمدة"
+    },
+    "tabs": {
+      "requests": "الطلبات",
+      "calendar": "التقويم",
+      "balances": "الأرصدة والحصص",
+      "navigation": "أقسام الإجازات"
+    },
+    "calendar_view": "عرض التقويم",
+    "calendar_summary": "تقويم إجازات الفريق",
+    "col": {
+      "reference": "المرجع",
+      "employee": "الموظف",
+      "department": "القسم",
+      "type": "نوع الإجازة",
+      "from": "من",
+      "to": "إلى",
+      "dates": "التواريخ",
+      "duration": "المدة",
+      "days": "الأيام",
+      "status": "الحالة",
+      "approver": "المعتمد",
+      "actions": "الإجراءات"
+    },
+    "form": {
+      "title": "طلب إجازة جديد",
+      "employee": "الموظف",
+      "select_employee": "اختر الموظف",
+      "type": "نوع الإجازة",
+      "select_type": "اختر نوع الإجازة",
+      "duration_type": "نوع المدة",
+      "from": "تاريخ البداية",
+      "to": "تاريخ النهاية",
+      "start_time": "وقت البداية",
+      "end_time": "وقت النهاية",
+      "reason": "السبب / ملاحظات",
+      "reason_placeholder": "وضح سبب الإجازة...",
+      "days_requested": "الأيام المحسوبة",
+      "available_balance": "الرصيد المتاح",
+      "submit_approval": "إرسال للاعتماد",
+      "hourly_hint": "يُخصم الحضور بالساعة وفق الحد الأدنى لوحدة الإجازة المُهيّأ."
+    },
+    "duration_type": {
+      "full_day": "يوم كامل",
+      "partial_day": "يوم جزئي",
+      "hourly": "بالساعة"
+    },
+    "filter": {
+      "title": "تصفية طلبات الإجازة",
+      "status": "الحالة",
+      "type": "نوع الإجازة",
+      "department": "القسم",
+      "employee": "الموظف",
+      "date_range": "النطاق الزمني",
+      "from_date": "من تاريخ",
+      "to_date": "إلى تاريخ"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "submitted": "قيد الاعتماد",
+      "approved": "معتمد",
+      "rejected": "مرفوض",
+      "cancelled": "ملغى",
+      "draft": "مسودة",
+      "taken": "مأخوذة"
+    },
+    "view": {
+      "title": "تفاصيل طلب الإجازة",
+      "reference": "المرجع",
+      "employee": "معلومات الموظف",
+      "dates": "التواريخ والمدة",
+      "reason": "السبب",
+      "decision_note": "ملاحظات القرار",
+      "rejection_reason": "سبب الرفض",
+      "audit": "تفاصيل الاعتماد",
+      "approved_by": "تم الاعتماد بواسطة",
+      "on_date": "بتاريخ"
+    },
+    "balances": {
+      "title": "أرصدة واستحقاقات الإجازات",
+      "subtitle": "استحقاقات إجازات الموظفين، الحصص المكتسبة والأيام المتبقية.",
+      "year": "السنة",
+      "accrued": "المستحق",
+      "used": "المستهلك",
+      "pending": "المحجوز",
+      "available": "المتاح",
+      "select_employee": "تصفية حسب الموظف",
+      "select_department": "تصفية حسب القسم",
+      "no_balances": "لا توجد أرصدة إجازات مطابقة للتصفية الحالية."
+    }
+  },
+
+  "recruitment": {
+    "list": {
+      "title": "التوظيف والاختيار",
+      "subtitle": "مسار المرشحين والمقابلات وقرارات التعيين."
+    },
+    "pipeline_title": "مسار المواهب",
+    "pipeline_subtitle": "تتبّع المرشحين في كل مراحل التوظيف.",
+    "open_pipeline": "فتح مسار التوظيف",
+    "return_to_list": "العودة إلى التوظيف",
+    "schedule_interview": "جدولة مقابلة",
+    "candidates": "المرشحون",
+    "no_candidates": "لا يوجد مرشحون مطابقون للتصفية.",
+    "load_error": "فشل تحميل المرشحين.",
+    "add_candidate": "إضافة مرشح",
+    "reject": "رفض",
+    "stage_updated": "تم تحديث مرحلة المرشح.",
+    "stage_error": "فشل تحديث مرحلة المرشح.",
+    "col": {
+      "applicant": "المرشح",
+      "position": "المنصب",
+      "stage": "المرحلة",
+      "applied": "تاريخ التقديم"
+    },
+    "filter": {
+      "stage": "المرحلة"
+    },
+    "stage": {
+      "applied": "تم التقديم",
+      "screening": "فرز أولي",
+      "interview": "مقابلة",
+      "offer": "عرض",
+      "hired": "تم التوظيف",
+      "evaluated": "تم التقييم",
+      "selected": "تم الاختيار",
+      "rejected": "مرفوض"
+    }
+  },
+
+  "workforce": {
+    "list": {
+      "title": "تخطيط القوى العاملة",
+      "subtitle": "تخطيط الورديات والجداول ونشرها."
+    },
+    "tab_shifts": "الورديات",
+    "tab_schedules": "الجداول",
+    "add_shift": "إضافة وردية",
+    "edit_shift": "تعديل الوردية",
+    "delete_shift_confirm": "هل أنت متأكد من حذف هذه الوردية؟",
+    "shift_saved": "تم حفظ الوردية بنجاح.",
+    "shift_created": "تم إنشاء الوردية بنجاح.",
+    "shift_error": "فشل حفظ الوردية.",
+    "shift_deleted": "تم حذف الوردية بنجاح.",
+    "shift_delete_error": "فشل حذف الوردية.",
+    "col": {
+      "employee": "الموظف",
+      "date": "التاريخ",
+      "shift": "الوردية",
+      "shift_name": "اسم الوردية",
+      "start": "البداية",
+      "end": "النهاية",
+      "break": "الاستراحة",
+      "status": "الحالة",
+      "sch_status": "حالة الجدول"
+    },
+    "form": {
+      "name": "اسم الوردية",
+      "start_time": "وقت البداية",
+      "end_time": "وقت النهاية",
+      "break_minutes": "الاستراحة (دقائق)",
+      "active": "نشط"
+    },
+    "availability": {
+      "title": "جاهزية القوى العاملة",
+      "subtitle": "إيجاد الكوادر المتاحة لفترة زمنية محددة.",
+      "search": "البحث عن الكوادر المتاحة",
+      "query_form": "استعلام الجاهزية",
+      "start_time": "بداية المهمة",
+      "end_time": "نهاية المهمة",
+      "time_range": "الفترة الزمنية",
+      "department": "القسم",
+      "team": "الفريق",
+      "required_skills": "المهارات المطلوبة",
+      "required_certifications": "الشهادات المطلوبة",
+      "results": "الكوادر المتاحة",
+      "evaluated": "تم تقييمهم",
+      "available": "المتاحون",
+      "skill_match": "تطابق المهارات",
+      "cert_match": "الشهادات الصالحة",
+      "status": "الحالة",
+      "reason": "سبب عدم الجاهزية",
+      "no_results": "لم يتم تقييم أي كوادر بعد",
+      "no_results_hint": "حدد فترة زمنية ثم نفّذ استعلام الجاهزية.",
+      "query_failed": "فشل البحث عن توفر القوى العاملة."
+    }
+  },
+
+  "hire_wizard": {
+    "title": "تعيين مرشح",
+    "step1": "التوظيف",
+    "step1_subtitle": "شروط التوظيف",
+    "step1_desc": "حدد نوع التوظيف والمنصب وتاريخ البداية.",
+    "step2": "التنظيم",
+    "step2_subtitle": "التوزيع التنظيمي",
+    "step2_desc": "عيّن الموظف الجديد لقسم وفريق.",
+    "step3": "الأجر",
+    "step3_subtitle": "الأجر",
+    "step3_desc": "حدد الراتب ودورة الدفع.",
+    "step4": "التأكيد",
+    "step4_subtitle": "المراجعة والتأكيد",
+    "step4_desc": "راجع البيانات قبل إنشاء ملف الموظف.",
+    "full_name": "الاسم الكامل",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "employee_number": "الرقم الوظيفي",
+    "employee_number_hint": "اتركه فارغاً للتوليد التلقائي.",
+    "department": "القسم",
+    "team": "الفريق",
+    "position": "المنصب",
+    "employment_type": "نوع التوظيف",
+    "hire_date": "تاريخ التوظيف",
+    "salary": "الراتب",
+    "currency": "العملة",
+    "period": "دورة الدفع",
+    "work_location": "مكان العمل",
+    "notes": "ملاحظات",
+    "full_time": "دوام كامل",
+    "part_time": "دوام جزئي",
+    "contract": "عقد",
+    "intern": "متدرب",
+    "temporary": "مؤقت",
+    "hourly": "بالساعة",
+    "monthly": "شهري",
+    "annually": "سنوي",
+    "confirm_hire": "تأكيد التعيين",
+    "hire": "تعيين المرشح",
+    "success": "تم تعيين المرشح بنجاح.",
+    "error": "فشل تعيين المرشح."
+  },
+
+  "appraisals": {
+    "title": "تقييمات الأداء",
+    "cycles_load_failed": "فشل تحميل دورات التقييم.",
+    "subtitle": "دورات التقييم والمراجعات والتنقيط للقوى العاملة.",
+    "cycles": "دورات التقييم",
+    "appraisals_list": "تقييمات الأداء",
+    "create_cycle": "إنشاء دورة",
+    "create_appraisal": "إنشاء تقييم",
+    "create_first_cycle": "إنشاء أول دورة",
+    "cycle_name": "اسم الدورة",
+    "cycle_type": "نوع الدورة",
+    "start_date": "تاريخ البداية",
+    "end_date": "تاريخ النهاية",
+    "cycle": "الدورة",
+    "employee": "الموظف",
+    "reviewer": "المقيّم",
+    "overall_score": "النتيجة الإجمالية",
+    "manager_feedback": "ملاحظات المدير",
+    "employee_feedback": "ملاحظات الموظف",
+    "annual": "سنوي",
+    "quarterly": "ربع سنوي",
+    "probation": "فترة التجربة",
+    "project_based": "حسب المشروع",
+    "draft": "مسودة",
+    "active": "نشط",
+    "in_review": "قيد المراجعة",
+    "completed": "مكتمل",
+    "submitted": "مرسل",
+    "reviewed": "تمت مراجعته",
+    "acknowledged": "تم الإقرار",
+    "reviews": "المراجعات",
+    "filter_by_cycle": "تصفية بالدورة",
+    "no_cycles": "لا توجد دورات تقييم",
+    "no_cycles_hint": "أنشئ دورة لبدء تشغيل مراجعات الأداء.",
+    "no_appraisals": "لا توجد تقييمات",
+    "no_appraisals_hint": "تظهر التقييمات هنا عند تفعيل دورة.",
+    "cycle_created": "تم إنشاء دورة التقييم.",
+    "appraisal_saved": "تم حفظ التقييم."
+  },
+
+  "fleet": {
+    "mileage": "عداد المسافة",
+    "assigned": "مُعيّن",
+    "unassigned": "غير مُعيّن",
+    "storage": "ساحة التخزين",
+    "no_vehicles": "لا توجد مركبات",
+    "no_vehicles_hint": "حاول تعديل عوامل التصفية أو كلمات البحث.",
+    "delete_title": "حذف المركبة",
+    "delete_confirm": "هل أنت متأكد من حذف المركبة {plate}؟ هذا الإجراء نهائي. لا يمكن حذف مركبة لها سجل تعيينات.",
+    "view_mode_table": "عرض الجدول / القائمة",
+    "view_mode_grid": "عرض البطاقات / الشبكة"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "business_partners": {
+    "addresses": {
+      "created_success": "Adresse ajoutée avec succès",
+      "updated_success": "Adresse mise à jour avec succès",
+      "deleted_success": "Adresse supprimée avec succès",
+      "set_primary_success": "Adresse principale définie avec succès",
+      "save_error": "Échec de l'enregistrement de l'adresse",
+      "delete_error": "Échec de la suppression de l'adresse",
+      "set_primary_error": "Échec de la définition de l'adresse principale"
+    },
+    "contacts": {
+      "created_success": "Contact ajouté avec succès",
+      "updated_success": "Contact mis à jour avec succès",
+      "deleted_success": "Contact supprimé avec succès",
+      "set_primary_success": "Contact principal défini avec succès",
+      "save_error": "Échec de l'enregistrement du contact",
+      "delete_error": "Échec de la suppression du contact",
+      "set_primary_error": "Échec de la définition du contact principal"
+    },
+    "bank_accounts": {
+      "created_success": "Compte bancaire ajouté avec succès",
+      "updated_success": "Compte bancaire mis à jour avec succès",
+      "deleted_success": "Compte bancaire supprimé avec succès",
+      "save_error": "Échec de l'enregistrement du compte bancaire",
+      "delete_error": "Échec de la suppression du compte bancaire"
+    },
+    "vat_certs": {
+      "created_success": "Certificat TVA ajouté avec succès",
+      "updated_success": "Certificat TVA mis à jour avec succès",
+      "deleted_success": "Certificat TVA supprimé avec succès",
+      "save_error": "Échec de l'enregistrement du certificat TVA",
+      "delete_error": "Échec de la suppression du certificat TVA"
+    },
+    "documents": {
+      "saved_success": "Document enregistré avec succès",
+      "deleted_success": "Document supprimé avec succès",
+      "download_started": "Téléchargement démarré",
+      "download_error": "Échec du téléchargement du document",
+      "save_error": "Échec de l'enregistrement du document",
+      "delete_error": "Échec de la suppression du document",
+      "process_error": "Impossible de traiter le document"
+    },
+    "logo": {
+      "missing_id": "Identifiant du partenaire commercial manquant",
+      "updated_success": "Logo mis à jour avec succès",
+      "update_error": "Échec de la mise à jour du logo"
+    },
+    "messages": {
+      "refresh_error": "Échec de l'actualisation des données",
+      "generic_error": "Une erreur inattendue est survenue"
+    }
+  }
+}

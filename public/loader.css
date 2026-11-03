@@ -1,0 +1,93 @@
+body {
+  margin: 0;
+}
+
+html {
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+:root {
+  --initial-loader-bg: #F8F7FA;
+  --initial-loader-bar-bg: rgba(46, 49, 146, 0.12);
+  --initial-loader-primary: #2E3192;
+  --initial-loader-accent: #27AAE1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --initial-loader-bg: #25293C;
+    --initial-loader-bar-bg: rgba(255, 255, 255, 0.12);
+    --initial-loader-primary: #E3E5F0;
+    --initial-loader-accent: #27AAE1;
+  }
+}
+
+#loading-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--initial-loader-bg);
+  inline-size: 100%;
+  block-size: 100%;
+  gap: 1.5rem 0;
+  transition: background-color 0.2s ease;
+}
+
+.loading-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: wave-pulse 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.loading-logo svg {
+  display: block;
+  filter: drop-shadow(0 4px 16px rgba(39, 170, 225, 0.18));
+}
+
+.loading-progress {
+  position: relative;
+  inline-size: 140px;
+  block-size: 3px;
+  background: var(--initial-loader-bar-bg);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.loading-progress-bar {
+  position: absolute;
+  inset-block: 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--initial-loader-primary), var(--initial-loader-accent));
+  animation: indeterminate-bar 1.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes wave-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
+@keyframes indeterminate-bar {
+  0% {
+    inset-inline-start: -40%;
+    inline-size: 40%;
+  }
+  50% {
+    inset-inline-start: 20%;
+    inline-size: 60%;
+  }
+  100% {
+    inset-inline-start: 100%;
+    inline-size: 40%;
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "registerRequest": {
+    "panel": {
+      "title": "Chaque extincteur, chaque inspection et chaque certificat dans un seul portail.",
+      "subtitle": "Demandez l'accès et notre équipe configurera vos sites, équipements et utilisateurs.",
+      "tag": {
+        "name": "Extincteur à poudre 6 kg",
+        "serial": "N° de série",
+        "site": "Site",
+        "siteValue": "Usine de Sfax",
+        "nextService": "Prochaine intervention",
+        "nextServiceValue": "12 mars 2027",
+        "status": "Statut",
+        "statusValue": "Conforme"
+      }
+    },
+    "header": {
+      "title": "Demander l'accès au portail",
+      "subtitle": "Cela prend environ 2 minutes. Notre équipe examine chaque demande avant d'activer un compte.",
+      "haveAccount": "Vous avez déjà un compte ?",
+      "signIn": "Se connecter"
+    },
+    "stepOf": "Étape {current} sur {total}",
+    "steps": {
+      "identity": {
+        "title": "Identité et rôle",
+        "subtitle": "Personne et type de compte"
+      },
+      "organization": {
+        "title": "Organisation",
+        "subtitle": "Informations sur l'entreprise"
+      },
+      "scope": {
+        "title": "Périmètre et détails",
+        "subtitle": "Sites et remarques"
+      }
+    },
+    "identity": {
+      "heading": "Demandeur et type de compte",
+      "intro": "Dites-nous qui vous êtes et le type d'accès au portail dont vous avez besoin.",
+      "firstName": "Prénom",
+      "firstNamePh": "Jean",
+      "lastName": "Nom",
+      "lastNamePh": "Dupont",
+      "email": "E-mail professionnel",
+      "phone": "Téléphone / Mobile",
+      "accountType": "Sélectionnez votre type de compte"
+    },
+    "accountTypes": {
+      "standard_client": {
+        "title": "Client standard",
+        "desc": "Société ou entreprise disposant d'équipements de lutte contre l'incendie sur site"
+      },
+      "site_responsible": {
+        "title": "Responsable de site (sous-client)",
+        "desc": "Responsable d'une agence, d'une usine ou d'un site commercial précis"
+      },
+      "client_group": {
+        "title": "Groupe de clients / Holding",
+        "desc": "Gestion de plusieurs entités ou sociétés partenaires"
+      },
+      "organisation": {
+        "title": "Organisme public / Protection civile",
+        "desc": "Protection civile, organisme de contrôle ou autorité de sécurité"
+      },
+      "supplier": {
+        "title": "Fournisseur / Partenaire",
+        "desc": "Fournisseur d'équipements, fabricant ou partenaire de maintenance"
+      }
+    },
+    "organization": {
+      "heading": "Entreprise et organisation",
+      "intro": "Renseignez les informations légales et de contact de votre entreprise ou organisation.",
+      "companyName": "Raison sociale / Nom de l'entité",
+      "taxId": "Identifiant fiscal / Matricule fiscale",
+      "industry": "Secteur d'activité",
+      "industryPh": "Sélectionnez un secteur",
+      "website": "Site web",
+      "address": "Adresse / Siège social",
+      "addressPh": "Zone Industrielle, Route de Sousse",
+      "city": "Ville",
+      "cityPh": "Tunis",
+      "country": "Pays",
+      "countryPh": "Tunisie"
+    },
+    "industries": {
+      "manufacturing": "Fabrication et industrie lourde",
+      "energy": "Pétrole et gaz / Énergie",
+      "logistics": "Logistique et entreposage",
+      "healthcare": "Santé et pharmaceutique",
+      "hospitality": "Hôtellerie et tourisme",
+      "retail": "Commerce et centres commerciaux",
+      "public": "Secteur public et administration",
+      "safety": "Services d'incendie et de sécurité",
+      "other": "Autre"
+    },
+    "scope": {
+      "heading": "Périmètre opérationnel et remarques",
+      "intro": "Décrivez vos sites pour accélérer la vérification.",
+      "positionTitle": "Votre fonction / poste",
+      "positionTitlePh": "Responsable HSE / Directeur sécurité",
+      "siteCount": "Nombre de sites / établissements",
+      "equipmentEstimate": "Nombre estimé d'équipements de lutte contre l'incendie",
+      "equipmentEstimatePh": "ex. 150 extincteurs, 12 dévidoirs, 4 poteaux d'incendie...",
+      "notes": "Exigences particulières ou message à l'administrateur",
+      "notesPh": "Décrivez les périmètres d'accès, les agences concernées ou les échéances de conformité urgentes..."
+    },
+    "siteCounts": {
+      "one": "1 site",
+      "few": "2 à 5 sites",
+      "many": "6 à 20 sites",
+      "enterprise": "Plus de 20 sites"
+    },
+    "actions": {
+      "next": {
+        "organization": "Suivant : Organisation",
+        "scope": "Suivant : Périmètre et détails"
+      },
+      "previous": "Précédent",
+      "submit": "Envoyer la demande d'inscription"
+    },
+    "validation": {
+      "firstName": "Le prénom est obligatoire",
+      "lastName": "Le nom est obligatoire",
+      "emailRequired": "L'e-mail est obligatoire",
+      "emailInvalid": "Saisissez un e-mail valide",
+      "phoneRequired": "Le numéro de téléphone est obligatoire",
+      "phoneInvalid": "Saisissez un numéro de téléphone valide",
+      "urlInvalid": "Saisissez une adresse de site web valide",
+      "companyName": "Le nom de l'entreprise est obligatoire"
+    },
+    "errors": {
+      "generic": "Nous n'avons pas pu envoyer votre demande. Vérifiez votre connexion et réessayez."
+    },
+    "success": {
+      "title": "Demande d'inscription envoyée",
+      "intro": "Merci d'avoir demandé l'accès à {app}. Votre demande est en attente de validation par l'administration.",
+      "reference": "Référence de suivi",
+      "copy": "Copier la référence",
+      "copied": "Copié",
+      "confirmation": "Une confirmation a été enregistrée pour {email}. Une fois la demande vérifiée, notre équipe activera votre profil et vous enverra vos identifiants.",
+      "nextTitle": "La suite",
+      "steps": {
+        "review": {
+          "title": "Examen",
+          "text": "Notre équipe vérifie les informations de votre entreprise et le type de compte."
+        },
+        "verify": {
+          "title": "Vérification",
+          "text": "Nous pouvons vous contacter pour confirmer quelques détails."
+        },
+        "activate": {
+          "title": "Activation",
+          "text": "Vos identifiants de connexion sont envoyés à votre adresse e-mail."
+        }
+      },
+      "home": "Retour à l'accueil",
+      "login": "Aller à la connexion"
+    }
+  }
+}

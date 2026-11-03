@@ -1,0 +1,37 @@
+@use './business-partners';
+
+// Fix VBtnToggle buttons with text being squeezed into 36px/52px icon button width
+body .v-btn-group.v-btn-toggle,
+.v-btn-group.v-btn-toggle,
+.v-btn-toggle,
+.wp-toggle-group {
+  overflow: visible !important;
+  max-inline-size: 100% !important;
+
+  .v-btn {
+    inline-size: auto !important;
+    min-inline-size: max-content !important;
+    max-inline-size: none !important;
+    padding-inline: 14px !important;
+    white-space: nowrap !important;
+    flex: 0 0 auto !important;
+
+    &.v-btn--density-compact,
+    &.v-btn--density-comfortable,
+    &.v-btn--density-default {
+      inline-size: auto !important;
+      min-inline-size: max-content !important;
+      max-inline-size: none !important;
+      padding-inline: 14px !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+    }
+
+    // Only strictly icon-only buttons (empty of text) stay square
+    &.v-btn--icon:empty {
+      inline-size: var(--v-btn-height) !important;
+      min-inline-size: var(--v-btn-height) !important;
+      padding-inline: 0 !important;
+    }
+  }
+}

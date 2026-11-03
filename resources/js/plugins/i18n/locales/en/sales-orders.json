@@ -1,0 +1,309 @@
+{
+  "salesOrders": {
+    "title": "Sales Orders",
+    "singular": "Sales Order",
+    "newOrder": "New Sales Order",
+    "editOrder": "Edit Sales Order",
+    "viewOrder": "View Sales Order",
+    "orderDetails": "Order Details",
+    "workspace": "Sales Order Workspace",
+
+    "types": {
+      "sales": "Sales (Goods)",
+      "service": "Service Order"
+    },
+
+    "statuses": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "under_review": "Under Review",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "completed": "Completed",
+      "closed": "Closed"
+    },
+
+    "fulfillmentStatuses": {
+      "pending": "Not Started",
+      "unfulfilled": "Not Started",
+      "partially_fulfilled": "Partially Fulfilled",
+      "fulfilled": "Fulfilled"
+    },
+
+    "origins": {
+      "manual": "Manual / Direct Entry",
+      "quotation": "From Quotation",
+      "from_quotation": "From Quotation",
+      "contract_call_off": "Contract Call-Off (MSA)",
+      "from_contract": "Contract Call-Off (MSA)"
+    },
+
+    "fulfillmentModes": {
+      "own_delivery": "Own Delivery",
+      "customer_pickup": "Customer Pickup",
+      "field_service": "Field Service",
+      "on_site": "On-Site"
+    },
+
+    "sections": {
+      "workflowProgress": "Workflow Progress",
+      "nextAction": "Next Action",
+      "foundation": "Order Foundation",
+      "lines": "Lines",
+      "services": "Services",
+      "deliverables": "Service Deliverables & Scope",
+      "review": "Feasibility Review",
+      "fulfillment": "Fulfillment Summary",
+      "downstream": "Downstream Execution",
+      "details": "Details",
+      "notes": "Notes"
+    },
+
+    "fields": {
+      "reference": "Reference",
+      "client": "Client",
+      "orderType": "Order Type",
+      "origin": "Origin",
+      "fulfillmentMode": "Fulfillment Mode",
+      "deliveryWindow": "Delivery Window",
+      "requestedWindow": "Requested Window",
+      "committedWindow": "Committed Window",
+      "assignedTo": "Assigned To",
+      "paymentTerms": "Payment Terms",
+      "currency": "Currency",
+      "clientPOReference": "Client PO Reference",
+      "clientPODocument": "Client PO Document",
+      "internalNotes": "Internal Notes",
+      "clientNotes": "Client-Facing Notes",
+      "totalHT": "Total HT",
+      "totalTVA": "TVA",
+      "totalTTC": "Total TTC"
+    },
+
+    "actions": {
+      "save": "Save",
+      "saveDraft": "Save Draft",
+      "submit": "Submit for Review",
+      "review": "Review Feasibility",
+      "accept": "Accept Order",
+      "reject": "Reject",
+      "cancel": "Cancel Order",
+      "delete": "Delete",
+      "edit": "Edit",
+      "viewLogistics": "View Logistics",
+      "viewOperations": "View Operations",
+      "viewCommitment": "View Commitment Document",
+      "addItems": "Add Items",
+      "addLine": "Add Line"
+    },
+
+    "nextActions": {
+      "createOrder": {
+        "title": "Create Order",
+        "description": "Fill in the required fields and save this order as a draft"
+      },
+      "saveChanges": {
+        "title": "Save Changes",
+        "description": "You have unsaved changes. Save the order before submitting for review"
+      },
+      "submitForReview": {
+        "title": "Submit for Review",
+        "description": "Ready to submit this order for feasibility evaluation and approval"
+      },
+      "reviewFeasibility": {
+        "title": "Review Feasibility",
+        "description": "Evaluate credit, stock availability, and capacity before accepting this order"
+      },
+      "acceptOrder": {
+        "title": "Accept Order",
+        "description": "Feasibility review completed successfully. Accept this order to generate downstream documents"
+      },
+      "viewFulfillment": {
+        "title": "View Fulfillment",
+        "description": "Order has been accepted. Track logistics and delivery in the appropriate module"
+      },
+      "orderCompleted": {
+        "title": "Order Completed",
+        "description": "This order has been fulfilled and completed"
+      },
+      "orderCancelled": {
+        "title": "Order Cancelled",
+        "description": "This order has been cancelled and cannot be resumed"
+      },
+      "orderRejected": {
+        "title": "Order Rejected",
+        "description": "This order was rejected during review"
+      }
+    },
+
+    "feasibility": {
+      "title": "Feasibility Review",
+      "overallAssessment": "Overall Assessment",
+      "creditEvaluation": "Credit Evaluation",
+      "stockAvailability": "Stock Availability",
+      "teamCapacity": "Team Capacity",
+      "reviewAudit": "Review Audit Details",
+      "reviewedBy": "Reviewed By",
+      "reviewedAt": "Reviewed At",
+      "decision": "Decision",
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectionReason": "Rejection Reason",
+
+      "creditResults": {
+        "sufficient": "Sufficient",
+        "warning": "Warning",
+        "exceeded": "Exceeded"
+      },
+
+      "stockResults": {
+        "sufficient": "Sufficient",
+        "partial": "Partial",
+        "insufficient": "Insufficient"
+      },
+
+      "capacityResults": {
+        "available": "Available",
+        "constrained": "Constrained",
+        "unavailable": "Unavailable"
+      },
+
+      "statuses": {
+        "pending": "Pending Review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+
+      "assessments": {
+        "ready": "READY",
+        "readyWithWarning": "READY WITH WARNING",
+        "blocked": "BLOCKED",
+        "pending": "PENDING"
+      },
+
+      "messages": {
+        "ready": "All checks passed",
+        "readyWithWarning": "Proceed with caution",
+        "blocked": "Critical issues must be resolved",
+        "pending": "Awaiting feasibility evaluation",
+        "creditDescription": "Customer payment performance and credit limit against order total",
+        "stockDescription": "Warehouse stock availability across all active warehouses",
+        "capacityDescription": "Technician team schedule and service delivery capacity",
+        "runCreditCheck": "Run Live Credit Check",
+        "runStockCheck": "Run Live Stock Check",
+        "runCapacityCheck": "Run Capacity Check",
+        "secondaryApprovalRequired": "High value order: secondary approval required"
+      }
+    },
+
+    "fulfillment": {
+      "title": "Fulfillment Summary",
+      "progress": "Overall Progress",
+      "ordered": "Ordered",
+      "reserved": "Reserved",
+      "delivered": "Delivered",
+      "total": "Total",
+      "scheduled": "Scheduled",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "lineByLineStatus": "Line-by-Line Status",
+      "trackingMessage": "Fulfillment tracking becomes available after order acceptance"
+    },
+
+    "downstream": {
+      "title": "Downstream Execution",
+      "gcs": "General Conditions of Sale (GCS)",
+      "lsa": "Level of Service Agreement (LSA)",
+      "dwo": "Delivery Work Orders (DWO)",
+      "swo": "Service Work Orders (SWO)",
+      "generated": "Generated",
+      "paymentTerms": "Payment Terms",
+      "leadTime": "Standard Lead Time",
+      "warrantyPeriod": "Warranty Period",
+      "responseTime": "Standard Response Time",
+      "qualityStandard": "Quality Standard",
+      "inventoryReservations": "Inventory Reservations Breakdown",
+      "generatedAutomatically": "Documents are generated automatically upon order acceptance"
+    },
+
+    "lines": {
+      "item": "Item / Product",
+      "service": "Service / Deliverable",
+      "quantity": "Qty",
+      "unitPrice": "Unit Price",
+      "discount": "Disc.",
+      "tax": "Tax",
+      "total": "Total TTC",
+      "actions": "Actions",
+      "editLine": "Edit Line",
+      "deleteLine": "Delete",
+      "adHoc": "Custom",
+      "sku": "SKU",
+      "variant": "Variant",
+      "deliveryDate": "Delivery Date",
+      "targetSite": "Target Site",
+      "itemName": "Item Name",
+      "calculatedTotals": "Calculated Totals",
+      "subtotalHT": "Subtotal HT",
+      "taxAmount": "Tax (TVA)",
+      "emptyState": "No lines added yet"
+    },
+
+    "dialogs": {
+      "rejectOrder": {
+        "title": "Reject Sales Order",
+        "description": "Please provide a reason for rejecting this Sales Order. This will be recorded permanently.",
+        "confirm": "Confirm Rejection"
+      },
+      "feasibilityReview": {
+        "title": "Conduct Feasibility Review",
+        "description": "Evaluate credit, stock, and operational feasibility to approve or reject this Sales Order.",
+        "blocked": "Approval Blocked"
+      },
+      "deleteConfirm": {
+        "title": "Delete Sales Order",
+        "description": "Are you sure you want to delete this sales order? This action cannot be undone."
+      }
+    },
+
+    "messages": {
+      "created": "Sales Order created successfully",
+      "updated": "Sales Order updated successfully",
+      "deleted": "Sales Order deleted successfully",
+      "submitted": "Sales Order submitted for feasibility review",
+      "accepted": "Sales Order accepted — downstream documents generated",
+      "rejected": "Sales Order rejected",
+      "cancelled": "Sales Order cancelled",
+      "clientRequired": "Client is required",
+      "saveFailed": "Failed to save Sales Order",
+      "reviewRecorded": "Feasibility review recorded successfully",
+      "creditCheck": "Credit evaluation completed",
+      "stockCheck": "Stock evaluation completed"
+    },
+
+    "validation": {
+      "clientRequired": "Client is required",
+      "linesRequired": "At least one line is required",
+      "quantityMinimum": "Quantity must be greater than 0",
+      "priceMinimum": "Price must be greater than or equal to 0",
+      "rejectionReasonRequired": "Rejection reason is required"
+    },
+
+    "foundation": {
+      "locked": "Locked",
+      "editable": "Editable",
+      "customer": "Customer",
+      "sourceDocument": "Source Document",
+      "lockedNotice": "Foundation fields are locked after order creation to maintain data consistency"
+    },
+
+    "workflowStages": {
+      "draft": "Draft",
+      "review": "Review",
+      "accepted": "Accepted",
+      "fulfillment": "Fulfillment",
+      "completed": "Completed"
+    }
+  }
+}

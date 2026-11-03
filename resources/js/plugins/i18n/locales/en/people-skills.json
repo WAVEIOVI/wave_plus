@@ -1,0 +1,941 @@
+{
+  "Approved": "Approved",
+  "Back": "Back",
+  "Clear": "Clear",
+  "Confirm": "Confirm",
+  "Date": "Date",
+  "Employee": "Employee",
+  "Pending": "Pending",
+  "Position": "Position",
+  "Refresh": "Refresh",
+  "Rejected": "Rejected",
+  "Reset": "Reset",
+  "Saved": "Saved",
+  "Submit": "Submit",
+  "Today": "Today",
+  "Total": "Total",
+  "more": "More",
+
+  "common": {
+    "refresh": "Refresh"
+  },
+
+  "hr": {
+    "attendance": {
+      "badge_hint": "Present your QR badge to the scanner",
+      "camera_unavailable_hint": "No camera detected. Use the PIN keypad instead.",
+      "geotag_on": "Location capture enabled",
+      "manual_code": "Manual badge code",
+      "punch": "Punch"
+    }
+  },
+
+  "employees": {
+    "list": {
+      "title": "Employee Directory",
+      "subtitle": "Authoritative directory of personnel, roles, qualifications and employment history.",
+      "add_employee": "Add Employee",
+      "select": "Select employee",
+      "actions": {
+        "print": "Print Employees",
+        "email": "Email Selected Employees"
+      },
+      "stats": {
+        "total": "Total Employees",
+        "active": "Active",
+        "on_leave": "On Leave",
+        "suspended": "Suspended",
+        "terminated": "Terminated"
+      },
+      "col": {
+        "employee": "Employee",
+        "department": "Department",
+        "position": "Position",
+        "contact": "Contact",
+        "hire_date": "Hire Date",
+        "status": "Status"
+      },
+      "filter": {
+        "title": "Filter Employees",
+        "status": "Status",
+        "department": "Department"
+      }
+    },
+    "add": {
+      "title": "Add Employee",
+      "submit": "Create Employee"
+    },
+    "edit": {
+      "title": "Employee Profile",
+      "change_photo": "Change Photo",
+      "change_status": "Change Status",
+      "linked_user": "Linked User",
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Work Email",
+      "phone": "Work Phone",
+      "date_of_birth": "Date of Birth",
+      "gender": "Gender",
+      "address": "Address",
+      "employee_number": "Employee ID",
+      "hire_date": "Hire Date",
+      "department": "Department",
+      "position": "Position",
+      "team": "Team",
+      "manager": "Direct Manager",
+      "status": "Employment Status",
+      "linked_user_hint": "Link this employee to a system user account",
+      "notes": "Internal Notes",
+      "notes_hint": "Internal notes about this employee",
+      "section": {
+        "personal": "Personal Information",
+        "employment": "Employment Information",
+        "system_access": "System Access",
+        "notes": "Notes",
+        "personal_contact": "Personal & Contact Information",
+        "role_org": "Role & Organizational Structure"
+      },
+      "load_error": "Failed to load employee profile.",
+      "photo_success": "Profile photo updated successfully.",
+      "photo_error": "Failed to update profile photo.",
+      "save": "Save Employee",
+      "save_success": "Employee saved successfully.",
+      "save_error": "Failed to save employee.",
+      "fields": {
+        "team": "Team"
+      },
+      "profile_media": "Profile Photo",
+      "avatar_hint": "Click camera icon to upload or change photo",
+      "no_photo": "No Photo",
+      "employee_number_label": "Employee No.",
+      "last_updated": "Last updated",
+      "preferred_name_label": "Known as",
+      "save_changes": "Save Changes",
+      "work_email": "Work Email",
+      "personal_email": "Personal Email",
+      "work_phone": "Work Phone",
+      "personal_phone": "Personal Phone",
+      "nationality": "Nationality",
+      "termination_date": "Termination Date",
+      "department_hint": "Select the department this employee belongs to",
+      "position_hint": "Select the position/role",
+      "team_hint": "Select the work team",
+      "manager_hint": "Select the direct manager",
+      "status_hint": "Current employment status",
+      "first_name_required": "First name is required",
+      "last_name_required": "Last name is required",
+      "email_invalid": "Please enter a valid email address"
+    },
+    "delete": {
+      "title": "Archive Employee",
+      "confirm": "Are you sure you want to archive this employee record?",
+      "description": "The employee file will be archived. Historical attendance, leave and payroll records are retained."
+    },
+    "actions": {
+      "activate": "Activate",
+      "on_leave": "Set On Leave",
+      "suspend": "Suspend",
+      "terminate": "Terminate",
+      "status_success": "Employee status updated to {status}.",
+      "status_error": "Failed to update employee status.",
+      "create_success": "{name} was created successfully.",
+      "create_success_fallback": "The employee",
+      "create_error": "Failed to create employee.",
+      "delete_success": "Employee archived successfully.",
+      "delete_error": "Failed to archive employee."
+    },
+    "status": {
+      "activate_title": "Activate Employee",
+      "suspend_title": "Suspend Employee",
+      "terminate_title": "Terminate Employee",
+      "reason": "Reason",
+      "reason_ph": "Reason for this status change…",
+      "termination_date": "Effective Date"
+    },
+    "form": {
+      "first_name": "First Name",
+      "first_name_ph": "e.g. Jane",
+      "middle_name": "Middle Name",
+      "last_name": "Last Name",
+      "last_name_ph": "e.g. Doe",
+      "preferred_name": "Preferred Name",
+      "gender": "Gender",
+      "date_of_birth": "Date of Birth",
+      "nationality": "Nationality",
+      "work_email": "Work Email",
+      "personal_email": "Personal Email",
+      "work_phone": "Work Phone",
+      "personal_phone": "Personal Phone",
+      "address": "Address",
+      "hire_date": "Hire Date",
+      "employee_number": "Employee ID",
+      "status": "Employment Status",
+      "department": "Department",
+      "position": "Position",
+      "team": "Current Team",
+      "manager": "Direct Manager",
+      "linked_user": "Linked Login Account",
+      "linked_user_hint": "Connect this employee to a system login account.",
+      "notes": "Internal Notes",
+      "notes_ph": "Any internal notes about this employee…"
+    },
+    "view": {
+      "title": "Employee Profile",
+      "contact": "Contact",
+      "no_contact": "No contact information available.",
+      "department": "Department",
+      "position": "Position",
+      "manager": "Manager",
+      "team": "Team",
+      "hire_date": "Hire Date",
+      "status": "Status",
+      "skills": "Skills",
+      "leave_balances": "Leave Balances",
+      "recent_attendance": "Recent Attendance",
+      "employment": "Employment",
+      "present": "Present",
+      "more": "More",
+      "of": "of",
+      "att_in": "In",
+      "att_out": "Out",
+      "att_hours": "Hours",
+      "att_status": "Status",
+      "emp_hist_position": "Position",
+      "emp_hist_dept": "Department",
+      "emp_hist_from": "From",
+      "emp_hist_to": "To",
+      "emp_hist_reason": "Reason"
+    }
+  },
+
+  "departments": {
+    "list": {
+      "title": "Departments & Positions",
+      "subtitle": "Organisational structure: departments, reporting lines and job positions.",
+      "tab_departments": "Departments",
+      "tab_positions": "Positions",
+      "view_mode": "Change list display",
+      "view_table": "List view",
+      "view_grid": "Grid view"
+    },
+    "filter": {
+      "title": "Filter Departments"
+    },
+    "view": {
+      "title": "Department Details",
+      "positions": "Positions",
+      "employees": "Employees",
+      "teams": "Work Teams",
+      "child_departments": "Child Departments"
+    },
+    "add": "Add Department",
+    "edit": "Edit Department",
+    "create_success": "Department created successfully.",
+    "save_success": "Department updated successfully.",
+    "save_error": "Failed to save department.",
+    "load_error": "Failed to load department.",
+    "delete_success": "Department deleted successfully.",
+    "delete_error": "Failed to delete department.",
+    "delete_confirm": "Are you sure you want to delete this department?",
+    "kpi": {
+      "total": "Total Departments",
+      "active": "Active Departments",
+      "with_manager": "With Manager",
+      "positions": "Positions"
+    },
+    "col": {
+      "name": "Name",
+      "code": "Code",
+      "parent": "Parent Department",
+      "manager": "Manager",
+      "positions": "Positions",
+      "employees": "Employees",
+      "teams": "Teams",
+      "created_at": "Created",
+      "description": "Description",
+      "status": "Status"
+    },
+    "form": {
+      "name": "Department Name",
+      "code": "Code",
+      "parent": "Parent Department",
+      "manager": "Manager",
+      "positions": "Positions",
+      "sort_order": "Sort Order",
+      "status": "Status",
+      "description": "Description",
+      "active": "Active",
+      "create": "Create Department",
+      "save": "Save Changes"
+    },
+    "validation": {
+      "required": "This field is required",
+      "non_negative": "Must be 0 or greater"
+    }
+  },
+
+  "positions": {
+    "filter": {
+      "title": "Filter Positions"
+    },
+    "view": {
+      "title": "Position Details",
+      "employees": "Employees"
+    },
+    "add": "Add Position",
+    "edit": "Edit Position",
+    "create_success": "Position created successfully.",
+    "save_success": "Position updated successfully.",
+    "save_error": "Failed to save position.",
+    "load_error": "Failed to load position.",
+    "delete_success": "Position deleted successfully.",
+    "delete_error": "Failed to delete position.",
+    "delete_confirm": "Are you sure you want to delete this position?",
+    "kpi": {
+      "total": "Total Positions",
+      "active": "Active Positions",
+      "with_rate": "With Hourly Rate",
+      "employees": "Employees"
+    },
+    "col": {
+      "title": "Title",
+      "code": "Code",
+      "department": "Department",
+      "rate": "Hourly Rate",
+      "employees": "Employees",
+      "created_at": "Created",
+      "status": "Status"
+    },
+    "form": {
+      "title": "Position Title",
+      "code": "Code",
+      "department": "Department",
+      "standard_hourly_rate": "Standard Hourly Rate",
+      "description": "Description",
+      "requirements": "Requirements",
+      "status": "Status",
+      "active": "Active",
+      "create": "Create Position",
+      "save": "Save Changes"
+    }
+  },
+
+  "teams": {
+    "list": {
+      "title": "Work Teams",
+      "subtitle": "Operational teams, their leads and membership.",
+      "add": "Add Team",
+      "edit": "Edit Team",
+      "view_mode": "Change list display",
+      "view_table": "List view",
+      "view_grid": "Grid view"
+    },
+    "filter": {
+      "title": "Filter Teams",
+      "with_leader": "With a team lead",
+      "without_leader": "Without a team lead"
+    },
+    "kpi": {
+      "total": "Total Teams",
+      "active": "Active Teams",
+      "with_leader": "With a Team Lead",
+      "total_members": "Active Memberships"
+    },
+    "view": {
+      "title": "Team Details",
+      "team_lead": "Team Lead",
+      "primary_member": "Primary team",
+      "joined_at": "Joined",
+      "members": "Members",
+      "no_members": "No members assigned to this team yet."
+    },
+    "validation": {
+      "required": "This field is required."
+    },
+    "options_error": "Unable to load team form options.",
+    "form": {
+      "subtitle": "Define the team's identity, organizational placement and status.",
+      "name": "Team Name",
+      "code": "Code",
+      "department": "Department",
+      "team_leader": "Team Lead",
+      "team_type": "Team Type",
+      "description": "Description",
+      "active": "Active",
+      "create": "Create Team",
+      "save": "Save Changes",
+      "current_leader": "Current team lead",
+      "sections": {
+        "identity": "Team Identity",
+        "organization": "Organization",
+        "settings": "Settings"
+      }
+    },
+    "type": {
+      "operational": "Operational",
+      "general": "General",
+      "project": "Project",
+      "shift": "Shift",
+      "department": "Department",
+      "cross_functional": "Cross-functional"
+    },
+    "add": "Add Team",
+    "edit": "Edit Team",
+    "create_success": "Team created successfully.",
+    "save_success": "Team updated successfully.",
+    "save_error": "Failed to save team.",
+    "load_error": "Failed to load teams.",
+    "delete_success": "Team deleted successfully.",
+    "delete_error": "Failed to delete team.",
+    "delete_confirm": "Are you sure you want to delete this team?",
+    "col": {
+      "name": "Name",
+      "code": "Code",
+      "type": "Type",
+      "department": "Department",
+      "leader": "Team Lead",
+      "position": "Position",
+      "members": "Members",
+      "status": "Status",
+      "created_at": "Created",
+      "updated_at": "Updated"
+    }
+  },
+
+  "skills": {
+    "tab_skills": "Skills",
+    "tab_certifications": "Certifications",
+    "list": {
+      "title": "Skills & Certifications",
+      "subtitle": "Master catalogue of workforce skills and certification types.",
+      "tab_skills": "Skills",
+      "tab_certifications": "Certifications"
+    },
+    "add": "Add Skill",
+    "edit": "Edit Skill",
+    "create_success": "Skill created successfully.",
+    "save_success": "Skill updated successfully.",
+    "save_error": "Failed to save skill.",
+    "delete_success": "Skill deleted successfully.",
+    "delete_error": "Failed to delete skill.",
+    "delete_confirm": "Are you sure you want to delete this skill?",
+    "col": {
+      "name": "Name",
+      "code": "Code",
+      "category": "Category",
+      "status": "Status"
+    },
+    "form": {
+      "name": "Skill Name",
+      "code": "Code",
+      "category": "Category",
+      "description": "Description",
+      "active": "Active"
+    }
+  },
+
+  "certifications": {
+    "add": "Add Certification",
+    "edit": "Edit Certification",
+    "create_success": "Certification created successfully.",
+    "save_success": "Certification updated successfully.",
+    "save_error": "Failed to save certification.",
+    "delete_success": "Certification deleted successfully.",
+    "delete_error": "Failed to delete certification.",
+    "delete_confirm": "Are you sure you want to delete this certification?",
+    "no_expiry": "No expiry",
+    "col": {
+      "name": "Name",
+      "code": "Code",
+      "body": "Issuing Body",
+      "validity": "Validity",
+      "status": "Status"
+    },
+    "form": {
+      "name": "Certification Name",
+      "code": "Code",
+      "issuing_body": "Issuing Body",
+      "validity_months": "Validity (Months)",
+      "description": "Description",
+      "active": "Active"
+    }
+  },
+
+  "attendance": {
+    "list": {
+      "title": "Time & Attendance",
+      "subtitle": "Time clock terminal, raw event ledger and daily calculated attendance.",
+      "navigation": "Attendance sections"
+    },
+    "punch_console": {
+      "title": "Punch Console",
+      "subtitle": "Record attendance using a badge, PIN, manual entry, or team punch.",
+      "return_to_list": "Attendance List",
+      "navigation": "Punch console modes"
+    },
+    "punch_console_modes": {
+      "badge_qr": "Badge QR",
+      "manual": "Manual",
+      "pin_pad": "PIN Pad",
+      "crew": "Crew",
+      "quick_clock": "Quick time clock"
+    },
+    "kpi": {
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent",
+      "on_leave": "On Leave",
+      "on_duty": "On Duty"
+    },
+    "load_error": "Failed to load attendance records.",
+    "load_kpis_error": "Failed to load attendance statistics.",
+    "load_employees_error": "Failed to load employees for attendance.",
+    "timeline": "Punch Timeline",
+    "timeline_empty": "No clock punches recorded for {date}.",
+    "timeline_load_failed": "Failed to load the attendance timeline.",
+    "badge_qr_failed": "Failed to generate the employee badge QR code.",
+    "col": {
+      "employee": "Employee",
+      "date": "Date",
+      "in": "Clock In",
+      "out": "Clock Out",
+      "hours": "Hours",
+      "status": "Status"
+    },
+    "filter": {
+      "date": "Date",
+      "status": "Status"
+    },
+    "status": {
+      "present": "Present",
+      "late": "Late Arrival",
+      "absent": "Absent",
+      "partial": "Partial Day",
+      "excused": "Excused"
+    },
+    "view": {
+      "title": "Attendance Detail",
+      "worked": "Worked",
+      "late": "Late",
+      "overtime": "Overtime"
+    },
+    "correct": "Correct",
+    "correction_title": "Request Correction",
+    "correction_reason": "Correction Reason",
+    "correction_success": "Correction request submitted.",
+    "correction_error": "Failed to submit correction request.",
+    "config": {
+      "title": "Attendance Configuration",
+      "subtitle": "Global grace windows for check-in/out deviations and minimum leave units.",
+      "saved": "Attendance configuration updated successfully.",
+      "save_error": "Failed to update attendance configuration.",
+      "checkin_tolerances": "Check-In Tolerances",
+      "checkout_tolerances": "Check-Out Tolerances",
+      "leave_policy": "Hourly & Partial-Day Leave Policy",
+      "late_checkin_grace": "Late Check-in Grace (Minutes)",
+      "late_checkin_grace_hint": "Arrival within this buffer is marked as Present",
+      "early_checkin_grace": "Early Arrival Tolerance",
+      "early_checkin_grace_hint": "Arrival buffer before shift start",
+      "early_checkout_grace": "Early Departure Grace",
+      "early_checkout_grace_hint": "Departure within buffer is forgiven",
+      "late_checkout_grace": "Late Departure Tolerance",
+      "late_checkout_grace_hint": "Buffer before overtime accrual triggers",
+      "hourly_leave_tolerance": "Hourly Leave Tolerance (Minutes)",
+      "hourly_leave_tolerance_hint": "Rounding tolerance applied to hourly leave requests",
+      "min_hourly_leave_unit": "Minimum Hourly Leave Unit (Minutes)",
+      "min_hourly_leave_unit_hint": "Smallest leave increment allowed",
+      "info_title": "Policy Notice",
+      "info_message": "These tolerances apply globally to calculated attendance and hourly leave."
+    },
+    "exception": {
+      "list": {
+        "title": "Attendance Exceptions",
+        "subtitle": "Review and resolve attendance deviations against planned schedules and authorised leave."
+      },
+      "filter": {
+        "review_status": "Review Status",
+        "type": "Exception Type",
+        "department": "Department",
+        "date": "Date"
+      },
+      "col": {
+        "employee": "Employee",
+        "date": "Date",
+        "type": "Type",
+        "expected_vs_actual": "Expected vs Actual",
+        "deviation": "Deviation",
+        "leave_link": "Covering Leave",
+        "review_status": "Review Status"
+      },
+      "expected": "Expected",
+      "actual": "Actual",
+      "no_leave": "No covering leave",
+      "acknowledge": "Acknowledge",
+      "resolve": "Resolve",
+      "dismiss": "Dismiss",
+      "acknowledged": "Exception acknowledged.",
+      "resolved": "Exception resolved.",
+      "dismissed": "Exception dismissed.",
+      "acknowledge_error": "Failed to acknowledge exception.",
+      "resolve_error": "Failed to resolve exception.",
+      "dismiss_error": "Failed to dismiss exception.",
+      "resolve_note_prompt": "Optional resolution note:",
+      "dismiss_note_prompt": "Reason for dismissal:",
+      "review_status": {
+        "open": "Open / Unresolved",
+        "acknowledged": "Acknowledged",
+        "resolved": "Resolved",
+        "dismissed": "Dismissed",
+        "all": "All Statuses"
+      },
+      "late_arrival": "Late Arrival",
+      "early_arrival": "Early Arrival",
+      "early_departure": "Early Departure",
+      "overtime": "Overtime",
+      "missing_checkout": "Missing Check-out",
+      "missing_checkin": "Missing Check-in",
+      "leave_mismatch": "Leave Mismatch"
+    }
+  },
+
+  "kiosk": {
+    "title": "Attendance Terminal",
+    "subtitle": "Employee self-service",
+    "attendance": "Attendance",
+    "scan_badge": "Scan your badge",
+    "scan_help": "Present your QR badge inside the frame. Your attendance will be recorded automatically.",
+    "start_scan": "Start scanning",
+    "use_pin": "Use PIN instead",
+    "enter_pin": "Enter your badge number",
+    "pin_help": "Use the keypad only when you do not have your badge.",
+    "pin_mode": "PIN keypad",
+    "back_to_scanner": "Back to scanner",
+    "ready": "Ready to scan",
+    "offline": "Offline",
+    "processing": "Processing",
+    "clocked_in": "Checked in",
+    "clocked_out": "Checked out",
+    "badge_not_recognized": "Badge not recognised. Try again or use the PIN keypad.",
+    "check_ins": "Check-ins",
+    "check_outs": "Check-outs",
+    "recent_activity": "Recent activity",
+    "no_activity": "No punches recorded today.",
+    "in": "In",
+    "out": "Out"
+  },
+
+  "time_off": {
+    "list": {
+      "title": "Time Off & Leave",
+      "subtitle": "Leave requests, team calendar, approvals and balance tracking."
+    },
+    "load_error": "Failed to load leave requests.",
+    "add": "New Leave Request",
+    "approve": "Approve",
+    "approve_success": "Leave request approved.",
+    "approve_error": "Failed to approve leave request.",
+    "reject": "Reject",
+    "reject_title": "Reject Leave Request",
+    "reject_reason": "Rejection Reason",
+    "reject_reason_required": "Please provide a reason for rejection.",
+    "reject_success": "Leave request rejected.",
+    "reject_error": "Failed to reject leave request.",
+    "cancel": "Cancel Request",
+    "cancel_confirm": "Are you sure you want to cancel this leave request?",
+    "cancel_success": "Leave request cancelled.",
+    "cancel_error": "Failed to cancel leave request.",
+    "create_success": "Leave request submitted successfully.",
+    "create_error": "Failed to submit leave request.",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "submitted": "Submitted",
+    "kpi": {
+      "pending": "Pending Approval",
+      "approved": "Approved",
+      "on_leave_today": "On Leave Today",
+      "rejected": "Rejected",
+      "total": "Total Requests",
+      "days_taken": "Days Approved"
+    },
+    "tabs": {
+      "requests": "Requests",
+      "calendar": "Calendar",
+      "balances": "Balances & Quotas",
+      "navigation": "Time Off Sections"
+    },
+    "calendar_view": "Calendar View",
+    "calendar_summary": "Team Leave Calendar",
+    "col": {
+      "reference": "Reference",
+      "employee": "Employee",
+      "department": "Department",
+      "type": "Leave Type",
+      "from": "From",
+      "to": "To",
+      "dates": "Dates",
+      "duration": "Duration",
+      "days": "Days",
+      "status": "Status",
+      "approver": "Approver",
+      "actions": "Actions"
+    },
+    "form": {
+      "title": "New Leave Request",
+      "employee": "Employee",
+      "select_employee": "Select Employee",
+      "type": "Leave Type",
+      "select_type": "Select Leave Type",
+      "duration_type": "Duration Type",
+      "from": "Start Date",
+      "to": "End Date",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "reason": "Reason / Notes",
+      "reason_placeholder": "Explain the reason for taking leave...",
+      "days_requested": "Calculated Days",
+      "available_balance": "Available Balance",
+      "submit_approval": "Submit for Approval",
+      "hourly_hint": "Hourly leave is deducted according to the configured minimum leave unit."
+    },
+    "duration_type": {
+      "full_day": "Full Day",
+      "partial_day": "Partial Day",
+      "hourly": "Hourly"
+    },
+    "filter": {
+      "title": "Filter Leave Requests",
+      "status": "Status",
+      "type": "Leave Type",
+      "department": "Department",
+      "employee": "Employee",
+      "date_range": "Date Range",
+      "from_date": "From Date",
+      "to_date": "To Date"
+    },
+    "status": {
+      "pending": "Pending",
+      "submitted": "Pending Approval",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "draft": "Draft",
+      "taken": "Taken"
+    },
+    "view": {
+      "title": "Leave Request Detail",
+      "reference": "Reference",
+      "employee": "Employee Information",
+      "dates": "Date & Duration",
+      "reason": "Reason",
+      "decision_note": "Decision Notes",
+      "rejection_reason": "Rejection Reason",
+      "audit": "Approval Details",
+      "approved_by": "Approved by",
+      "on_date": "on"
+    },
+    "balances": {
+      "title": "Leave Balances & Entitlements",
+      "subtitle": "Employee leave entitlements, accrued quotas, and remaining days.",
+      "year": "Year",
+      "accrued": "Entitled",
+      "used": "Used",
+      "pending": "Reserved",
+      "available": "Available",
+      "select_employee": "Filter by Employee",
+      "select_department": "Filter by Department",
+      "no_balances": "No leave balances found for the selected filters."
+    }
+  },
+
+  "recruitment": {
+    "list": {
+      "title": "Recruitment & Hiring",
+      "subtitle": "Candidate pipeline, interviews and hiring decisions."
+    },
+    "pipeline_title": "Talent Pipeline",
+    "pipeline_subtitle": "Track candidates across every hiring stage.",
+    "open_pipeline": "Open Pipeline",
+    "return_to_list": "Return to Recruitment",
+    "schedule_interview": "Schedule interview",
+    "candidates": "Candidates",
+    "no_candidates": "No candidates match the current filters.",
+    "load_error": "Failed to load candidates.",
+    "add_candidate": "Add Candidate",
+    "reject": "Reject",
+    "stage_updated": "Candidate stage updated.",
+    "stage_error": "Failed to update candidate stage.",
+    "col": {
+      "applicant": "Applicant",
+      "position": "Position",
+      "stage": "Stage",
+      "applied": "Applied"
+    },
+    "filter": {
+      "stage": "Stage"
+    },
+    "stage": {
+      "applied": "Applied",
+      "screening": "Screening",
+      "interview": "Interview",
+      "offer": "Offer",
+      "hired": "Hired",
+      "evaluated": "Evaluated",
+      "selected": "Selected",
+      "rejected": "Rejected"
+    }
+  },
+
+  "workforce": {
+    "list": {
+      "title": "Workforce Planner",
+      "subtitle": "Shift planning, schedules and roster publishing."
+    },
+    "tab_shifts": "Shifts",
+    "tab_schedules": "Schedules",
+    "add_shift": "Add Shift",
+    "edit_shift": "Edit Shift",
+    "delete_shift_confirm": "Are you sure you want to delete this shift?",
+    "shift_saved": "Shift saved successfully.",
+    "shift_created": "Shift created successfully.",
+    "shift_error": "Failed to save shift.",
+    "shift_deleted": "Shift deleted successfully.",
+    "shift_delete_error": "Failed to delete shift.",
+    "col": {
+      "employee": "Employee",
+      "date": "Date",
+      "shift": "Shift",
+      "shift_name": "Shift Name",
+      "start": "Start",
+      "end": "End",
+      "break": "Break",
+      "status": "Status",
+      "sch_status": "Schedule Status"
+    },
+    "form": {
+      "name": "Shift Name",
+      "start_time": "Start Time",
+      "end_time": "End Time",
+      "break_minutes": "Break (Minutes)",
+      "active": "Active"
+    },
+    "availability": {
+      "title": "Workforce Availability",
+      "subtitle": "Find personnel available for a given time window.",
+      "search": "Find Available Personnel",
+      "query_form": "Availability Query",
+      "start_time": "Assignment Start",
+      "end_time": "Assignment End",
+      "time_range": "Time Window",
+      "department": "Department",
+      "team": "Team",
+      "required_skills": "Required Skills",
+      "required_certifications": "Required Certifications",
+      "results": "Available Personnel",
+      "evaluated": "Evaluated",
+      "available": "Available",
+      "skill_match": "Skill Match",
+      "cert_match": "Certifications Valid",
+      "status": "Status",
+      "reason": "Unavailability Reason",
+      "no_results": "No personnel evaluated yet",
+      "no_results_hint": "Set a time window and run the availability query.",
+      "query_failed": "Failed to search workforce availability."
+    }
+  },
+
+  "hire_wizard": {
+    "title": "Hire Candidate",
+    "step1": "Employment",
+    "step1_subtitle": "Employment Terms",
+    "step1_desc": "Define the employment type, position and start date.",
+    "step2": "Organisation",
+    "step2_subtitle": "Organisation Placement",
+    "step2_desc": "Assign the new hire to a department and team.",
+    "step3": "Compensation",
+    "step3_subtitle": "Compensation",
+    "step3_desc": "Set the salary and pay period.",
+    "step4": "Confirmation",
+    "step4_subtitle": "Review & Confirm",
+    "step4_desc": "Review the details before creating the employee file.",
+    "full_name": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "employee_number": "Employee Number",
+    "employee_number_hint": "Leave blank to auto-generate.",
+    "department": "Department",
+    "team": "Team",
+    "position": "Position",
+    "employment_type": "Employment Type",
+    "hire_date": "Hire Date",
+    "salary": "Salary",
+    "currency": "Currency",
+    "period": "Pay Period",
+    "work_location": "Work Location",
+    "notes": "Notes",
+    "full_time": "Full Time",
+    "part_time": "Part Time",
+    "contract": "Contract",
+    "intern": "Intern",
+    "temporary": "Temporary",
+    "hourly": "Hourly",
+    "monthly": "Monthly",
+    "annually": "Annually",
+    "confirm_hire": "Confirm Hire",
+    "hire": "Hire Candidate",
+    "success": "Candidate hired successfully.",
+    "error": "Failed to hire candidate."
+  },
+
+  "appraisals": {
+    "title": "Performance Reviews",
+    "cycles_load_failed": "Failed to load appraisal cycles.",
+    "subtitle": "Appraisal cycles, reviews and scoring across the workforce.",
+    "cycles": "Appraisal Cycles",
+    "appraisals_list": "Performance Reviews",
+    "create_cycle": "Create Cycle",
+    "create_appraisal": "Create Appraisal",
+    "create_first_cycle": "Create First Cycle",
+    "cycle_name": "Cycle Name",
+    "cycle_type": "Cycle Type",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "cycle": "Cycle",
+    "employee": "Employee",
+    "reviewer": "Reviewer",
+    "overall_score": "Overall Score",
+    "manager_feedback": "Manager Feedback",
+    "employee_feedback": "Employee Feedback",
+    "annual": "Annual",
+    "quarterly": "Quarterly",
+    "probation": "Probation",
+    "project_based": "Project Based",
+    "draft": "Draft",
+    "active": "Active",
+    "in_review": "In Review",
+    "completed": "Completed",
+    "submitted": "Submitted",
+    "reviewed": "Reviewed",
+    "acknowledged": "Acknowledged",
+    "reviews": "Reviews",
+    "filter_by_cycle": "Filter by Cycle",
+    "no_cycles": "No appraisal cycles yet",
+    "no_cycles_hint": "Create a cycle to start running performance reviews.",
+    "no_appraisals": "No appraisals found",
+    "no_appraisals_hint": "Appraisals appear here once a cycle is active.",
+    "cycle_created": "Appraisal cycle created.",
+    "appraisal_saved": "Appraisal saved."
+  },
+
+  "fleet": {
+    "mileage": "Mileage",
+    "assigned": "Assigned",
+    "unassigned": "Unassigned",
+    "storage": "Pool Storage",
+    "no_vehicles": "No vehicles found",
+    "no_vehicles_hint": "Try adjusting your filters or search keywords.",
+    "delete_title": "Delete Vehicle",
+    "delete_confirm": "Are you sure you want to delete vehicle {plate}? This action is permanent. A vehicle with assignment history cannot be deleted.",
+    "view_mode_table": "Table / List View",
+    "view_mode_grid": "Card / Grid View"
+  }
+}

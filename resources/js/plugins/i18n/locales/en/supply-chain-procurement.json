@@ -1,0 +1,317 @@
+{
+  "scp": {
+    "nav": {
+      "title": "Supply Chain & Procurement",
+      "dashboard": "Dashboard",
+      "ipr": "Internal Purchase Requests",
+      "ipr_short": "IPR",
+      "rfq": "Requests for Quotation",
+      "rfq_short": "RFQ",
+      "po": "Purchase Orders",
+      "po_short": "PO",
+      "grn": "Goods Received Notes",
+      "grn_short": "GRN"
+    },
+    "common": {
+      "reference": "Reference",
+      "status": "Status",
+      "supplier": "Supplier",
+      "warehouse": "Warehouse",
+      "date_range": "Date Range",
+      "created_at": "Created",
+      "updated_at": "Updated",
+      "auto_generated": "Auto-generated",
+      "not_set": "Not Set",
+      "loading": "Loading...",
+      "no_data": "No data available",
+      "lines": "Lines",
+      "notes": "Notes",
+      "overview": "Overview",
+      "details": "Details",
+      "currency": "Currency",
+      "total": "Total",
+      "on_time": "On Time",
+      "late": "Late",
+      "days_late": "Days Late",
+      "score": "Score",
+      "yes": "Yes",
+      "no": "No",
+      "all": "All",
+      "none": "None",
+      "item": "Item",
+      "name": "Name",
+      "sku": "SKU",
+      "description": "Description",
+      "unit_cost": "Unit Cost"
+    },
+    "action": {
+      "save": "Save",
+      "save_draft": "Save Draft",
+      "submit": "Submit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "view": "View",
+      "export_pdf": "Export PDF",
+      "change_status": "Change Status",
+      "convert_to_po": "Convert to PO",
+      "select_all": "Select All",
+      "accept_all": "Accept All",
+      "reject_all": "Reject All",
+      "clear_selection": "Clear Selection",
+      "open_match_page": "Open Match Page",
+      "execute_match": "Execute Match",
+      "remove_line": "Remove Line",
+      "add_line": "Add Line",
+      "select_multiple": "Select Multiple Items from Catalog",
+      "view_all": "View All",
+      "new": "New",
+      "back_to_list": "Back to List",
+      "apply_filters": "Apply Filters",
+      "reset_filters": "Reset Filters"
+    },
+    "grn": {
+      "title": "Goods Received Note",
+      "new_title": "New GRN",
+      "edit_title": "Edit GRN",
+      "subtitle": "Goods receiving and quality control.",
+      "fields": {
+        "grn_number": "GRN Number",
+        "linked_po": "Source Purchase Order",
+        "supplier": "Supplier",
+        "reception_date": "Reception Date",
+        "expected_date": "Expected Date",
+        "delivery_status": "Delivery Status",
+        "warehouse": "Warehouse",
+        "carrier": "Carrier",
+        "delivery_note_ref": "Delivery Note Ref",
+        "delivery_note_file": "Delivery Note File",
+        "internal_notes": "Internal Notes",
+        "received_by": "Received By",
+        "received_at": "Received Date",
+        "partial_delivery": "Partial Delivery",
+        "delivery_on_time": "Delivered On Time",
+        "overall_qc_result": "Overall QC Result",
+        "qc_performed_by": "QC Performed By",
+        "qc_performed_at": "QC Performed At",
+        "qc_findings": "QC Findings & Notes",
+        "storage_location": "Storage Location",
+        "zone": "Zone",
+        "batch_number": "Batch Number",
+        "serial_numbers": "Serial Numbers",
+        "line_notes": "Line Notes",
+        "qc_result": "QC Result",
+        "rejection_reason": "Rejection Reason",
+        "rejection_photos": "Rejection Photos",
+        "qc_photos": "QC Photos",
+        "certificates_received": "Certificates Received",
+        "certificate_files": "Certificate Files",
+        "non_stockable": "Non-Stockable",
+        "unit_cost_ht": "Unit Cost (HT)",
+        "qc_status": "QC Status",
+        "no_zone": "No zone",
+        "no_path": "No path"
+      },
+      "action": {
+        "receive_qc": "Receive & QC",
+        "view_details": "View Details",
+        "batch_receive": "Batch Receive",
+        "apply_batch": "Apply to All Lines",
+        "done": "Done",
+        "close": "Close",
+        "cancel": "Cancel"
+      },
+      "modal": {
+        "title_receive_qc": "Receive QC Line",
+        "title_batch_receive": "Batch Receive",
+        "subtitle_batch_receive": "Receive multiple lines at once with shared storage routing.",
+        "section_quantities": "Quantities",
+        "section_logistics": "Logistics & Financials",
+        "section_global_routing": "Global Storage Routing",
+        "section_storage_routing": "Storage Routing",
+        "col_variant_item": "Variant / Item",
+        "lines_pending": "lines pending",
+        "batch_all_processed": "All lines have been processed."
+      },
+      "qc_results": {
+        "passed": "Passed",
+        "partial": "Partial",
+        "failed": "Failed",
+        "passed_with_remarks": "Passed w/ Remarks",
+        "rejected": "Rejected",
+        "pending": "Pending"
+      },
+      "validation": {
+        "location_required": "Storage location is required"
+      },
+      "qty": {
+        "ordered": "Qty Ordered",
+        "received": "Qty Received",
+        "accepted": "Qty Accepted",
+        "rejected": "Qty Rejected",
+        "units": "units"
+      },
+      "timing": {
+        "reception_date": "Reception Date",
+        "expected_date": "Expected Date",
+        "days_late": "Days Late",
+        "on_time": "On Time",
+        "late": "Late",
+        "delivery_performance": "Delivery Performance"
+      },
+      "variance": {
+        "on_target": "On Target",
+        "over_received": "Over Received",
+        "under_received": "Under Received",
+        "variance_warning": "Received quantity differs from ordered"
+      },
+      "tabs": {
+        "lines": "Lines & Quantities",
+        "qc": "Quality Control",
+        "match": "3-Way Match",
+        "rejected": "Rejected Items",
+        "logs": "Activity Logs"
+      },
+      "sections": {
+        "reference_context": "Reference & Context",
+        "receiving_details": "Receiving Details",
+        "receiving_qc": "Receiving & QC per Line",
+        "delivery_header": "Delivery Header",
+        "supplier_info": "Supplier Info",
+        "reception_info": "Reception Details",
+        "delivery_performance": "Delivery Performance",
+        "qc_summary": "QC Summary",
+        "notes_remarks": "Notes & QC Remarks",
+        "rejected_goods": "Rejected Goods"
+      },
+      "empty": {
+        "no_lines": "No Lines",
+        "select_po": "Select a Purchase Order to populate lines.",
+        "no_rejected": "No rejected items"
+      },
+      "alerts": {
+        "locked": "This GRN is stocked and locked.",
+        "qc_review": "This GRN is currently {status}. Review QC findings before transitioning.",
+        "missing_location": "Cannot confirm GRN: Some lines are missing a storage location.",
+        "required_fields": "PO, Supplier and at least one line are required."
+      },
+      "match": {
+        "title": "3-Way Match",
+        "subtitle": "Connect PO → GRN → Invoice using the supplier delivery note reference.",
+        "key_label": "Key"
+      },
+      "snackbar": {
+        "created_success": "GRN created successfully",
+        "updated_success": "GRN updated successfully",
+        "deleted_success": "GRN deleted successfully",
+        "status_updated": "Status updated successfully",
+        "error_save": "Failed to save GRN",
+        "error_delete": "Failed to delete GRN",
+        "error_status": "Failed to update status",
+        "error_load": "Failed to load GRN details",
+        "error_po_populate": "Error auto-populating from PO",
+        "error_generic": "An error occurred"
+      }
+    },
+    "ipr": {
+      "title": "Internal Purchase Request",
+      "new_title": "New IPR",
+      "subtitle": "Manage internal purchase request details.",
+      "snackbar": {
+        "created_success": "IPR created successfully",
+        "updated_success": "IPR updated successfully",
+        "deleted_success": "IPR deleted successfully",
+        "status_updated": "Status updated successfully",
+        "error_save": "Failed to save IPR. Please check inputs.",
+        "error_delete": "Failed to delete IPR",
+        "error_status": "Failed to update status",
+        "error_generic": "An error occurred",
+        "error_requested_by": "Requested By is required",
+        "error_no_lines": "At least one line is required.",
+        "error_variant_load": "Failed to load item variants."
+      }
+    },
+    "rfq": {
+      "title": "Request for Quotation",
+      "new_title": "New RFQ",
+      "subtitle": "Manage request for quotation details.",
+      "snackbar": {
+        "created_success": "RFQ created successfully",
+        "updated_success": "RFQ updated successfully",
+        "deleted_success": "RFQ deleted successfully",
+        "status_updated": "Status updated successfully",
+        "error_save": "Failed to save RFQ",
+        "error_delete": "Failed to delete RFQ",
+        "error_status": "Failed to update status",
+        "error_generic": "An error occurred"
+      }
+    },
+    "po": {
+      "title": "Purchase Order",
+      "new_title": "New PO",
+      "subtitle": "Manage purchase order details.",
+      "snackbar": {
+        "created_success": "PO created successfully",
+        "updated_success": "PO updated successfully",
+        "deleted_success": "PO deleted successfully",
+        "status_updated": "Status updated successfully",
+        "error_save": "Failed to save PO",
+        "error_delete": "Failed to delete PO",
+        "error_status": "Failed to update status",
+        "error_generic": "An error occurred"
+      }
+    },
+    "dashboard": {
+      "title": "Procurement Dashboard",
+      "subtitle": "Overview of procurement activities and performance",
+      "filter": {
+        "date_range": "Date Range",
+        "warehouse": "Warehouse",
+        "from": "From",
+        "to": "To"
+      },
+      "kpi": {
+        "open_iprs": "Open IPRs",
+        "open_iprs_desc": "Draft & submitted requests",
+        "pending_rfqs": "Pending RFQs",
+        "pending_rfqs_desc": "Published quotation requests",
+        "active_pos": "Active POs",
+        "active_pos_desc": "Issued & partially received",
+        "pending_grns": "Pending GRNs",
+        "pending_grns_desc": "POs issued but no GRN"
+      },
+      "pipeline": {
+        "title": "Procurement Pipeline",
+        "subtitle": "Document flow across procurement stages"
+      },
+      "scorecard": {
+        "title": "Supplier Scorecard",
+        "subtitle": "Performance scoring based on delivery and quality metrics",
+        "supplier": "Supplier",
+        "overall_score": "Overall Score",
+        "rfq_score": "RFQ Score",
+        "on_time_delivery": "On-Time Delivery",
+        "delivery_quality": "Delivery Quality",
+        "partial_rate": "Partial Delivery Rate",
+        "avg_days_late": "Avg Days Late",
+        "no_suppliers": "No supplier performance data available yet.",
+        "weight_rfq": "RFQ Avg (20%)",
+        "weight_on_time": "On-Time (25%)",
+        "weight_quality": "Quality (25%)",
+        "weight_partial": "Partial (15%)",
+        "weight_days_late": "Days Late (15%)"
+      },
+      "recent": {
+        "title": "Recent Activity",
+        "subtitle": "Latest procurement documents",
+        "no_activity": "No recent activity"
+      },
+      "quick_actions": {
+        "title": "Quick Actions",
+        "new_ipr": "New IPR",
+        "new_rfq": "New RFQ",
+        "new_po": "New PO"
+      }
+    }
+  }
+}

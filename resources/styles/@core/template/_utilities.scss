@@ -1,0 +1,88 @@
+.v-timeline-item {
+  .app-timeline-title {
+    color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity));
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.3125rem;
+  }
+
+  .app-timeline-meta {
+    color: rgba(var(--v-theme-on-surface), var(--v-disabled-opacity));
+    font-size: 11px;
+    line-height: 0.875rem;
+  }
+
+  .app-timeline-text {
+    color: rgba(var(--v-theme-on-surface), var(--v-medium-emphasis-opacity));
+    font-size: 13px;
+    line-height: 1.25rem;
+  }
+}
+
+// ℹ️ Temporary solution as v-spacer style is not getting applied in build version. will remove this after release.
+// VSpacer
+.v-spacer {
+  flex-grow: 1;
+}
+
+// app-logo & app-logo-title
+.app-logo {
+  display: flex;
+  align-items: center;
+  column-gap: 0.75rem;
+
+  .app-logo-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: 0.25px;
+    line-height: 1.5rem;
+    text-transform: none;
+  }
+}
+
+// Hide text next to logo in all navbars so full graphic logo is used directly
+.layout-vertical-nav .nav-header .app-logo-title,
+.layout-horizontal-nav .app-title,
+.layout-navbar .app-logo-title,
+.layout-navbar .app-title,
+.front-page-navbar .app-logo-title,
+.app-brand .app-logo-title {
+  display: none !important;
+}
+
+.wave-brand-logo-container {
+  display: inline-flex;
+  align-items: center;
+
+  .wave-logo-expanded {
+    display: inline-block;
+  }
+
+  .wave-logo-collapsed {
+    display: none;
+  }
+
+  .wave-logo-primary {
+    fill: #2e3192;
+    transition: fill 0.2s ease-in-out;
+  }
+
+  .wave-logo-secondary {
+    fill: #27aae1;
+    transition: fill 0.2s ease-in-out;
+  }
+}
+
+.v-theme--dark {
+  .wave-brand-logo-container .wave-logo-primary {
+    fill: #e3e5f0 !important;
+  }
+}
+
+.text-white-variant {
+  color: rgba(255, 255, 255, 78%) !important;
+}
+
+.bg-custom-background {
+  background-color: rgb(var(--v-table-header-color));
+}

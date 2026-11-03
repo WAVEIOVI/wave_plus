@@ -1,0 +1,54 @@
+{
+  "business_partners": {
+    "addresses": {
+      "created_success": "تمت إضافة العنوان بنجاح",
+      "updated_success": "تم تحديث العنوان بنجاح",
+      "deleted_success": "تم حذف العنوان بنجاح",
+      "set_primary_success": "تم تعيين العنوان الرئيسي بنجاح",
+      "save_error": "فشل حفظ العنوان",
+      "delete_error": "فشل حذف العنوان",
+      "set_primary_error": "فشل تعيين العنوان الرئيسي"
+    },
+    "contacts": {
+      "created_success": "تمت إضافة جهة الاتصال بنجاح",
+      "updated_success": "تم تحديث جهة الاتصال بنجاح",
+      "deleted_success": "تم حذف جهة الاتصال بنجاح",
+      "set_primary_success": "تم تعيين جهة الاتصال الرئيسية بنجاح",
+      "save_error": "فشل حفظ جهة الاتصال",
+      "delete_error": "فشل حذف جهة الاتصال",
+      "set_primary_error": "فشل تعيين جهة الاتصال الرئيسية"
+    },
+    "bank_accounts": {
+      "created_success": "تمت إضافة الحساب البنكي بنجاح",
+      "updated_success": "تم تحديث الحساب البنكي بنجاح",
+      "deleted_success": "تم حذف الحساب البنكي بنجاح",
+      "save_error": "فشل حفظ الحساب البنكي",
+      "delete_error": "فشل حذف الحساب البنكي"
+    },
+    "vat_certs": {
+      "created_success": "تمت إضافة شهادة الضريبة بنجاح",
+      "updated_success": "تم تحديث شهادة الضريبة بنجاح",
+      "deleted_success": "تم حذف شهادة الضريبة بنجاح",
+      "save_error": "فشل حفظ شهادة الضريبة",
+      "delete_error": "فشل حذف شهادة الضريبة"
+    },
+    "documents": {
+      "saved_success": "تم حفظ المستند بنجاح",
+      "deleted_success": "تم حذف المستند بنجاح",
+      "download_started": "بدأ التنزيل",
+      "download_error": "فشل تنزيل المستند",
+      "save_error": "فشل حفظ المستند",
+      "delete_error": "فشل حذف المستند",
+      "process_error": "تعذر معالجة المستند"
+    },
+    "logo": {
+      "missing_id": "معرف شريك الأعمال مفقود",
+      "updated_success": "تم تحديث الشعار بنجاح",
+      "update_error": "فشل تحديث الشعار"
+    },
+    "messages": {
+      "refresh_error": "فشل تحديث البيانات",
+      "generic_error": "حدث خطأ غير متوقع"
+    }
+  }
+}

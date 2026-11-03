@@ -1,0 +1,393 @@
+{
+  "catalog": {
+    "nav": {
+      "title": "الكتالوج",
+      "items": "عناصر الكتالوج",
+      "blueprints": "مخططات المعدات",
+      "guidelines": "إرشادات الصيانة"
+    },
+    "dashboard": {
+      "title": "لوحة تحكم الكتالوج",
+      "subtitle": "نظرة شاملة على منتجاتك، مخططات المعدات، وإرشادات الصيانة.",
+      "blueprints": "مخططات المعدات",
+      "new_item": "عنصر جديد",
+      "items_by_type": "عناصر الكتالوج حسب النوع",
+      "items_by_type_sub": "توزيع عناصر الكتالوج والمخزون",
+      "blueprints_by_category": "مخططات المعدات حسب الفئة",
+      "blueprints_by_category_sub": "توزيع المخططات عبر الفئات المختلفة",
+      "recent_activity": "النشاط الحديث",
+      "recent_activity_sub": "أحدث العناصر والمخططات المحدثة",
+      "no_data": "لا توجد عناصر كتالوج بعد",
+      "no_blueprints": "لا توجد بيانات مخططات",
+      "total_items": "إجمالي العناصر"
+    },
+    "items": {
+      "list": {
+        "title": "عناصر الكتالوج",
+        "subtitle": "إدارة المنتجات والمستهلكات وخدمات المعدات والأسعار والمتغيرات",
+        "actions": {
+          "add_new": "إضافة عنصر",
+          "export_pdf": "تصدير PDF",
+          "send_mail": "إرسال القائمة بالبريد",
+          "send_single_mail": "إرسال بالبريد",
+          "view": "عرض العنصر",
+          "edit": "تعديل العنصر",
+          "delete": "حذف العنصر",
+          "grid_view": "عرض الشبكة",
+          "list_view": "عرض القائمة"
+        },
+        "kpis": {
+          "total_items": "إجمالي العناصر",
+          "active": "النشطة",
+          "products": "المنتجات",
+          "consumables": "المستهلكات",
+          "servicing": "الخدمات"
+        },
+        "filter": {
+          "title": "تصفية العناصر",
+          "item_type": "نوع العنصر",
+          "category": "الفئة",
+          "status": "الحالة",
+          "brand": "العلامة التجارية",
+          "all_types": "جميع الأنواع",
+          "all_categories": "جميع الفئات",
+          "all_statuses": "جميع الحالات"
+        },
+        "table": {
+          "code": "الرمز",
+          "name": "الاسم",
+          "type": "النوع",
+          "subtype": "النوع الفرعي",
+          "category": "الفئة",
+          "price": "نطاق السعر",
+          "stock": "المخزون",
+          "status": "الحالة",
+          "actions": "الإجراءات",
+          "non_stockable": "غير قابل للتخزين"
+        },
+        "messages": {
+          "delete_success": "تم حذف عنصر الكتالوج بنجاح.",
+          "delete_error": "فشل حذف عنصر الكتالوج.",
+          "create_success": "تم إنشاء العنصر {ref} بنجاح.",
+          "update_success": "تم تحديث العنصر {ref} بنجاح.",
+          "export_pdf_success": "تم تصدير ملف PDF بنجاح.",
+          "export_pdf_error": "فشل تصدير ملف PDF.",
+          "email_success": "تمت جدولة البريد الإلكتروني بنجاح.",
+          "email_error": "فشل إرسال البريد الإلكتروني."
+        },
+        "delete_dialog": {
+          "title": "حذف عنصر الكتالوج",
+          "description": "هل أنت متأكد من رغبتك في حذف هذا العنصر؟ لا يمكن التراجع عن هذا الإجراء."
+        },
+        "empty": {
+          "category": "غير مصنف",
+          "price": "لا يوجد سعر محدد",
+          "stock": "غير متاح"
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "الرئيسية",
+        "breadcrumb_catalog": "الكتالوج",
+        "breadcrumb_items": "العناصر",
+        "title_new": "عنصر كتالوج جديد",
+        "title_edit": "تعديل عنصر الكتالوج",
+        "sections": {
+          "classification": "التصنيف",
+          "general": "المعلومات العامة",
+          "specifications": "المواصفات",
+          "commerce": "التجارة والتسعير",
+          "media": "الوسائط والملفات",
+          "variants": "المتغيرات"
+        },
+        "actions": {
+          "save": "حفظ العنصر",
+          "saving": "جاري الحفظ...",
+          "cancel": "إلغاء",
+          "back_to_list": "العودة إلى القائمة"
+        },
+        "validation": {
+          "select_category": "يرجى تحديد الفئة.",
+          "general_errors": "يرجى تصحيح الأخطاء في المعلومات العامة.",
+          "save_error": "حدث خطأ أثناء حفظ العنصر."
+        }
+      },
+      "types": {
+        "product": "منتج",
+        "consumable": "مستهلك",
+        "eq_servicing": "خدمة معدات"
+      },
+      "statuses": {
+        "active": "نشط",
+        "draft": "مسودة",
+        "discontinued": "متوقف"
+      }
+    },
+    "blueprints": {
+      "list": {
+        "title": "مخططات المعدات",
+        "subtitle": "تعريف التكوينات التقنية ودورات الصيانة ومهام الخدمة",
+        "actions": {
+          "add_new": "إضافة مخطط",
+          "test_bench": "منصة اختبار الفني",
+          "view": "عرض المخطط",
+          "edit": "تعديل المخطط",
+          "delete": "حذف المخطط",
+          "grid_view": "عرض الشبكة",
+          "list_view": "عرض القائمة",
+          "table_view": "عرض الجدول"
+        },
+        "kpis": {
+          "total_blueprints": "إجمالي المخططات",
+          "active": "نشط",
+          "draft": "مسودة",
+          "inactive": "غير نشط"
+        },
+        "filter": {
+          "title": "تصفية المخططات",
+          "status": "الحالة",
+          "equipment_class": "فئة المعدات",
+          "all_statuses": "جميع الحالات",
+          "all_classes": "جميع الفئات"
+        },
+        "table": {
+          "code": "الرمز",
+          "name": "الاسم",
+          "equipment_class": "فئة المعدات",
+          "options": "الخيارات",
+          "cycles": "الدورات",
+          "servicing": "الخدمات",
+          "status": "الحالة",
+          "created_at": "تاريخ الإنشاء",
+          "actions": "الإجراءات"
+        },
+        "delete_dialog": {
+          "title": "حذف مخطط المعدات",
+          "description": "هل أنت متأكد من حذف هذا المخطط؟ لا يمكن التراجع."
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "الرئيسية",
+        "breadcrumb_catalog": "الكتالوج",
+        "breadcrumb_blueprints": "المخططات",
+        "title_new": "مخطط معدات جديد",
+        "title_edit": "تعديل المخطط",
+        "tabs": {
+          "general": "معلومات عامة",
+          "options": "محرك الخيارات",
+          "cycles": "دورات التدخل",
+          "servicing": "الخدمات والمستهلكات",
+          "test_bench": "منصة الاختبار",
+          "guidelines": "الإرشادات"
+        },
+        "actions": {
+          "save": "حفظ المخطط",
+          "saving": "جاري الحفظ...",
+          "cancel": "إلغاء",
+          "back_to_list": "العودة للقائمة",
+          "change_status": "تغيير الحالة",
+          "add_option": "إضافة خيار",
+          "add_interval": "إضافة فترة",
+          "add_service_task": "إضافة مهمة خدمة"
+        },
+        "option": {
+          "add_title": "إضافة خيار مخصص",
+          "edit_title": "تعديل الخيار",
+          "subtitle": "تكوين خيار المعدات والقيم المسموحة",
+          "code": "رمز الخيار *",
+          "code_hint": "يُستخدم في معادلات الحساب",
+          "code_required": "رمز الخيار مطلوب",
+          "data_type": "نوع البيانات *",
+          "data_type_select": "قائمة منسدلة",
+          "data_type_number": "رقم",
+          "data_type_text": "نص",
+          "data_type_boolean": "نعم/لا",
+          "name": "اسم الخيار",
+          "values": "قيم الخيار",
+          "add_value": "إضافة قيمة",
+          "add_value_title": "إضافة قيمة",
+          "edit_value": "تعديل القيمة",
+          "add_first_value": "إضافة أول قيمة",
+          "empty_values": "لا توجد قيم بعد.",
+          "display_label": "التسمية",
+          "value_code": "الرمز *",
+          "numeric_value": "القيمة الرقمية",
+          "unit": "وحدة القياس",
+          "save": "حفظ التغييرات",
+          "add": "إضافة الخيار",
+          "update": "تحديث",
+          "add_short": "إضافة"
+        },
+        "interval": {
+          "add_title": "إضافة فترة صيانة",
+          "edit_title": "تعديل الفترة",
+          "type": "نوع التدخل *",
+          "first": "الفترة الأولى (أشهر) *",
+          "first_hint": "متى يحدث أول تدخل؟",
+          "recurring": "الفترة المتكررة (أشهر)",
+          "recurring_hint": "كم مرة يتكرر بعد الأول؟",
+          "notes": "ملاحظات / تعليمات",
+          "preview": "معاينة الجدول",
+          "first_label": "الأول:",
+          "then_every": "ثم كل:",
+          "months": "أشهر",
+          "months_after": "أشهر بعد التركيب",
+          "one_time": "مرة واحدة فقط"
+        },
+        "status": {
+          "apply": "تطبيق الحالة",
+          "hint": "اختر الحالة التشغيلية لهذا المخطط.",
+          "active_hint": "متاح لمعدات العملاء والصيانة.",
+          "draft_hint": "قيد الإعداد، غير منشور بعد.",
+          "inactive_hint": "مؤرشف / معطل."
+        },
+        "guidelines": {
+          "title": "إرشادات الصيانة",
+          "subtitle": "إجراءات قياسية مرتبطة بهذا المخطط",
+          "attach": "إرفاق إرشاد",
+          "attach_first": "إرفاق أول إرشاد",
+          "search_title": "إرفاق إرشاد صيانة",
+          "already_attached": "الإرشاد مرفق مسبقاً.",
+          "attach_success": "تم إرفاق الإرشاد",
+          "attach_error": "فشل إرفاق الإرشاد",
+          "detach_success": "تم فصل الإرشاد",
+          "detach_error": "فشل فصل الإرشاد",
+          "empty_title": "لا توجد إرشادات مرفقة",
+          "empty_text": "اربط قوائم التحقق وبروتوكولات الفحص.",
+          "hide_steps": "إخفاء الخطوات",
+          "view_steps": "عرض الخطوات",
+          "detach": "فصل الإرشاد",
+          "no_steps": "لا توجد خطوات في هذا الإرشاد."
+        }
+      }
+    },
+    "guidelines": {
+      "list": {
+        "title": "إرشادات الصيانة",
+        "subtitle": "إدارة الإجراءات القياسية والخطوات والتعليمات",
+        "actions": {
+          "add_new": "إضافة إرشاد",
+          "view": "عرض الإرشاد",
+          "edit": "تعديل الإرشاد",
+          "delete": "حذف الإرشاد",
+          "grid_view": "عرض الشبكة",
+          "list_view": "عرض القائمة",
+          "table_view": "عرض الجدول"
+        },
+        "kpis": {
+          "total_guidelines": "إجمالي الإرشادات",
+          "active": "نشط",
+          "inactive": "غير نشط",
+          "total_steps": "إجمالي الخطوات"
+        },
+        "filter": {
+          "title": "تصفية الإرشادات",
+          "status": "الحالة",
+          "all_statuses": "جميع الحالات",
+          "active": "نشط",
+          "inactive": "غير نشط"
+        },
+        "table": {
+          "code": "الرمز",
+          "name": "الاسم",
+          "steps": "الخطوات",
+          "status": "الحالة",
+          "actions": "الإجراءات"
+        },
+        "delete_dialog": {
+          "title": "حذف الإرشاد",
+          "description": "هل أنت متأكد من حذف هذا الإرشاد؟ لا يمكن التراجع."
+        }
+      },
+      "edit": {
+        "breadcrumb_home": "الرئيسية",
+        "breadcrumb_catalog": "الكتالوج",
+        "breadcrumb_guidelines": "الإرشادات",
+        "title_new": "إرشاد جديد",
+        "title_edit": "تعديل الإرشاد",
+        "tabs": {
+          "base": "التعريف",
+          "steps": "الخطوات والتعليمات"
+        },
+        "actions": {
+          "save": "حفظ الإرشاد",
+          "saving": "جاري الحفظ...",
+          "cancel": "إلغاء",
+          "back_to_list": "العودة للقائمة",
+          "add_step": "إضافة خطوة"
+        },
+        "scope": "النطاق والوصف",
+        "empty_steps": "لا توجد خطوات في هذا الإرشاد.",
+        "step": {
+          "add_title": "إضافة خطوة تحقق",
+          "edit_title": "تعديل الخطوة",
+          "subtitle": "تعليمات التحقق للفني",
+          "instruction": "التعليمات",
+          "type": "نوع الاستجابة *",
+          "expected": "القيمة المتوقعة (اختياري)",
+          "required": "خطوة إلزامية أثناء التدخل",
+          "update": "تحديث الخطوة",
+          "save": "حفظ الخطوة",
+          "mandatory": "إلزامي",
+          "optional": "اختياري"
+        }
+      }
+    },
+    "test_bench": {
+      "title": "منصة اختبار الفني",
+      "subtitle": "محاكاة تكوينات المعدات وحساب العمالة والتحقق من معادلات المستهلكات",
+      "select_blueprint": "اختر المخطط",
+      "choose_options": "تكوين الخيارات",
+      "equipment_qty": "كمية المعدات",
+      "run_simulation": "تشغيل المحاكاة",
+      "reset": "إعادة تعيين",
+      "results": "نتائج المحاكاة",
+      "labor_lines": "مهام الخدمة والعمالة",
+      "consumables": "المستهلكات المطلوبة",
+      "checklist": "قائمة التحقق التقنية",
+      "controls": "عناصر التحكم",
+      "controls_hint": "اختر مخططاً وحدد الخيارات والكمية",
+      "include_tasks": "تضمين مهام الخدمة",
+      "print": "طباعة",
+      "resolving": "جارٍ حساب المعادلات والخطوط...",
+      "load_error": "فشل تحميل المخططات",
+      "details_error": "فشل تحميل تفاصيل المخطط",
+      "calc_error": "حدث خطأ في الحساب",
+      "no_consumables": "لا توجد مستهلكات لهذه التهيئة.",
+      "no_services": "لا توجد مهام خدمة.",
+      "no_guidelines": "لا توجد إرشادات مرتبطة بهذا المخطط.",
+      "kpi_units": "وحدات المعدات",
+      "total_lines": "إجمالي الخطوط",
+      "empty_title": "جاهز للمحاكاة التقنية",
+      "empty_text": "اختر مخطط معدات لاختبار الخيارات والعمالة والقطع."
+    },
+    "blueprints": {
+      "edit": {
+        "title_new": "مخطط معدات جديد",
+        "title_edit": "تعديل المخطط",
+        "breadcrumb_home": "الرئيسية",
+        "breadcrumb_catalog": "الكتالوج",
+        "breadcrumb_blueprints": "المخططات",
+        "tabs": {
+          "general": "المعلومات العامة",
+          "options": "محرك الخيارات",
+          "cycles": "دورات التدخل",
+          "servicing": "الصيانة والمستهلكات",
+          "test_bench": "منصة الاختبار",
+          "guidelines": "الإرشادات"
+        },
+        "options": {
+          "allowed_values_count": "{count} خيارات قيم مكونة"
+        },
+        "cycles": {
+          "first_interval": "الأول: {months} شهر",
+          "repeats_every": "يتكرر كل {months} شهر"
+        },
+        "servicing": {
+          "item_code": "رمز الصنف: {code}",
+          "required_consumables_count": "المستهلكات وقطع الغيار المطلوبة ({count}):",
+          "formula_quantity": "المعادلة / الكمية"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,309 @@
+{
+  "salesOrders": {
+    "title": "Commandes de Vente",
+    "singular": "Commande de Vente",
+    "newOrder": "Nouvelle Commande",
+    "editOrder": "Modifier la Commande",
+    "viewOrder": "Voir la Commande",
+    "orderDetails": "Détails de la Commande",
+    "workspace": "Espace de Travail Commande",
+
+    "types": {
+      "sales": "Vente (Biens)",
+      "service": "Commande de Service"
+    },
+
+    "statuses": {
+      "draft": "Brouillon",
+      "submitted": "Soumise",
+      "under_review": "En Révision",
+      "accepted": "Acceptée",
+      "rejected": "Rejetée",
+      "cancelled": "Annulée",
+      "completed": "Terminée",
+      "closed": "Clôturée"
+    },
+
+    "fulfillmentStatuses": {
+      "pending": "Non Démarrée",
+      "unfulfilled": "Non Démarrée",
+      "partially_fulfilled": "Partiellement Exécutée",
+      "fulfilled": "Exécutée"
+    },
+
+    "origins": {
+      "manual": "Saisie Manuelle / Directe",
+      "quotation": "Depuis Devis",
+      "from_quotation": "Depuis Devis",
+      "contract_call_off": "Appel de Contrat (MSA)",
+      "from_contract": "Appel de Contrat (MSA)"
+    },
+
+    "fulfillmentModes": {
+      "own_delivery": "Livraison Propre",
+      "customer_pickup": "Retrait Client",
+      "field_service": "Service sur Site",
+      "on_site": "Sur Site"
+    },
+
+    "sections": {
+      "workflowProgress": "Progression du Workflow",
+      "nextAction": "Action Suivante",
+      "foundation": "Fondation de la Commande",
+      "lines": "Lignes",
+      "services": "Services",
+      "deliverables": "Services et Livrables",
+      "review": "Révision de Faisabilité",
+      "fulfillment": "Résumé d'Exécution",
+      "downstream": "Exécution en Aval",
+      "details": "Détails",
+      "notes": "Notes"
+    },
+
+    "fields": {
+      "reference": "Référence",
+      "client": "Client",
+      "orderType": "Type de Commande",
+      "origin": "Origine",
+      "fulfillmentMode": "Mode d'Exécution",
+      "deliveryWindow": "Fenêtre de Livraison",
+      "requestedWindow": "Fenêtre Demandée",
+      "committedWindow": "Fenêtre Engagée",
+      "assignedTo": "Assigné à",
+      "paymentTerms": "Conditions de Paiement",
+      "currency": "Devise",
+      "clientPOReference": "Référence BC Client",
+      "clientPODocument": "Document BC Client",
+      "internalNotes": "Notes Internes",
+      "clientNotes": "Notes Client",
+      "totalHT": "Total HT",
+      "totalTVA": "TVA",
+      "totalTTC": "Total TTC"
+    },
+
+    "actions": {
+      "save": "Enregistrer",
+      "saveDraft": "Enregistrer le Brouillon",
+      "submit": "Soumettre pour Révision",
+      "review": "Réviser la Faisabilité",
+      "accept": "Accepter la Commande",
+      "reject": "Rejeter",
+      "cancel": "Annuler la Commande",
+      "delete": "Supprimer",
+      "edit": "Modifier",
+      "viewLogistics": "Voir la Logistique",
+      "viewOperations": "Voir les Opérations",
+      "viewCommitment": "Voir le Document d'Engagement",
+      "addItems": "Ajouter des Articles",
+      "addLine": "Ajouter une Ligne"
+    },
+
+    "nextActions": {
+      "createOrder": {
+        "title": "Créer la Commande",
+        "description": "Remplir les champs requis et enregistrer cette commande en tant que brouillon"
+      },
+      "saveChanges": {
+        "title": "Enregistrer les Modifications",
+        "description": "Vous avez des modifications non enregistrées. Enregistrez la commande avant de la soumettre"
+      },
+      "submitForReview": {
+        "title": "Soumettre pour Révision",
+        "description": "Prêt à soumettre cette commande pour évaluation de faisabilité et approbation"
+      },
+      "reviewFeasibility": {
+        "title": "Réviser la Faisabilité",
+        "description": "Évaluer le crédit, la disponibilité en stock et la capacité avant d'accepter cette commande"
+      },
+      "acceptOrder": {
+        "title": "Accepter la Commande",
+        "description": "Révision de faisabilité terminée avec succès. Acceptez cette commande pour générer les documents en aval"
+      },
+      "viewFulfillment": {
+        "title": "Voir l'Exécution",
+        "description": "La commande a été acceptée. Suivez la logistique et la livraison dans le module approprié"
+      },
+      "orderCompleted": {
+        "title": "Commande Terminée",
+        "description": "Cette commande a été exécutée et terminée"
+      },
+      "orderCancelled": {
+        "title": "Commande Annulée",
+        "description": "Cette commande a été annulée et ne peut pas être reprise"
+      },
+      "orderRejected": {
+        "title": "Commande Rejetée",
+        "description": "Cette commande a été rejetée lors de la révision"
+      }
+    },
+
+    "feasibility": {
+      "title": "Révision de Faisabilité",
+      "overallAssessment": "Évaluation Globale",
+      "creditEvaluation": "Évaluation du Crédit",
+      "stockAvailability": "Disponibilité en Stock",
+      "teamCapacity": "Capacité de l'Équipe",
+      "reviewAudit": "Détails de l'Audit de Révision",
+      "reviewedBy": "Révisé Par",
+      "reviewedAt": "Révisé Le",
+      "decision": "Décision",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "rejectionReason": "Raison du Rejet",
+
+      "creditResults": {
+        "sufficient": "Suffisant",
+        "warning": "Avertissement",
+        "exceeded": "Dépassé"
+      },
+
+      "stockResults": {
+        "sufficient": "Suffisant",
+        "partial": "Partiel",
+        "insufficient": "Insuffisant"
+      },
+
+      "capacityResults": {
+        "available": "Disponible",
+        "constrained": "Contraint",
+        "unavailable": "Indisponible"
+      },
+
+      "statuses": {
+        "pending": "En Attente de Révision",
+        "approved": "Approuvée",
+        "rejected": "Rejetée"
+      },
+
+      "assessments": {
+        "ready": "PRÊTE",
+        "readyWithWarning": "PRÊTE AVEC AVERTISSEMENT",
+        "blocked": "BLOQUÉE",
+        "pending": "EN ATTENTE"
+      },
+
+      "messages": {
+        "ready": "Tous les contrôles sont réussis",
+        "readyWithWarning": "Procéder avec prudence",
+        "blocked": "Les problèmes critiques doivent être résolus",
+        "pending": "En attente d'évaluation de faisabilité",
+        "creditDescription": "Performance de paiement du client et limite de crédit par rapport au total de la commande",
+        "stockDescription": "Disponibilité du stock en entrepôt dans tous les entrepôts actifs",
+        "capacityDescription": "Planning de l'équipe de techniciens et capacité de livraison de service",
+        "runCreditCheck": "Exécuter la Vérification du Crédit",
+        "runStockCheck": "Exécuter la Vérification du Stock",
+        "runCapacityCheck": "Exécuter la Vérification de Capacité",
+        "secondaryApprovalRequired": "Commande de grande valeur : approbation secondaire requise"
+      }
+    },
+
+    "fulfillment": {
+      "title": "Résumé d'Exécution",
+      "progress": "Progression Globale",
+      "ordered": "Commandé",
+      "reserved": "Réservé",
+      "delivered": "Livré",
+      "total": "Total",
+      "scheduled": "Planifié",
+      "inProgress": "En Cours",
+      "completed": "Terminé",
+      "lineByLineStatus": "État Ligne par Ligne",
+      "trackingMessage": "Le suivi de l'exécution devient disponible après l'acceptation de la commande"
+    },
+
+    "downstream": {
+      "title": "Exécution en Aval",
+      "gcs": "Conditions Générales de Vente (CGV)",
+      "lsa": "Accord de Niveau de Service (ANS)",
+      "dwo": "Ordres de Travail de Livraison (OTL)",
+      "swo": "Ordres de Travail de Service (OTS)",
+      "generated": "Généré",
+      "paymentTerms": "Conditions de Paiement",
+      "leadTime": "Délai Standard",
+      "warrantyPeriod": "Période de Garantie",
+      "responseTime": "Temps de Réponse Standard",
+      "qualityStandard": "Norme de Qualité",
+      "inventoryReservations": "Répartition des Réservations d'Inventaire",
+      "generatedAutomatically": "Les documents sont générés automatiquement lors de l'acceptation de la commande"
+    },
+
+    "lines": {
+      "item": "Article / Produit",
+      "service": "Service / Livrable",
+      "quantity": "Qté",
+      "unitPrice": "Prix Unitaire",
+      "discount": "Remise",
+      "tax": "TVA",
+      "total": "Total TTC",
+      "actions": "Actions",
+      "editLine": "Modifier la Ligne",
+      "deleteLine": "Supprimer",
+      "adHoc": "Personnalisé",
+      "sku": "SKU",
+      "variant": "Variante",
+      "deliveryDate": "Date de Livraison",
+      "targetSite": "Site Cible",
+      "itemName": "Nom de l'Article",
+      "calculatedTotals": "Totaux Calculés",
+      "subtotalHT": "Sous-total HT",
+      "taxAmount": "TVA",
+      "emptyState": "Aucune ligne ajoutée"
+    },
+
+    "dialogs": {
+      "rejectOrder": {
+        "title": "Rejeter la Commande de Vente",
+        "description": "Veuillez fournir une raison pour rejeter cette commande de vente. Cela sera enregistré de façon permanente.",
+        "confirm": "Confirmer le Rejet"
+      },
+      "feasibilityReview": {
+        "title": "Effectuer la Révision de Faisabilité",
+        "description": "Évaluer le crédit, le stock et la faisabilité opérationnelle pour approuver ou rejeter cette commande de vente.",
+        "blocked": "Approbation Bloquée"
+      },
+      "deleteConfirm": {
+        "title": "Supprimer la Commande de Vente",
+        "description": "Êtes-vous sûr de vouloir supprimer cette commande de vente ? Cette action est irréversible."
+      }
+    },
+
+    "messages": {
+      "created": "Commande de vente créée avec succès",
+      "updated": "Commande de vente mise à jour avec succès",
+      "deleted": "Commande de vente supprimée avec succès",
+      "submitted": "Commande de vente soumise pour révision de faisabilité",
+      "accepted": "Commande de vente acceptée — documents en aval générés",
+      "rejected": "Commande de vente rejetée",
+      "cancelled": "Commande de vente annulée",
+      "clientRequired": "Le client est requis",
+      "saveFailed": "Échec de l'enregistrement de la commande de vente",
+      "reviewRecorded": "Révision de faisabilité enregistrée avec succès",
+      "creditCheck": "Évaluation du crédit terminée",
+      "stockCheck": "Évaluation du stock terminée"
+    },
+
+    "validation": {
+      "clientRequired": "Le client est requis",
+      "linesRequired": "Au moins une ligne est requise",
+      "quantityMinimum": "La quantité doit être supérieure à 0",
+      "priceMinimum": "Le prix doit être supérieur ou égal à 0",
+      "rejectionReasonRequired": "La raison du rejet est requise"
+    },
+
+    "foundation": {
+      "locked": "Verrouillé",
+      "editable": "Modifiable",
+      "customer": "Client",
+      "sourceDocument": "Document Source",
+      "lockedNotice": "Les champs de fondation sont verrouillés après la création de la commande pour maintenir la cohérence des données"
+    },
+
+    "workflowStages": {
+      "draft": "Brouillon",
+      "review": "Révision",
+      "accepted": "Acceptée",
+      "fulfillment": "Exécution",
+      "completed": "Terminée"
+    }
+  }
+}

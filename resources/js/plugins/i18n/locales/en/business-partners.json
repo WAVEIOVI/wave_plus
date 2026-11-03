@@ -1,0 +1,54 @@
+{
+  "business_partners": {
+    "addresses": {
+      "created_success": "Address added successfully",
+      "updated_success": "Address updated successfully",
+      "deleted_success": "Address deleted successfully",
+      "set_primary_success": "Primary address updated successfully",
+      "save_error": "Failed to save address",
+      "delete_error": "Failed to delete address",
+      "set_primary_error": "Failed to set primary address"
+    },
+    "contacts": {
+      "created_success": "Contact added successfully",
+      "updated_success": "Contact updated successfully",
+      "deleted_success": "Contact deleted successfully",
+      "set_primary_success": "Primary contact updated successfully",
+      "save_error": "Failed to save contact",
+      "delete_error": "Failed to delete contact",
+      "set_primary_error": "Failed to set primary contact"
+    },
+    "bank_accounts": {
+      "created_success": "Bank account added successfully",
+      "updated_success": "Bank account updated successfully",
+      "deleted_success": "Bank account deleted successfully",
+      "save_error": "Failed to save bank account",
+      "delete_error": "Failed to delete bank account"
+    },
+    "vat_certs": {
+      "created_success": "VAT certificate added successfully",
+      "updated_success": "VAT certificate updated successfully",
+      "deleted_success": "VAT certificate deleted successfully",
+      "save_error": "Failed to save VAT certificate",
+      "delete_error": "Failed to delete VAT certificate"
+    },
+    "documents": {
+      "saved_success": "Document saved successfully",
+      "deleted_success": "Document deleted successfully",
+      "download_started": "Download started",
+      "download_error": "Failed to download document",
+      "save_error": "Failed to save document",
+      "delete_error": "Failed to delete document",
+      "process_error": "Unable to process document"
+    },
+    "logo": {
+      "missing_id": "Missing business partner identifier",
+      "updated_success": "Logo updated successfully",
+      "update_error": "Failed to update the logo"
+    },
+    "messages": {
+      "refresh_error": "Failed to refresh data",
+      "generic_error": "An unexpected error occurred"
+    }
+  }
+}

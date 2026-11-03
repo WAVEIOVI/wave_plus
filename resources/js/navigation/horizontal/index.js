@@ -1,0 +1,16 @@
+import applications from './applications'
+import businessPartners from './business-partners'
+import catalog from './catalog'
+import clientAssets from './client-assets'
+import communications from './communications'
+import crmSales from './crm-sales'
+import dashboard from './dashboard'
+import financialCenter from './financial-center'
+import logistics from './logistics'
+import peopleSkills from './people-skills'
+import procurement from './procurement'
+import reports from './reports'
+import settingsAdministration from './settings-administration'
+import user from './user'
+
+export default [...applications, ...dashboard, ...reports, ...user, ...businessPartners, ...catalog, ...settingsAdministration, ...procurement, ...crmSales, ...clientAssets, ...logistics, ...peopleSkills, ...financialCenter, ...communications]

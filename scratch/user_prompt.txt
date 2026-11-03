@@ -1,0 +1,181 @@
+<USER_REQUEST>
+Work on the current WAVE PLUS project and implement the **Financial Center** as the last major operational module.
+
+This is a foundation implementation, not a complex accounting-system rewrite.
+
+Respect the existing WAVE PLUS architecture and standards exactly:
+
+* Laravel 10
+* existing Modules structure
+* existing Models / Services / Requests / Controllers / Resources
+* Vue 3 + `<script setup>` + Vuetify
+* Pinia + Axios
+* existing pages / views / components / composables / stores patterns
+* existing i18n
+* existing permissions/navigation conventions
+* mobile-friendly UI
+* edit/reuse existing structures before creating new ones
+* do not modify unrelated modules unnecessarily
+* do not introduce a second architecture
+
+# CORE CONCEPT
+
+Financial Center owns **financial truth**, while operational modules own operational truth.
+
+Use this principle:
+
+**Operational modules create reality → Financial Center translates reality into money → Reporting consumes Financial Center outputs.**
+
+Examples:
+
+Sales Order = commercial commitment
+Delivery Note = physical delivery
+Sales Invoice = receivable
+Purchase Order = purchasing commitment
+GRN = physical receipt
+Supplier Invoice = payable
+Fleet expense = vehicle cost
+Mission cost = operational cost
+Payment = cash movement
+
+Do NOT put financial logic directly into every operational module.
+
+---
+
+# 1. FINANCIAL CENTER STRUCTURE
+
+Create a clean module with these sections:
+
+### Dashboard
+
+### Customers / Receivables
+
+### Suppliers / Payables
+
+### Invoices
+
+### Payments
+
+### Cash & Banks
+
+### Expenses
+
+### Profitability
+
+### Cost Centers
+
+### Budgets
+
+### Accounting
+
+### Financial Periods
+
+Keep the UI simple and practical.
+
+Do not build a huge accounting application.
+
+---
+
+# 2. FINANCIAL DASHBOARD
+
+Create a management dashboard showing:
+
+* Cash balance
+* Bank balance
+* Accounts receivable
+* Accounts payable
+* Overdue receivables
+* Overdue payables
+* Sales
+* Purchases
+* Expenses
+* 
+<truncated 12766 bytes>
+TION
+
+Before finishing, verify these end-to-end flows:
+
+### Customer
+
+SO
+→ execution
+→ Sales Invoice
+→ Receivable
+→ Payment
+→ Customer balance
+
+### Supplier
+
+PO
+→ GRN
+→ Supplier Invoice
+→ Payable
+→ Payment
+
+### Expense
+
+Vehicle / Mission / Department
+→ Expense
+→ Cost Center
+→ Financial Transaction
+
+### Profitability
+
+SO/SWO/Mission
+→ Revenue
+→ Related Costs
+→ Gross Contribution
+
+### Cash
+
+Payment/Expense
+→ Financial Account
+→ Balance
+→ Financial Timeline
+
+### Period
+
+Financial transaction
+→ Open Period
+
+Closed Period
+→ modification protected
+
+Finally:
+
+* search for inconsistent financial fields
+* verify all API contracts
+* verify permissions
+* verify routes
+* verify stores
+* verify i18n
+* run PHP syntax/tests where available
+* run frontend lint/build where available
+
+At the end provide a concise report:
+
+1. files changed
+2. migrations added
+3. financial entities created
+4. integrations completed
+5. calculations implemented
+6. tests/build/lint executed
+7. remaining limitations
+
+Keep the implementation **simple, coherent, extensible and native to the existing WAVE PLUS architecture**.
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-04T01:44:34+01:00.
+
+The user's current state is as follows:
+Active Document: c:\Dev\Active\project-wave-plus\dev\v0\resources\js\pages\logistics\fleet\providers\index.vue (LANGUAGE_VUE)
+Cursor is on line: 1
+Other open documents:
+- c:\Dev\Active\project-wave-plus\dev\v0\resources\js\pages\logistics\fleet\providers\index.vue (LANGUAGE_VUE)
+Running terminal commands:
+- kiro-cli (in c:\Dev\Active\project-wave-plus\dev\v0, running for 5h13m44s)
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Claude Sonnet 4.6 (Thinking). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>

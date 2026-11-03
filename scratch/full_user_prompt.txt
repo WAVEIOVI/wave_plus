@@ -1,0 +1,901 @@
+<USER_REQUEST>
+Work on the current WAVE PLUS project and implement the **Financial Center** as the last major operational module.
+
+This is a foundation implementation, not a complex accounting-system rewrite.
+
+Respect the existing WAVE PLUS architecture and standards exactly:
+
+* Laravel 10
+* existing Modules structure
+* existing Models / Services / Requests / Controllers / Resources
+* Vue 3 + `<script setup>` + Vuetify
+* Pinia + Axios
+* existing pages / views / components / composables / stores patterns
+* existing i18n
+* existing permissions/navigation conventions
+* mobile-friendly UI
+* edit/reuse existing structures before creating new ones
+* do not modify unrelated modules unnecessarily
+* do not introduce a second architecture
+
+# CORE CONCEPT
+
+Financial Center owns **financial truth**, while operational modules own operational truth.
+
+Use this principle:
+
+**Operational modules create reality → Financial Center translates reality into money → Reporting consumes Financial Center outputs.**
+
+Examples:
+
+Sales Order = commercial commitment
+Delivery Note = physical delivery
+Sales Invoice = receivable
+Purchase Order = purchasing commitment
+GRN = physical receipt
+Supplier Invoice = payable
+Fleet expense = vehicle cost
+Mission cost = operational cost
+Payment = cash movement
+
+Do NOT put financial logic directly into every operational module.
+
+---
+
+# 1. FINANCIAL CENTER STRUCTURE
+
+Create a clean module with these sections:
+
+### Dashboard
+
+### Customers / Receivables
+
+### Suppliers / Payables
+
+### Invoices
+
+### Payments
+
+### Cash & Banks
+
+### Expenses
+
+### Profitability
+
+### Cost Centers
+
+### Budgets
+
+### Accounting
+
+### Financial Periods
+
+Keep the UI simple and practical.
+
+Do not build a huge accounting application.
+
+---
+
+# 2. FINANCIAL DASHBOARD
+
+Create a management dashboard showing:
+
+* Cash balance
+* Bank balance
+* Accounts receivable
+* Accounts payable
+* Overdue receivables
+* Overdue payables
+* Sales
+* Purchases
+* Expenses
+* Gross margin
+* Net cash movement
+
+Also show simple visual sections:
+
+### Cash Flow
+
+Opening balance → Money In → Money Out → Closing balance
+
+### Receivables Aging
+
+Current / 1–30 / 31–60 / 61–90 / 90+
+
+### Payables Aging
+
+Current / 1–30 / 31–60 / 61–90 / 90+
+
+### Profitability
+
+Revenue vs Cost vs Gross Margin
+
+Use real application data where available.
+
+Do not create fake/demo financial data.
+
+---
+
+# 3. CUSTOMER FINANCIAL ACCOUNTS
+
+Reuse the existing Business Partner/customer system.
+
+Do NOT create another customer master.
+
+A customer financial account should show:
+
+* credit limit
+* outstanding balance
+* overdue balance
+* available credit
+* invoices
+* credit notes
+* debit notes
+* payments
+* payment allocations
+* statements
+* aging
+* payment history
+
+The financial chain is:
+
+**Sales Order → Fulfillment → Invoice → Receivable → Payment**
+
+Do not make Sales Order itself the financial truth.
+
+---
+
+# 4. SUPPLIER FINANCIAL ACCOUNTS
+
+Reuse the existing supplier/business-partner system.
+
+A supplier financial account should show:
+
+* outstanding balance
+* overdue balance
+* supplier invoices
+* credit/debit notes
+* payments
+* payment history
+* aging
+* statement
+
+The intended chain is:
+
+**Purchase Order → GRN/Receipt → Supplier Invoice → Payable → Payment**
+
+Keep procurement operational logic inside Procurement.
+
+---
+
+# 5. SALES INVOICES
+
+Create a proper Sales Invoice structure.
+
+Support:
+
+* invoice
+* credit note
+* debit note
+* cancellation/void
+* partial payment
+* payment allocation
+
+Invoices should be able to originate from existing operational data such as:
+
+* Sales Order
+* Delivery Note
+* Service completion
+* Contract
+
+Do not duplicate Sales Order lines unnecessarily.
+
+Reference the originating document.
+
+---
+
+# 6. SUPPLIER INVOICES
+
+Create Supplier Invoice support.
+
+Reference:
+
+* supplier
+* Purchase Order
+* GRN/receipt
+* invoice date
+* due date
+* amounts
+* taxes
+* payment status
+* documents
+
+Where practical, support matching:
+
+**PO → Received → Supplier Invoice**
+
+This should allow later reporting of mismatches.
+
+Keep this simple.
+
+---
+
+# 7. PAYMENTS
+
+Create a unified payment model/structure supporting:
+
+### Money In
+
+* customer payment
+* advance/deposit
+* other income
+* refund/reversal where applicable
+
+### Money Out
+
+* supplier payment
+* employee reimbursement
+* operational expense
+* advance
+* refund
+
+Payment should support:
+
+* date
+* amount
+* method
+* financial account
+* payer/payee
+* reference
+* allocation
+* attachment
+* notes
+
+Allow partial payments and multiple allocations where appropriate.
+
+---
+
+# 8. CASH & BANKS
+
+Create simple Financial Accounts.
+
+Examples:
+
+* Cash
+* Petty Cash
+* Bank Account
+* Other payment account
+
+Each account should have:
+
+* opening balance
+* current balance
+* transactions
+* status
+* reconciliation state
+
+Create a simple transaction list and basic reconciliation workflow.
+
+Do NOT build bank API integrations.
+
+Manual reconciliation is enough for this version.
+
+---
+
+# 9. EXPENSES
+
+Create a simple expense system.
+
+Expenses may come from:
+
+* employees
+* vehicles/fleet
+* Logistics
+* Workshop
+* Operational Hub
+* Administration
+* utilities
+* maintenance
+* subscriptions
+* miscellaneous
+
+Support:
+
+* date
+* category
+* amount
+* tax where applicable
+* financial account
+* cost center
+* related vehicle
+* related SO/SWO/DWO/mission where applicable
+* employee/provider
+* attachment
+* notes
+
+Make the relationship optional where it does not apply.
+
+---
+
+# 10. COST CENTERS
+
+Create a simple reusable Cost Center structure.
+
+Examples:
+
+* Sales
+* Logistics
+* Workshop
+* Field Service
+* HR
+* Administration
+* Operations
+
+Financial transactions/expenses should be assignable to a cost center.
+
+This will later support:
+
+**Revenue → Cost → Margin**
+
+by department.
+
+Do not make cost accounting unnecessarily complex.
+
+---
+
+# 11. PROFITABILITY
+
+This is an important WAVE PLUS feature.
+
+Create profitability views based on real data.
+
+At minimum support:
+
+### By Sales Order
+
+Revenue
+
+* materials
+* labor
+* logistics
+* vehicle/fleet cost
+* subcontracting
+* other costs
+  = Gross Contribution
+
+### By Service Mission / SWO
+
+Revenue
+
+* materials
+* labor
+* vehicle
+* workshop
+* subcontractor
+  = Mission Contribution
+
+Also prepare reusable filtering by:
+
+* Client
+* Sales Order
+* SWO/Mission
+* Vehicle
+* Cost Center
+* Period
+
+Do not calculate fake costs.
+
+Use actual financial/operational transactions available in the system.
+
+Where a cost is not yet available, show it as unavailable rather than inventing it.
+
+---
+
+# 12. FLEET / OPERATIONAL COST INTEGRATION
+
+Use the Fleet module already implemented.
+
+Financial Center should be able to receive/refer to:
+
+* fuel expenses
+* maintenance expenses
+* rental vehicle costs
+* client vehicle costs where financially relevant
+* other vehicle expenses
+
+This should make future:
+
+**Vehicle Cost / Mission**
+
+and
+
+**Vehicle Cost / Period**
+
+analysis possible.
+
+Do not move Fleet ownership to Finance.
+
+---
+
+# 13. PROCUREMENT INTEGRATION
+
+Financial Center must consume procurement outputs.
+
+Target flow:
+
+**PO → GRN → Supplier Invoice → Payable → Payment**
+
+Do not make Procurement itself responsible for payment balances.
+
+Finance owns:
+
+* supplier liability
+* invoice balance
+* payment
+* overdue amount
+
+---
+
+# 14. SALES INTEGRATION
+
+Target flow:
+
+**SO → Delivery/Service Execution → Sales Invoice → Receivable → Payment**
+
+Sales Order remains CRM/Sales responsibility.
+
+Finance only receives the financial consequence.
+
+Add useful financial indicators to SO where appropriate:
+
+* invoice status
+* invoiced amount
+* paid amount
+* outstanding amount
+* margin where available
+
+Do not turn SO into a Finance screen.
+
+---
+
+# 15. LOGISTICS / DELIVERY PROVIDER INTEGRATION
+
+Allow Logistics-related costs to be associated with:
+
+* DWO
+* Delivery Provider
+* Delivery
+* Cost Center
+
+This will later support:
+
+**Delivery Revenue vs Delivery Cost**
+
+and provider profitability/performance analysis.
+
+Do not duplicate Delivery Provider master data.
+
+---
+
+# 16. OPERATIONAL HUB / WORKSHOP INTEGRATION
+
+Allow financial costs to reference:
+
+* SWO
+* Mission
+* Workshop
+* Mobile Workshop
+* Materials
+* Vehicle
+* Labor
+* external service/provider
+
+This should support future:
+
+**Mission Revenue vs Mission Cost**
+
+without moving operational data into Finance.
+
+---
+
+# 17. TAX STRUCTURE
+
+Create a configurable/simple tax structure.
+
+Support:
+
+* tax type
+* tax rate
+* tax amount
+* exemption where applicable
+* net amount
+* tax amount
+* gross amount
+
+Do not hard-code tax percentages throughout the application.
+
+Use configuration/data-driven values.
+
+Do not build complicated country-specific tax filing yet.
+
+---
+
+# 18. CREDIT MANAGEMENT
+
+For customers support:
+
+* credit limit
+* outstanding amount
+* available credit
+* overdue amount
+
+Expose this information to CRM/Sales.
+
+Initially it may be:
+
+* informational
+* warning
+
+Do not automatically block Sales Orders unless the existing authorization architecture supports that cleanly.
+
+Finance should own the credit information.
+
+---
+
+# 19. FINANCIAL PERIODS
+
+Create a simple financial-period structure.
+
+Example:
+
+October 2026
+
+Status:
+
+* Open
+* Closed
+
+Closed periods should prevent uncontrolled modification of finalized financial transactions.
+
+Keep this simple.
+
+---
+
+# 20. FINANCIAL TRANSACTIONS
+
+Create a central financial transaction concept.
+
+Other modules should generate/reference financial events such as:
+
+* Sales Invoice Posted
+* Supplier Invoice Posted
+* Customer Payment
+* Supplier Payment
+* Expense Posted
+* Vehicle Expense
+* Mission Cost
+* Stock-related financial adjustment
+* Other financial adjustments
+
+The Financial Center should become the common financial layer.
+
+Do not let every module create its own competing financial ledger.
+
+---
+
+# 21. ACCOUNTING FOUNDATION
+
+Prepare a simple General Ledger foundation.
+
+Create:
+
+### Chart of Accounts
+
+Example groups:
+
+* Cash
+* Bank
+* Accounts Receivable
+* Accounts Payable
+* Inventory
+* Revenue
+* Purchases
+* Operating Expenses
+
+Create the basic concepts:
+
+* account
+* journal entry
+* debit
+* credit
+* financial period
+
+But do NOT build a huge accounting engine in this phase.
+
+The architecture should be extendable later.
+
+---
+
+# 22. FINANCIAL TIMELINE
+
+Create a reusable financial timeline component.
+
+For a customer, supplier, SO, SWO, vehicle, cost center, etc., show relevant financial events chronologically.
+
+Example:
+
+03 Oct — Sales Invoice — 8,500 TND
+06 Oct — Payment — 3,000 TND
+08 Oct — Credit Note — 500 TND
+15 Oct — Payment — 2,000 TND
+
+Use existing timeline/UI patterns where available.
+
+This should become a useful common component in Financial Center.
+
+---
+
+# 23. DOCUMENTS
+
+Use the existing WAVE PLUS document/media system.
+
+Financial documents should support attachments such as:
+
+* invoices
+* receipts
+* bank documents
+* expense receipts
+* supplier documents
+* payment proof
+
+Do NOT create a second document-storage architecture.
+
+---
+
+# 24. FRONTEND
+
+Follow the existing WAVE PLUS frontend architecture.
+
+Pages should remain thin.
+
+Use:
+
+* focused views
+* reusable sections/components
+* Pinia stores for API/data
+* composables for reusable workflows
+* constants for statuses/options
+
+Avoid giant components.
+
+Make the main screens mobile-friendly.
+
+The Financial Center should feel simple:
+
+**Dashboard → document/list → detail → actions → timeline**
+
+rather than a complicated accounting application.
+
+---
+
+# 25. NAVIGATION + I18N
+
+Create the Financial Center navigation.
+
+Suggested:
+
+Financial Center
+
+* Dashboard
+* Customers / Receivables
+* Suppliers / Payables
+* Invoices
+* Payments
+* Cash & Banks
+* Expenses
+* Profitability
+* Cost Centers
+* Budgets
+* Accounting
+* Financial Periods
+
+Use existing navigation conventions.
+
+Add complete i18n for all user-facing strings.
+
+Maintain the project's supported languages.
+
+No hard-coded UI labels.
+
+---
+
+# 26. REPORTING BOUNDARY
+
+Important:
+
+Do not build the Reporting module here.
+
+Financial Center should expose clean financial data/services/API resources that Reporting can consume later.
+
+Reporting is a consumer of Financial Center data, not the owner of financial calculations.
+
+---
+
+# 27. CLIENT PORTAL BOUNDARY
+
+Do not build Client Portal here.
+
+Prepare the APIs/resources so Client Portal can later expose appropriate:
+
+* invoices
+* payments
+* statements
+* balances
+* financial documents
+
+But do not create portal UI in this task.
+
+---
+
+# 28. DATABASE / BACKEND / FRONTEND HARMONY
+
+For every implemented feature verify:
+
+DB
+→ Migration
+→ Model
+→ Relationship
+→ Request/Validation
+→ Service
+→ Controller
+→ API Resource
+→ Pinia Store
+→ View/Component
+
+No frontend field without backend/database support.
+
+No unused backend field created only for appearance.
+
+Use existing project ID/ULID conventions.
+
+Use foreign keys and indexes appropriately.
+
+---
+
+# 29. IMPORTANT ARCHITECTURE RULES
+
+Do NOT:
+
+* create another customer/supplier master
+* create another document system
+* create another inventory valuation system
+* put payment logic inside Sales Orders
+* put accounting logic directly inside Logistics
+* put accounting logic directly inside HR
+* turn Reporting into Finance
+* build complex bank integrations
+* build advanced accounting features not required now
+* duplicate financial data unnecessarily
+
+The principle is:
+
+**Operational modules own operations.
+Financial Center owns money.
+Reporting consumes financial/operational outputs.
+Client Portal exposes selected outputs.**
+
+---
+
+# 30. IMPLEMENTATION ORDER
+
+Implement in this order:
+
+1. Database foundation
+2. Financial accounts / chart of accounts
+3. Financial transactions
+4. Customers / receivables
+5. Suppliers / payables
+6. Invoices
+7. Payments
+8. Cash & bank accounts
+9. Expenses
+10. Cost centers
+11. Profitability
+12. Financial periods
+13. Dashboard
+14. Integration with existing SO / Procurement / Inventory / Logistics / Operational Hub / Fleet
+15. Navigation + i18n
+16. Final cleanup and verification
+
+Do not build empty frontend screens before their backend foundation exists.
+
+---
+
+# 31. FINAL VERIFICATION
+
+Before finishing, verify these end-to-end flows:
+
+### Customer
+
+SO
+→ execution
+→ Sales Invoice
+→ Receivable
+→ Payment
+→ Customer balance
+
+### Supplier
+
+PO
+→ GRN
+→ Supplier Invoice
+→ Payable
+→ Payment
+
+### Expense
+
+Vehicle / Mission / Department
+→ Expense
+→ Cost Center
+→ Financial Transaction
+
+### Profitability
+
+SO/SWO/Mission
+→ Revenue
+→ Related Costs
+→ Gross Contribution
+
+### Cash
+
+Payment/Expense
+→ Financial Account
+→ Balance
+→ Financial Timeline
+
+### Period
+
+Financial transaction
+→ Open Period
+
+Closed Period
+→ modification protected
+
+Finally:
+
+* search for inconsistent financial fields
+* verify all API contracts
+* verify permissions
+* verify routes
+* verify stores
+* verify i18n
+* run PHP syntax/tests where available
+* run frontend lint/build where available
+
+At the end provide a concise report:
+
+1. files changed
+2. migrations added
+3. financial entities created
+4. integrations completed
+5. calculations implemented
+6. tests/build/lint executed
+7. remaining limitations
+
+Keep the implementation **simple, coherent, extensible and native to the existing WAVE PLUS architecture**.
+
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-04T01:44:34+01:00.
+
+The user's current state is as follows:
+Active Document: c:\Dev\Active\project-wave-plus\dev\v0\resources\js\pages\logistics\fleet\providers\index.vue (LANGUAGE_VUE)
+Cursor is on line: 1
+Other open documents:
+- c:\Dev\Active\project-wave-plus\dev\v0\resources\js\pages\logistics\fleet\providers\index.vue (LANGUAGE_VUE)
+Running terminal commands:
+- kiro-cli (in c:\Dev\Active\project-wave-plus\dev\v0, running for 5h13m44s)
+</ADDITIONAL_METADATA>
+<USER_SETTINGS_CHANGE>
+The user changed setting `Model Selection` from None to Claude Sonnet 4.6 (Thinking). No need to comment on this change if the user doesn't ask about it. If reporting what model you are, please use a human readable name instead of the exact string.
+</USER_SETTINGS_CHANGE>
