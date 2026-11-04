@@ -12,7 +12,7 @@ class ExportClientsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('viewAny', Client::class) ?? false;
+        return $this->user()?->can('export', Client::class) ?? false;
     }
 
     protected function prepareForValidation(): void

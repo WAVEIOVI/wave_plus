@@ -12,6 +12,7 @@ import {
   appendSignatureToHtml,
   htmlToPlainText,
 } from '../../resources/js/views/communications/email/utils/signatureUtils.js'
+import { ability } from '../../resources/js/plugins/casl/ability.js'
 import { isDeepEqual, useDirtyState } from '../../resources/js/composables/shared/useDirtyState.js'
 import { useAppSnackbar } from '../../resources/js/composables/useAppSnackbar.js'
 import { findFieldError, parseServerErrors } from '../../resources/js/composables/shared/useServerErrors.js'
@@ -1757,18 +1758,24 @@ describe('smart composer signature & message utils', () => {
 
   it('appendSignatureToHtml prevents duplicate signature insertion', () => {
     // 1st append
+
     const step1 = appendSignatureToHtml(sampleBody, personalSig)
+
     assert.ok(step1.includes('wp-signature-personal'))
     assert.equal(step1.split('wp-signature-personal').length - 1, 1)
 
     // 2nd append with company signature replaces personal signature cleanly
+
     const step2 = appendSignatureToHtml(step1, companySig)
+
     assert.ok(!step2.includes('wp-signature-personal'))
     assert.ok(step2.includes('wp-signature-company'))
     assert.equal(step2.split('wp-signature-company').length - 1, 1)
 
     // Append empty or none strips signature
+
     const step3 = appendSignatureToHtml(step2, '')
+
     assert.ok(!step3.includes('wp-signature'))
     assert.equal(step3, sampleBody)
   })
@@ -1784,6 +1791,216 @@ describe('smart composer signature & message utils', () => {
     assert.ok(!text.includes('&amp;'))
   })
 })
+
+describe('Vuexy CASL Business Partners ability & permissions', () => {
+  it('normalizes entity CRUD actions from backend Spatie permissions', () => {
+    ability.setTestPermissions(['read-clients', 'create-clients', 'edit-clients', 'delete-clients', 'export-clients'])
+
+    assert.equal(ability.can('read', 'clients'), true)
+    assert.equal(ability.can('create', 'clients'), true)
+    assert.equal(ability.can('update', 'clients'), true)
+    assert.equal(ability.can('edit', 'clients'), true)
+    assert.equal(ability.can('delete', 'clients'), true)
+    assert.equal(ability.can('export', 'clients'), true)
+
+    // Other partner types remain unauthorized
+    assert.equal(ability.can('read', 'suppliers'), false)
+    assert.equal(ability.can('create', 'suppliers'), false)
+    assert.equal(ability.can('update', 'suppliers'), false)
+    assert.equal(ability.can('read', 'service-providers'), false)
+    assert.equal(ability.can('read', 'organisations'), false)
+  })
+
+  it('handles canonical entity-specific subjects for all partner types', () => {
+    ability.setTestPermissions([
+      'read-suppliers',
+      'edit-suppliers',
+      'export-suppliers',
+      'create-service-providers',
+      'read-organisations',
+      'delete-organisations',
+    ])
+
+    assert.equal(ability.can('read', 'suppliers'), true)
+    assert.equal(ability.can('update', 'suppliers'), true)
+    assert.equal(ability.can('export', 'suppliers'), true)
+    assert.equal(ability.can('create', 'suppliers'), false)
+
+    assert.equal(ability.can('create', 'service-providers'), true)
+    assert.equal(ability.can('read', 'service-providers'), false)
+
+    assert.equal(ability.can('read', 'organisations'), true)
+    assert.equal(ability.can('delete', 'organisations'), true)
+    assert.equal(ability.can('update', 'organisations'), false)
+  })
+
+  it('authorizes dashboard access only with read-bp-dashboard', () => {
+    ability.setTestPermissions(['read-clients'])
+    assert.equal(ability.can('read', 'bp-dashboard'), false)
+
+    ability.setTestPermissions(['read-bp-dashboard'])
+    assert.equal(ability.can('read', 'bp-dashboard'), true)
+  })
+
+  it('authorizes bank accounts with read-bp-bank-accounts and manage-bp-bank-accounts', () => {
+    ability.setTestPermissions(['read-bp-bank-accounts'])
+    assert.equal(ability.can('read', 'bp-bank-accounts'), true)
+    assert.equal(ability.can('update', 'bp-bank-accounts'), false)
+    assert.equal(ability.can('manage', 'bp-bank-accounts'), false)
+    assert.equal(ability.can('create', 'bp-bank-accounts'), false)
+
+    ability.setTestPermissions(['manage-bp-bank-accounts'])
+    assert.equal(ability.can('read', 'bp-bank-accounts'), true)
+    assert.equal(ability.can('update', 'bp-bank-accounts'), true)
+    assert.equal(ability.can('manage', 'bp-bank-accounts'), true)
+    assert.equal(ability.can('create', 'bp-bank-accounts'), true)
+  })
+
+  it('authorizes contextual email messages and batch history', () => {
+    ability.setTestPermissions(['create-email-messages'])
+    assert.equal(ability.can('create', 'email-messages'), true)
+    assert.equal(ability.can('send', 'email-messages'), true)
+    assert.equal(ability.can('read', 'bp-email-batches'), false)
+
+    ability.setTestPermissions(['view-all-bp-email-batches'])
+    assert.equal(ability.can('read', 'bp-email-batches'), true)
+  })
+
+  it('removes inconsistent generic BusinessPartners ACL checks and isolates module visibility', () => {
+    ability.setTestPermissions(['read-BusinessPartners'])
+
+    // Only allows top-level module visibility in app switcher
+    assert.equal(ability.can('read', 'BusinessPartners'), true)
+
+    // NEVER grants entity access
+    assert.equal(ability.can('read', 'clients'), false)
+    assert.equal(ability.can('read', 'suppliers'), false)
+    assert.equal(ability.can('read', 'service-providers'), false)
+    assert.equal(ability.can('read', 'organisations'), false)
+
+    // NEVER allows generic create / update / delete on BusinessPartners
+    assert.equal(ability.can('update', 'BusinessPartners'), false)
+    assert.equal(ability.can('edit', 'BusinessPartners'), false)
+    assert.equal(ability.can('create', 'BusinessPartners'), false)
+    assert.equal(ability.can('delete', 'BusinessPartners'), false)
+  })
+
+  it('allows Super Admin full access across all actions and subjects', () => {
+    ability.setTestPermissions([], ['Super Admin'])
+
+    assert.equal(ability.can('read', 'clients'), true)
+    assert.equal(ability.can('update', 'clients'), true)
+    assert.equal(ability.can('delete', 'clients'), true)
+    assert.equal(ability.can('export', 'clients'), true)
+    assert.equal(ability.can('read', 'bp-dashboard'), true)
+    assert.equal(ability.can('manage', 'bp-bank-accounts'), true)
+    assert.equal(ability.can('create', 'email-messages'), true)
+  })
+})
+
+describe('Vuexy CASL HR (People & Skills) ability & permissions', () => {
+  it('authorizes employee operations from granular Spatie permissions', () => {
+    ability.setTestPermissions(['hr.employees.view', 'hr.employees.create', 'hr.employees.edit', 'hr.employees.archive'])
+
+    assert.equal(ability.can('read', 'employees'), true)
+    assert.equal(ability.can('create', 'employees'), true)
+    assert.equal(ability.can('update', 'employees'), true)
+    assert.equal(ability.can('edit', 'employees'), true)
+    assert.equal(ability.can('delete', 'employees'), true)
+    assert.equal(ability.can('manage', 'employees'), true)
+  })
+
+  it('restricts employee actions when only view permission is granted', () => {
+    ability.setTestPermissions(['hr.employees.view'])
+
+    assert.equal(ability.can('read', 'employees'), true)
+    assert.equal(ability.can('create', 'employees'), false)
+    assert.equal(ability.can('update', 'employees'), false)
+    assert.equal(ability.can('delete', 'employees'), false)
+  })
+
+  it('authorizes attendance and corrections correctly', () => {
+    ability.setTestPermissions(['hr.attendance.view', 'hr.attendance.correct'])
+
+    assert.equal(ability.can('read', 'attendance'), true)
+    assert.equal(ability.can('correct', 'attendance'), true)
+    assert.equal(ability.can('create', 'attendance'), false)
+
+    ability.setTestPermissions(['hr.attendance.manage'])
+    assert.equal(ability.can('create', 'attendance'), true)
+    assert.equal(ability.can('update', 'attendance'), true)
+    assert.equal(ability.can('correct', 'attendance'), true)
+  })
+
+  it('authorizes leave requests and approvals', () => {
+    ability.setTestPermissions(['hr.leave.view', 'hr.leave.request'])
+
+    assert.equal(ability.can('read', 'leave'), true)
+    assert.equal(ability.can('create', 'leave'), true)
+    assert.equal(ability.can('approve', 'leave'), false)
+
+    ability.setTestPermissions(['hr.leave.approve'])
+    assert.equal(ability.can('approve', 'leave'), true)
+  })
+
+  it('authorizes recruitment and hiring', () => {
+    ability.setTestPermissions(['hr.recruitment.view', 'hr.recruitment.hire'])
+
+    assert.equal(ability.can('read', 'recruitment'), true)
+    assert.equal(ability.can('hire', 'recruitment'), true)
+    assert.equal(ability.can('create', 'recruitment'), false)
+  })
+
+  it('authorizes fleet vehicles and drivers', () => {
+    ability.setTestPermissions(['hr.fleet.view', 'hr.fleet.manage'])
+
+    assert.equal(ability.can('read', 'fleet'), true)
+    assert.equal(ability.can('create', 'fleet'), true)
+    assert.equal(ability.can('update', 'fleet'), true)
+    assert.equal(ability.can('delete', 'fleet'), true)
+  })
+
+  it('authorizes departments, positions, and teams with granular permissions', () => {
+    ability.setTestPermissions(['hr.departments.view', 'hr.positions.manage', 'hr.teams.view'])
+
+    assert.equal(ability.can('read', 'departments'), true)
+    assert.equal(ability.can('create', 'departments'), false)
+    assert.equal(ability.can('read', 'positions'), true)
+    assert.equal(ability.can('create', 'positions'), true)
+    assert.equal(ability.can('read', 'teams'), true)
+    assert.equal(ability.can('create', 'teams'), false)
+  })
+
+  it('authorizes confidential employee data and appraisals strictly', () => {
+    ability.setTestPermissions(['hr.employees.view'])
+
+    assert.equal(ability.can('read', 'employees'), true)
+    assert.equal(ability.can('view-sensitive', 'employees'), false)
+    assert.equal(ability.can('read', 'appraisals'), false)
+
+    ability.setTestPermissions(['hr.employees.view-sensitive', 'hr.appraisals.view'])
+    assert.equal(ability.can('view-sensitive', 'employees'), true)
+    assert.equal(ability.can('read', 'appraisals'), true)
+    assert.equal(ability.can('create', 'appraisals'), false)
+  })
+
+  it('ensures general read-PeopleSkills does not grant mutation or approval privileges', () => {
+    ability.setTestPermissions(['read-PeopleSkills'])
+
+    assert.equal(ability.can('read', 'employees'), true)
+    assert.equal(ability.can('read', 'departments'), true)
+    assert.equal(ability.can('read', 'attendance'), true)
+    assert.equal(ability.can('read', 'leave'), true)
+
+    assert.equal(ability.can('create', 'employees'), false)
+    assert.equal(ability.can('delete', 'employees'), false)
+    assert.equal(ability.can('correct', 'attendance'), false)
+    assert.equal(ability.can('approve', 'leave'), false)
+    assert.equal(ability.can('hire', 'recruitment'), false)
+    assert.equal(ability.can('view-sensitive', 'employees'), false)
+  })
+})
+
 
 
 

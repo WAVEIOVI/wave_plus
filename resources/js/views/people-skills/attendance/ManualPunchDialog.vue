@@ -1,4 +1,5 @@
 <script setup>
+/* eslint-disable camelcase */
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'

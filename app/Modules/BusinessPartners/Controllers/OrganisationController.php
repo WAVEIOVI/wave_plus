@@ -93,7 +93,7 @@ class OrganisationController extends Controller
 
     public function exportPdf(): Response
     {
-        $this->authorize('viewAny', Organisation::class);
+        $this->authorize('export', Organisation::class);
 
         $organisations = Organisation::with('accountManager')
             ->orderBy('created_at', 'desc')
@@ -121,7 +121,7 @@ class OrganisationController extends Controller
             'documents',
         ])->findOrFail($id);
 
-        $this->authorize('view', $organisation);
+        $this->authorize('export', $organisation);
 
         $html = view('pdf.organisations.organisation-record', compact('organisation'))->render();
 

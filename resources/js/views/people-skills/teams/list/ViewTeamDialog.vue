@@ -1,19 +1,79 @@
 <script setup>
-import { WpDetailDialog, WpStatusChip } from '@/components/shared'
+/* eslint-disable camelcase */
+import { WpDeleteDialog, WpDetailDialog, WpFormDialog, WpStatusChip } from '@/components/shared'
 import { localizedValue } from '@/composables/useLocaleField'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import { reactive, ref } from 'vue'
 
-defineProps({
+const props = defineProps({
   modelValue: { type: Boolean, default: false },
   team: { type: Object, default: null },
   fields: { type: Array, default: () => [] },
+  employeeOptions: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   error: { type: [String, Object], default: null },
   active: { type: Boolean, default: false },
   canEdit: { type: Boolean, default: false },
+  submittingMember: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:modelValue', 'retry', 'edit'])
+const emit = defineEmits([
+  'update:modelValue',
+  'retry',
+  'edit',
+  'addMember',
+  'removeMember',
+])
+
+const isAddMemberOpen = ref(false)
+
+const memberForm = reactive({
+  employee_id: null,
+  role_in_team: 'Member',
+  is_primary: true,
+})
+
+const isRemoveMemberOpen = ref(false)
+const removingMember = ref(null)
+const removingLoading = ref(false)
+
+const openAddMember = () => {
+  memberForm.employee_id = null
+  memberForm.role_in_team = 'Member'
+  memberForm.is_primary = true
+  isAddMemberOpen.value = true
+}
+
+const submitAddMember = () => {
+  if (!memberForm.employee_id) return
+  emit('addMember', {
+    team_id: props.team?.id,
+    employee_id: memberForm.employee_id,
+    role_in_team: memberForm.role_in_team,
+    is_primary: memberForm.is_primary,
+  })
+  isAddMemberOpen.value = false
+}
+
+const askRemoveMember = member => {
+  removingMember.value = member
+  isRemoveMemberOpen.value = true
+}
+
+const confirmRemoveMember = () => {
+  if (!removingMember.value || !props.team?.id) return
+  removingLoading.value = true
+  try {
+    emit('removeMember', {
+      team_id: props.team.id,
+      member_id: removingMember.value.id,
+    })
+    isRemoveMemberOpen.value = false
+  }
+  finally {
+    removingLoading.value = false
+  }
+}
 
 const memberInitials = member => {
   if (member.full_name)
@@ -139,6 +199,16 @@ const formatDate = value => {
           >
             {{ team.members?.length ?? 0 }}
           </VChip>
+          <VBtn
+            v-if="canEdit"
+            variant="text"
+            size="small"
+            class="ms-auto"
+            prepend-icon="tabler-user-plus"
+            @click="openAddMember"
+          >
+            {{ $t('teams.add') }}
+          </VBtn>
         </div>
 
         <PerfectScrollbar
@@ -173,7 +243,7 @@ const formatDate = value => {
                 </VAvatar>
               </template>
               <template #append>
-                <div class="d-flex flex-wrap justify-end gap-1">
+                <div class="d-flex align-center gap-2">
                   <VChip
                     v-if="member.is_primary"
                     size="x-small"
@@ -190,6 +260,20 @@ const formatDate = value => {
                   >
                     {{ $t('teams.view.team_lead') }}
                   </VChip>
+                  <VBtn
+                    v-if="canEdit"
+                    icon
+                    variant="text"
+                    color="error"
+                    size="x-small"
+                    :title="$t('Delete')"
+                    @click="askRemoveMember(member)"
+                  >
+                    <VIcon
+                      icon="tabler-x"
+                      size="16"
+                    />
+                  </VBtn>
                 </div>
               </template>
             </VListItem>
@@ -204,6 +288,52 @@ const formatDate = value => {
       </section>
     </template>
   </WpDetailDialog>
+
+  <!-- Add Member Dialog -->
+  <WpFormDialog
+    v-model="isAddMemberOpen"
+    :title="$t('teams.add')"
+    icon="tabler-user-plus"
+    size="small"
+    :loading="submittingMember"
+    @submit="submitAddMember"
+  >
+    <VRow>
+      <VCol cols="12">
+        <AppSelect
+          v-model="memberForm.employee_id"
+          :label="$t('teams.col.leader')"
+          :items="employeeOptions"
+          :rules="[v => !!v || $t('teams.validation.required')]"
+          required
+          variant="outlined"
+        />
+      </VCol>
+      <VCol cols="12">
+        <AppTextField
+          v-model="memberForm.role_in_team"
+          :label="$t('teams.col.type')"
+          variant="outlined"
+        />
+      </VCol>
+      <VCol cols="12">
+        <VSwitch
+          v-model="memberForm.is_primary"
+          :label="$t('teams.view.primary_member')"
+          color="primary"
+        />
+      </VCol>
+    </VRow>
+  </WpFormDialog>
+
+  <!-- Remove Member Dialog -->
+  <WpDeleteDialog
+    v-model="isRemoveMemberOpen"
+    :title="$t('Delete')"
+    :description="removingMember ? `${removingMember.full_name || 'Member'} - ${$t('teams.delete_confirm')}` : ''"
+    :loading="removingLoading"
+    :confirm-action="confirmRemoveMember"
+  />
 </template>
 
 <style scoped>

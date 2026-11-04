@@ -22,6 +22,7 @@ import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
 import { useHrStore } from '@/stores/hrStore'
 import { useLeaveRequestStore } from '@/stores/useLeaveRequestStore'
+import ApproveLeaveDialog from '@/views/people-skills/time-off/ApproveLeaveDialog.vue'
 import LeaveRequestFormDialog from '@/views/people-skills/time-off/LeaveRequestFormDialog.vue'
 import RejectLeaveDialog from '@/views/people-skills/time-off/RejectLeaveDialog.vue'
 import TimeOffBalancesTab from '@/views/people-skills/time-off/TimeOffBalancesTab.vue'
@@ -29,7 +30,8 @@ import TimeOffCalendarTab from '@/views/people-skills/time-off/TimeOffCalendarTa
 import TimeOffConfigurationTab from '@/views/people-skills/time-off/TimeOffConfigurationTab.vue'
 import ViewLeaveRequestDialog from '@/views/people-skills/time-off/ViewLeaveRequestDialog.vue'
 import { avatarText } from '@core/utils/formatters'
-import { computed, getCurrentInstance, onMounted, ref, watch } from 'vue'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -41,7 +43,7 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'leave',
   },
 })
 
@@ -49,13 +51,14 @@ const { t, locale } = useI18n()
 const { smAndDown } = useDisplay()
 const route = useRoute()
 const router = useRouter()
-const { proxy } = getCurrentInstance()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const leaveStore = useLeaveRequestStore()
 const hrStore = useHrStore()
 
-const canCreate = computed(() => !!proxy?.$can?.('create', 'PeopleSkills'))
-const canApprove = computed(() => !!proxy?.$can?.('update', 'PeopleSkills') || !!proxy?.$can?.('create', 'PeopleSkills'))
+const canCreate = computed(() => ability.can('create', 'leave') || ability.can('request', 'leave') || ability.can('manage', 'leave') || ability.can('create', 'PeopleSkills'))
+const canApprove = computed(() => ability.can('approve', 'leave') || ability.can('manage', 'leave') || ability.can('create', 'PeopleSkills'))
+const canManage = computed(() => ability.can('manage', 'leave') || ability.can('create', 'PeopleSkills'))
 
 // ── Tabs Navigation ──────────────────────────────────────────────────────────
 const initialTab = ['calendar', 'balances', 'config'].includes(route.query.tab) ? route.query.tab : 'requests'
@@ -84,7 +87,7 @@ const hybridTabs = computed(() => {
     },
   ]
 
-  if (canApprove.value) {
+  if (canManage.value) {
     tabs.push({
       value: 'config',
       title: t('time_off.tabs.config', 'Configuration'),
@@ -273,31 +276,29 @@ const mobileFabActions = computed(() => {
       title: t('wp.filters.label', 'Filters'),
       onClick: () => balancesRef.value?.openFilters(),
     })
-  } else if (activeTab.value === 'config') {
-    if (canCreate.value) {
-      const sub = configRef.value?.currentConfigTab
-      if (sub === 'leave-types') {
-        actions.push({
-          id: 'add-type',
-          icon: 'tabler-plus',
-          title: t('time_off.add_type', 'New Leave Type'),
-          onClick: () => configRef.value?.openType(),
-        })
-      } else if (sub === 'leave-policies') {
-        actions.push({
-          id: 'add-policy',
-          icon: 'tabler-plus',
-          title: t('time_off.add_policy', 'New Accrual Policy'),
-          onClick: () => configRef.value?.openPolicy(),
-        })
-      } else if (sub === 'public-holidays') {
-        actions.push({
-          id: 'add-holiday',
-          icon: 'tabler-plus',
-          title: t('time_off.add_holiday', 'New Public Holiday'),
-          onClick: () => configRef.value?.openHoliday(),
-        })
-      }
+  } else if (activeTab.value === 'config' && canCreate.value) {
+    const sub = configRef.value?.currentConfigTab
+    if (sub === 'leave-types') {
+      actions.push({
+        id: 'add-type',
+        icon: 'tabler-plus',
+        title: t('time_off.add_type', 'New Leave Type'),
+        onClick: () => configRef.value?.openType(),
+      })
+    } else if (sub === 'leave-policies') {
+      actions.push({
+        id: 'add-policy',
+        icon: 'tabler-plus',
+        title: t('time_off.add_policy', 'New Accrual Policy'),
+        onClick: () => configRef.value?.openPolicy(),
+      })
+    } else if (sub === 'public-holidays') {
+      actions.push({
+        id: 'add-holiday',
+        icon: 'tabler-plus',
+        title: t('time_off.add_holiday', 'New Public Holiday'),
+        onClick: () => configRef.value?.openHoliday(),
+      })
     }
   }
 
@@ -356,20 +357,31 @@ const onLeaveSaved = () => {
 }
 
 // ── Approve / Reject / Cancel ───────────────────────────────────────────────
+const approveDialog = useDialog()
+const approveLoading = ref(false)
 const rejectDialog = useDialog()
 const rejectLoading = ref(false)
 const cancelDialog = useDialog()
 const cancelLoading = ref(false)
 const pendingActionId = ref(null)
 
-const handleApprove = async id => {
+const openApprove = id => {
+  pendingActionId.value = id
+  approveDialog.open(id)
+}
+
+const handleApproveConfirm = async decisionNote => {
+  approveLoading.value = true
   try {
-    await leaveStore.approve(id)
+    await leaveStore.approve(pendingActionId.value, decisionNote)
     showMessage(t('time_off.approve_success'), 'success')
+    approveDialog.close()
     viewDialog.close()
     listPage.refresh()
   } catch (err) {
     showMessage(err?.data?.message || t('time_off.approve_error'), 'error')
+  } finally {
+    approveLoading.value = false
   }
 }
 
@@ -656,7 +668,7 @@ onMounted(() => {
               <WpRowActions
                 :actions="getRowActions(item)"
                 @view="openView(item.id)"
-                @approve="handleApprove(item.id)"
+                @approve="openApprove(item.id)"
                 @reject="openReject(item.id)"
                 @cancel="openCancel(item.id)"
               />
@@ -705,7 +717,7 @@ onMounted(() => {
                     <WpRowActions
                       :actions="getRowActions(item)"
                       @view="openView(item.id)"
-                      @approve="handleApprove(item.id)"
+                      @approve="openApprove(item.id)"
                       @reject="openReject(item.id)"
                       @cancel="openCancel(item.id)"
                     />
@@ -826,7 +838,7 @@ onMounted(() => {
       :leave-request="viewRecord"
       :loading="viewLoading"
       :can-approve="canApprove"
-      @approve="handleApprove"
+      @approve="openApprove"
       @reject="openReject"
       @cancel="openCancel"
     />
@@ -836,6 +848,13 @@ onMounted(() => {
       v-model="isCreateDialogOpen"
       :leave-request="editingRequest"
       @saved="onLeaveSaved"
+    />
+
+    <!-- Approve Decision Dialog -->
+    <ApproveLeaveDialog
+      v-model="approveDialog.isOpen.value"
+      :loading="approveLoading"
+      @confirm="handleApproveConfirm"
     />
 
     <!-- Reject Reason Dialog -->

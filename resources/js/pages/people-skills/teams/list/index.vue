@@ -24,7 +24,8 @@ import { useEmployeeStore } from '@/stores/useEmployeeStore'
 import { useWorkTeamStore } from '@/stores/useWorkTeamStore'
 import TeamFormDialog from '@/views/people-skills/teams/list/TeamFormDialog.vue'
 import ViewTeamDialog from '@/views/people-skills/teams/list/ViewTeamDialog.vue'
-import { computed, getCurrentInstance, onMounted, reactive, ref, watch } from 'vue'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 definePage({
@@ -34,12 +35,12 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'teams',
   },
 })
 
 const { t } = useI18n()
-const { proxy } = getCurrentInstance()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const teamStore = useWorkTeamStore()
 const hrStore = useHrStore()
@@ -55,15 +56,15 @@ const listPage = useListPage({
 })
 
 // ── View Mode: Table / Grid toggle ───────────────────────────────────────────
-const viewMode = ref('table')
+const viewMode = ref('grid')
 const filterDialogOpen = ref(false)
 const mobileFabOpen = ref(false)
 
 try {
-  viewMode.value = localStorage.getItem('wp.people-skills.teams.view') === 'grid' ? 'grid' : 'table'
+  viewMode.value = localStorage.getItem('wp.people-skills.teams.view') === 'table' ? 'table' : 'grid'
 }
 catch {
-  viewMode.value = 'table'
+  viewMode.value = 'grid'
 }
 
 watch(viewMode, value => {
@@ -158,7 +159,7 @@ const mobileFabActions = computed(() => [
     id: 'add-team',
     icon: 'tabler-users-group',
     title: t('teams.add'),
-    disabled: !proxy?.$can?.('create', 'PeopleSkills'),
+    disabled: !can('create'),
     onClick: () => openEdit(),
   },
   {
@@ -277,6 +278,8 @@ const saving = ref(false)
 const formLoading = ref(false)
 const delDialog = useDialog()
 const deleting = ref(false)
+const deleteDescription = ref('')
+const submittingMember = ref(false)
 const extraLeaderOption = ref(null)
 
 const employeeOptions = computed(() =>
@@ -389,6 +392,49 @@ const save = async formData => {
   finally { saving.value = false }
 }
 
+const askDelete = item => {
+  if (Number(item?.members_count) > 0) {
+    showMessage(`${localizedValue(item?.name)} has ${item.members_count} active members. Please remove members before deleting.`, 'warning')
+
+    return
+  }
+
+  const name = localizedValue(item?.name, '')
+
+  deleteDescription.value = name
+    ? `${name}. ${t('teams.delete_confirm')}`
+    : t('teams.delete_confirm')
+  delDialog.open(item.id)
+}
+
+const handleAddMember = async ({ team_id, employee_id, role_in_team, is_primary }) => {
+  submittingMember.value = true
+  try {
+    await teamStore.addMember(team_id, { employee_id, role_in_team, is_primary })
+    showMessage(t('teams.save_success'), 'success')
+    viewTeam.value = await teamStore.fetchOne(team_id)
+    await listPage.refresh()
+  }
+  catch (err) {
+    showMessage(err?.data?.message || err?.message || t('teams.save_error'), 'error')
+  }
+  finally {
+    submittingMember.value = false
+  }
+}
+
+const handleRemoveMember = async ({ team_id, member_id }) => {
+  try {
+    await teamStore.removeMember(team_id, member_id)
+    showMessage(t('teams.delete_success'), 'success')
+    viewTeam.value = await teamStore.fetchOne(team_id)
+    await listPage.refresh()
+  }
+  catch (err) {
+    showMessage(err?.data?.message || err?.message || t('teams.delete_error'), 'error')
+  }
+}
+
 const doDelete = async () => {
   deleting.value = true
   try {
@@ -420,11 +466,21 @@ const headers = computed(() => [
   { title: '', key: 'actions', sortable: false, width: '60px' },
 ])
 
-const getRowActions = () => [
-  { label: t('View'), icon: 'tabler-eye', emit: 'view' },
-  { label: t('Edit'), icon: 'tabler-edit', emit: 'edit' },
-  { label: t('Delete'), icon: 'tabler-trash', emit: 'delete', color: 'error', dividerBefore: true },
-]
+const can = action => ability.can(action, 'teams') || ability.can(action, 'PeopleSkills')
+
+const getRowActions = () => {
+  const actions = [{ label: t('View'), icon: 'tabler-eye', emit: 'view' }]
+
+  if (can('update')) {
+    actions.push({ label: t('Edit'), icon: 'tabler-edit', emit: 'edit' })
+  }
+
+  if (can('delete')) {
+    actions.push({ label: t('Delete'), icon: 'tabler-trash', emit: 'delete', color: 'error', dividerBefore: true })
+  }
+
+  return actions
+}
 
 const getDeptName = (deptId, team = null) => {
   if (team?.department)
@@ -465,8 +521,6 @@ const formatDate = value => {
   
   return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date)
 }
-
-const can = action => !!proxy?.$can?.(action, 'PeopleSkills')
 
 const rules = {
   required: value => !!String(value ?? '').trim() || t('teams.validation.required'),
@@ -540,7 +594,7 @@ onMounted(() => {
     <VCard>
       <WpPageToolbar
         v-model:search="listPage.search.value"
-        :create-label="$can('create', 'PeopleSkills') ? $t('teams.add') : ''"
+        :create-label="can('create') ? $t('teams.add') : ''"
         hide-create-on-mobile
         show-filter
         hide-filter-on-mobile
@@ -626,7 +680,7 @@ onMounted(() => {
             :actions="getRowActions()"
             @view="openView(item.id)"
             @edit="openEdit(item)"
-            @delete="delDialog.open(item.id)"
+            @delete="askDelete(item)"
           />
         </template>
 
@@ -665,7 +719,7 @@ onMounted(() => {
                 :actions="getRowActions()"
                 @view="openView(item.id)"
                 @edit="openEdit(item)"
-                @delete="delDialog.open(item.id)"
+                @delete="askDelete(item)"
               />
             </template>
 
@@ -778,7 +832,7 @@ onMounted(() => {
                 {{ $t('View') }}
               </VBtn>
               <VBtn
-                v-if="$can('update', 'PeopleSkills')"
+                v-if="can('update')"
                 variant="text"
                 size="small"
                 prepend-icon="tabler-edit"
@@ -796,12 +850,16 @@ onMounted(() => {
       v-model="viewDialog.isOpen.value"
       :team="viewTeam"
       :fields="viewFields"
+      :employee-options="employeeOptions"
       :loading="viewLoading"
       :error="viewError"
       :active="!!viewTeam?.is_active"
       :can-edit="can('update')"
+      :submitting-member="submittingMember"
       @retry="retryView"
       @edit="openEdit(viewTeam); viewDialog.close()"
+      @add-member="handleAddMember"
+      @remove-member="handleRemoveMember"
     />
 
     <TeamFormDialog
@@ -864,7 +922,7 @@ onMounted(() => {
     <WpDeleteDialog
       v-model="delDialog.isOpen.value"
       :title="$t('Delete')"
-      :description="$t('teams.delete_confirm')"
+      :description="deleteDescription || $t('teams.delete_confirm')"
       :loading="deleting"
       :confirm-action="doDelete"
       @update:model-value="value => !value && delDialog.close()"

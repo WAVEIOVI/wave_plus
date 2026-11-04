@@ -13,8 +13,7 @@ abstract class PartnerPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->can('read-'.$this->subject())
-            || $user->can('read-BusinessPartners');
+        return $user->can('read-'.$this->subject());
     }
 
     public function view(User $user, Model $partner): bool
@@ -35,5 +34,10 @@ abstract class PartnerPolicy
     public function delete(User $user, Model $partner): bool
     {
         return $user->can('delete-'.$this->subject());
+    }
+
+    public function export(User $user, ?Model $partner = null): bool
+    {
+        return $user->can('export-'.$this->subject());
     }
 }

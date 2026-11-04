@@ -5,7 +5,7 @@ definePage({
   meta: {
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'bp-dashboard',
   },
 })
 </script>

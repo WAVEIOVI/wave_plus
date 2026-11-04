@@ -1,4 +1,6 @@
 <script setup>
+/* eslint-disable camelcase */
+import { WpFormDialog } from '@/components/shared'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -71,91 +73,69 @@ const handleSubmit = () => {
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     :model-value="props.isDialogVisible"
-    max-width="560"
-    persistent
+    :title="props.cycle ? t('appraisals.edit_cycle', 'Edit Appraisal Cycle') : t('appraisals.create_cycle', 'New Appraisal Cycle')"
+    :subtitle="t('appraisals.cycle_desc', 'Define performance review period and timeline.')"
+    icon="tabler-calendar-event"
+    size="small"
+    :loading="props.loading"
+    :submit-disabled="!form.name || !form.start_date || !form.end_date"
+    :submit-label="props.cycle ? t('common.save', 'Save Changes') : t('common.save', 'Create Cycle')"
     @update:model-value="emit('update:isDialogVisible', $event)"
+    @submit="handleSubmit"
+    @cancel="emit('update:isDialogVisible', false)"
   >
-    <VCard>
-      <VCardItem class="pb-2">
-        <template #prepend>
-          <VAvatar
-            color="primary"
-            variant="tonal"
-            rounded
-            class="me-3"
-          >
-            <VIcon icon="tabler-calendar-event" />
-          </VAvatar>
-        </template>
-        <VCardTitle>
-          {{ props.cycle ? t('appraisals.edit_cycle', 'Edit Appraisal Cycle') : t('appraisals.create_cycle', 'New Appraisal Cycle') }}
-        </VCardTitle>
-        <VCardSubtitle>
-          {{ t('appraisals.cycle_desc', 'Define performance review period and timeline.') }}
-        </VCardSubtitle>
-      </VCardItem>
-
-      <VCardText class="pt-4">
-        <VRow>
-          <VCol cols="12">
-            <AppTextField
-              v-model="form.name"
-              :label="t('appraisals.cycle_name', 'Cycle Name')"
-              placeholder="e.g. FY 2026 Annual Performance Review"
-              required
-            />
-          </VCol>
-          <VCol cols="12" sm="6">
-            <AppSelect
-              v-model="form.cycle_type"
-              :label="t('appraisals.cycle_type', 'Cycle Type')"
-              :items="cycleTypeOptions"
-              required
-            />
-          </VCol>
-          <VCol cols="12" sm="6">
-            <AppSelect
-              v-model="form.status"
-              :label="t('common.status', 'Status')"
-              :items="statusOptions"
-            />
-          </VCol>
-          <VCol cols="12" sm="6">
-            <AppDateTimePicker
-              v-model="form.start_date"
-              :label="t('common.start_date', 'Start Date')"
-              required
-            />
-          </VCol>
-          <VCol cols="12" sm="6">
-            <AppDateTimePicker
-              v-model="form.end_date"
-              :label="t('common.end_date', 'End Date')"
-              required
-            />
-          </VCol>
-        </VRow>
-      </VCardText>
-
-      <VCardActions class="justify-end px-6 pb-6">
-        <VBtn
-          variant="tonal"
-          color="secondary"
-          @click="emit('update:isDialogVisible', false)"
-        >
-          {{ t('common.cancel', 'Cancel') }}
-        </VBtn>
-        <VBtn
-          color="primary"
-          :loading="props.loading"
-          :disabled="!form.name || !form.start_date || !form.end_date"
-          @click="handleSubmit"
-        >
-          {{ props.cycle ? t('common.save', 'Save Changes') : t('common.create', 'Create Cycle') }}
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
+    <VRow>
+      <VCol cols="12">
+        <AppTextField
+          v-model="form.name"
+          :label="t('appraisals.cycle_name', 'Cycle Name')"
+          placeholder="e.g. FY 2026 Annual Performance Review"
+          required
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <AppSelect
+          v-model="form.cycle_type"
+          :label="t('appraisals.cycle_type', 'Cycle Type')"
+          :items="cycleTypeOptions"
+          required
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <AppSelect
+          v-model="form.status"
+          :label="t('common.status', 'Status')"
+          :items="statusOptions"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <AppDateTimePicker
+          v-model="form.start_date"
+          :label="t('common.start_date', 'Start Date')"
+          required
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <AppDateTimePicker
+          v-model="form.end_date"
+          :label="t('common.end_date', 'End Date')"
+          required
+        />
+      </VCol>
+    </VRow>
+  </WpFormDialog>
 </template>

@@ -25,11 +25,13 @@ import { useServiceProviderStore } from '@/stores/useServiceProviderStore'
 import { useVehicleStore } from '@/stores/useVehicleStore'
 import VehicleAssignDialog from '@/views/people-skills/fleet/vehicles/VehicleAssignDialog.vue'
 import VehicleClientUsageDialog from '@/views/people-skills/fleet/vehicles/VehicleClientUsageDialog.vue'
-import VehicleFormDialog from '@/views/people-skills/fleet/vehicles/VehicleFormDialog.vue'
+import VehicleDetailDialog from '@/views/people-skills/fleet/vehicles/VehicleDetailDialog.vue'
 import VehicleOdometerDialog from '@/views/people-skills/fleet/vehicles/VehicleOdometerDialog.vue'
 import VehicleRentalDialog from '@/views/people-skills/fleet/vehicles/VehicleRentalDialog.vue'
 import VehicleReturnDialog from '@/views/people-skills/fleet/vehicles/VehicleReturnDialog.vue'
 import VehicleStatusDialog from '@/views/people-skills/fleet/vehicles/VehicleStatusDialog.vue'
+import VehicleTelemetryDialog from '@/views/people-skills/fleet/vehicles/VehicleTelemetryDialog.vue'
+import VehicleWizardDialog from '@/views/people-skills/fleet/vehicles/VehicleWizardDialog.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -58,6 +60,11 @@ const inventoryStore = useInventoryStore()
 // View mode: 'table' or 'grid'
 const viewMode = ref('table')
 const filterOpen = ref(false)
+const isViewOpen = ref(false)
+const isViewLoading = ref(false)
+const viewError = ref(null)
+const selectedVehicle = ref(null)
+let viewRequestId = 0
 
 // Alert arrays normalized from single endpoint
 const alerts = ref({ maintenance: [], documents: [] })
@@ -79,6 +86,20 @@ const workflow = useVehicleWorkflow(async () => {
   await page.refresh()
   await loadAlerts()
 })
+
+const {
+  isFormOpen,
+  isAssignOpen,
+  isReturnOpen,
+  isStatusOpen,
+  isOdometerOpen,
+  isRentalOpen,
+  isClientUsageOpen,
+  isTelemetryOpen,
+  isDeleteOpen,
+  isSubmitting,
+  targetVehicle,
+} = workflow
 
 const userOptions = computed(() => {
   return (hrStore.availableUsers || []).map(user => ({
@@ -158,14 +179,37 @@ const headers = computed(() => [
   { title: t('fleet.plate_number') || 'Vehicle', key: 'vehicle', sortable: true, minWidth: '220px' },
   { title: t('fleet.type') || 'Type', key: 'type', sortable: true },
   { title: t('fleet.ownership') || 'Ownership', key: 'ownership_type', sortable: true },
-  { title: 'Assigned Custody', key: 'assignment', sortable: false },
+  { title: t('fleet.custody') || 'Assigned Custody', key: 'assignment', sortable: false },
   { title: t('fleet.odometer') || 'Odometer', key: 'odometer_km', sortable: true },
   { title: t('fleet.status') || 'Status', key: 'status', sortable: true },
-  { title: '', key: 'actions', sortable: false, width: '60px' },
+  { title: t('Actions') || 'Actions', key: 'actions', sortable: false, align: 'end', width: '100px' },
 ])
 
-const navigateToDetail = id => {
-  router.push(`/people-skills/fleet/vehicles/${id}`)
+const openVehicleView = async vehicle => {
+  const requestId = ++viewRequestId
+
+  selectedVehicle.value = vehicle
+  isViewOpen.value = true
+  isViewLoading.value = true
+  viewError.value = null
+
+  try {
+    const fullVehicle = await store.fetchById(vehicle.id)
+
+    if (requestId !== viewRequestId || !isViewOpen.value)
+      return
+
+    if (fullVehicle)
+      selectedVehicle.value = fullVehicle
+    else
+      viewError.value = t('fleet.vehicle_not_found', 'Vehicle details could not be loaded.')
+  } catch (error) {
+    if (requestId === viewRequestId && isViewOpen.value)
+      viewError.value = error?.data?.message || error?.message || t('fleet.vehicle_load_error', 'Failed to load vehicle details.')
+  } finally {
+    if (requestId === viewRequestId)
+      isViewLoading.value = false
+  }
 }
 
 // Localised status label with a humanised fallback for statuses without a key.
@@ -182,7 +226,7 @@ const rowActions = vehicle => {
   const isClient = vehicle.ownership_type === 'client' || vehicle.status === 'client_use'
 
   const actions = [
-    { label: t('fleet.view_details') || 'View 360', icon: 'tabler-eye', emit: 'view' },
+    { label: t('fleet.view_details') || 'View Vehicle', icon: 'tabler-eye', emit: 'view' },
   ]
 
   if (ability.can('update', 'Fleet')) {
@@ -194,6 +238,7 @@ const rowActions = vehicle => {
         emit: isAssigned ? 'return' : 'assign',
       },
       { label: t('fleet.update_odometer') || 'Update Odometer', icon: 'tabler-dashboard', emit: 'odometer' },
+      { label: t('fleet.update_telemetry') || 'Update GPS Telemetry', icon: 'tabler-map-pin', emit: 'telemetry' },
       { label: t('fleet.change_status') || 'Change Status', icon: 'tabler-refresh', emit: 'status' },
       ...(isRental
         ? [{ label: t('fleet.end_rental') || 'End Rental', icon: 'tabler-car-off', emit: 'rental_end' }]
@@ -211,13 +256,17 @@ const rowActions = vehicle => {
   return actions
 }
 
+const navigateToEdit = id => {
+  router.push({ name: 'people-skills-fleet-vehicles-edit', params: { id } })
+}
+
 const onRowAction = (actionName, vehicle) => {
   switch (actionName) {
   case 'view':
-    navigateToDetail(vehicle.id)
+    openVehicleView(vehicle)
     break
   case 'edit':
-    workflow.openEdit(vehicle)
+    navigateToEdit(vehicle.id)
     break
   case 'assign':
     workflow.openAssign(vehicle)
@@ -227,6 +276,9 @@ const onRowAction = (actionName, vehicle) => {
     break
   case 'odometer':
     workflow.openOdometer(vehicle)
+    break
+  case 'telemetry':
+    workflow.openTelemetry(vehicle)
     break
   case 'status':
     workflow.openStatus(vehicle)
@@ -377,7 +429,7 @@ onMounted(async () => {
           <template #item.vehicle="{ item }">
             <div
               class="d-flex align-center gap-3 py-2 cursor-pointer"
-              @click="navigateToDetail(item.id)"
+              @click="openVehicleView(item)"
             >
               <VAvatar
                 color="primary"
@@ -455,17 +507,6 @@ onMounted(async () => {
             <WpRowActions
               :actions="rowActions(item)"
               @action="act => onRowAction(act, item)"
-              @view="navigateToDetail(item.id)"
-              @edit="workflow.openEdit(item)"
-              @assign="workflow.openAssign(item)"
-              @return="workflow.openReturn(item)"
-              @odometer="workflow.openOdometer(item)"
-              @status="workflow.openStatus(item)"
-              @rental_start="workflow.openRental(item, false)"
-              @rental_end="workflow.openRental(item, true)"
-              @client_start="workflow.openClientUsage(item, false)"
-              @client_end="workflow.openClientUsage(item, true)"
-              @delete="workflow.openDelete(item)"
             />
           </template>
 
@@ -474,7 +515,7 @@ onMounted(async () => {
             <WpMobileCard
               :title="item.plate_number"
               :subtitle="`${item.label} · ${item.type}`"
-              @click="navigateToDetail(item.id)"
+              @click="openVehicleView(item)"
             >
               <template #avatar>
                 <VAvatar
@@ -486,23 +527,21 @@ onMounted(async () => {
               </template>
 
               <template #actions>
-                <WpStatusChip
-                  type="vehicle"
-                  :status="item.status"
-                  :label="statusLabel(item.status)"
-                  size="x-small"
-                />
-                <WpRowActions
-                  :actions="rowActions(item)"
-                  @action="act => onRowAction(act, item)"
-                  @view="navigateToDetail(item.id)"
-                  @edit="workflow.openEdit(item)"
-                  @assign="workflow.openAssign(item)"
-                  @return="workflow.openReturn(item)"
-                  @odometer="workflow.openOdometer(item)"
-                  @status="workflow.openStatus(item)"
-                  @delete="workflow.openDelete(item)"
-                />
+                <div
+                  class="d-flex align-center gap-1"
+                  @click.stop
+                >
+                  <WpStatusChip
+                    type="vehicle"
+                    :status="item.status"
+                    :label="statusLabel(item.status)"
+                    size="x-small"
+                  />
+                  <WpRowActions
+                    :actions="rowActions(item)"
+                    @action="act => onRowAction(act, item)"
+                  />
+                </div>
               </template>
 
               <template #content>
@@ -552,7 +591,7 @@ onMounted(async () => {
                   </template>
                   <VCardTitle
                     class="text-base font-weight-bold cursor-pointer"
-                    @click="navigateToDetail(item.id)"
+                    @click="openVehicleView(item)"
                   >
                     {{ item.plate_number }}
                   </VCardTitle>
@@ -563,13 +602,6 @@ onMounted(async () => {
                     <WpRowActions
                       :actions="rowActions(item)"
                       @action="act => onRowAction(act, item)"
-                      @view="navigateToDetail(item.id)"
-                      @edit="workflow.openEdit(item)"
-                      @assign="workflow.openAssign(item)"
-                      @return="workflow.openReturn(item)"
-                      @odometer="workflow.openOdometer(item)"
-                      @status="workflow.openStatus(item)"
-                      @delete="workflow.openDelete(item)"
                     />
                   </template>
                 </VCardItem>
@@ -631,7 +663,7 @@ onMounted(async () => {
                     size="small"
                     block
                     prepend-icon="tabler-eye"
-                    @click="navigateToDetail(item.id)"
+                    @click="openVehicleView(item)"
                   >
                     {{ $t('fleet.view_details') || 'View 360' }}
                   </VBtn>
@@ -700,10 +732,10 @@ onMounted(async () => {
     </WpFilterDialog>
 
     <!-- All Vehicle Operation Dialogs -->
-    <VehicleFormDialog
-      v-model="workflow.isFormOpen.value"
+    <VehicleWizardDialog
+      v-model="isFormOpen"
       :form="workflow.form"
-      :loading="workflow.isSubmitting.value"
+      :loading="isSubmitting"
       :status-options="workflow.statusOptions"
       :type-options="workflow.typeOptions"
       :ownership-options="workflow.ownershipOptions"
@@ -713,10 +745,10 @@ onMounted(async () => {
     />
 
     <VehicleAssignDialog
-      v-model="workflow.isAssignOpen.value"
+      v-model="isAssignOpen"
       :assignment="workflow.assignment"
-      :vehicle="workflow.targetVehicle.value"
-      :loading="workflow.isSubmitting.value"
+      :vehicle="targetVehicle"
+      :loading="isSubmitting"
       :custody-options="workflow.custodyOptions"
       :user-options="userOptions"
       :site-options="siteOptions"
@@ -724,55 +756,78 @@ onMounted(async () => {
     />
 
     <VehicleReturnDialog
-      v-model="workflow.isReturnOpen.value"
+      v-model="isReturnOpen"
       :return-data="workflow.returnData"
-      :vehicle="workflow.targetVehicle.value"
-      :loading="workflow.isSubmitting.value"
+      :vehicle="targetVehicle"
+      :loading="isSubmitting"
       :return-status-options="workflow.returnStatusOptions"
       @save="workflow.submitReturn"
     />
 
     <VehicleStatusDialog
-      v-model="workflow.isStatusOpen.value"
+      v-model="isStatusOpen"
       :status-data="workflow.statusData"
-      :vehicle="workflow.targetVehicle.value"
-      :loading="workflow.isSubmitting.value"
+      :vehicle="targetVehicle"
+      :loading="isSubmitting"
       :status-options="workflow.statusOptions"
       @save="workflow.submitStatus"
     />
 
     <VehicleOdometerDialog
-      v-model="workflow.isOdometerOpen.value"
+      v-model="isOdometerOpen"
       :odometer-data="workflow.odometerData"
-      :vehicle="workflow.targetVehicle.value"
-      :loading="workflow.isSubmitting.value"
+      :vehicle="targetVehicle"
+      :loading="isSubmitting"
       @save="workflow.submitOdometer"
     />
 
     <VehicleRentalDialog
-      v-model="workflow.isRentalOpen.value"
+      v-model="isRentalOpen"
       :rental-data="workflow.rentalData"
-      :vehicle="workflow.targetVehicle.value"
-      :loading="workflow.isSubmitting.value"
+      :vehicle="targetVehicle"
+      :loading="isSubmitting"
       :provider-options="providerOptions"
       @save="workflow.submitRental"
     />
 
     <VehicleClientUsageDialog
-      v-model="workflow.isClientUsageOpen.value"
+      v-model="isClientUsageOpen"
       :client-usage-data="workflow.clientUsageData"
-      :vehicle="workflow.targetVehicle.value"
-      :loading="workflow.isSubmitting.value"
+      :vehicle="targetVehicle"
+      :loading="isSubmitting"
       :client-options="clientOptions"
       @save="workflow.submitClientUsage"
     />
 
+    <VehicleTelemetryDialog
+      v-model="isTelemetryOpen"
+      :telemetry-data="workflow.telemetryData"
+      :vehicle="targetVehicle"
+      :loading="isSubmitting"
+      @save="workflow.submitTelemetry"
+    />
+
     <WpDeleteDialog
-      v-model="workflow.isDeleteOpen.value"
+      v-model="isDeleteOpen"
       :title="$t('fleet.delete_title')"
-      :description="$t('fleet.delete_confirm', { plate: workflow.targetVehicle.value?.plate_number })"
-      :loading="workflow.isSubmitting.value"
+      :description="$t('fleet.delete_confirm', { plate: targetVehicle?.plate_number })"
+      :loading="isSubmitting"
       :confirm-action="workflow.submitDelete"
+    />
+
+    <VehicleDetailDialog
+      v-model="isViewOpen"
+      :vehicle="selectedVehicle"
+      :loading="isViewLoading"
+      :error="viewError"
+      :can-edit="ability.can('update', 'Fleet')"
+      :status-options="workflow.statusOptions"
+      :type-options="workflow.typeOptions"
+      :ownership-options="workflow.ownershipOptions"
+      :fuel-type-options="workflow.fuelTypeOptions"
+      :user-options="userOptions"
+      @edit="vehicle => { isViewOpen = false; navigateToEdit(vehicle.id) }"
+      @retry="selectedVehicle && openVehicleView(selectedVehicle)"
     />
   </div>
 </template>

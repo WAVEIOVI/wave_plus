@@ -9,11 +9,16 @@ import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
+  isDialogVisible: { type: Boolean, default: undefined },
   employeeId: { type: String, default: null },
   employee: { type: Object, default: null },
+  badge: { type: Object, default: null },
+  loading: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:modelValue', 'saved'])
+const emit = defineEmits(['update:modelValue', 'update:isDialogVisible', 'saved'])
+
+const isVisible = computed(() => props.isDialogVisible !== undefined ? props.isDialogVisible : props.modelValue)
 
 const { t } = useI18n()
 const { showMessage } = useAppSnackbar()
@@ -24,7 +29,7 @@ const localEmployee = ref(null)
 
 const { dataUrl: qrDataUrl, isRendering: isRenderingQr, render: renderQrCode, download: downloadQrCode } = useQrCode()
 
-const profile = computed(() => localEmployee.value || props.employee || null)
+const profile = computed(() => props.badge || localEmployee.value || props.employee || null)
 
 const displayName = computed(() =>
   profile.value?.full_name
@@ -50,8 +55,15 @@ const departmentLabel = computed(() => {
   return typeof dept === 'string' ? dept : localizedValue(dept.name) || null
 })
 
+const teamLabel = computed(() => {
+  const team = profile.value?.team || profile.value?.current_team
+  if (!team) return null
+
+  return typeof team === 'string' ? team : localizedValue(team.name) || null
+})
+
 const metaLine = computed(() =>
-  [positionLabel.value, departmentLabel.value].filter(Boolean).join(' · '),
+  [positionLabel.value, departmentLabel.value, teamLabel.value].filter(Boolean).join(' · '),
 )
 
 const qrPayload = computed(() =>
@@ -64,11 +76,11 @@ const renderQr = async () => {
 }
 
 watch(
-  () => [props.modelValue, qrPayload.value],
+  () => [isVisible.value, qrPayload.value],
   async ([visible]) => {
     if (visible) {
       isFlipped.value = false
-      if (!localEmployee.value && props.employeeId && !props.employee) {
+      if (!localEmployee.value && props.employeeId && !props.employee && !props.badge) {
         try { localEmployee.value = await employeeStore.fetchOne(props.employeeId) }
         catch (e) { console.error('Badge employee load failed:', e) }
       }
@@ -78,7 +90,10 @@ watch(
   { immediate: true },
 )
 
-const close = () => emit('update:modelValue', false)
+const close = () => {
+  emit('update:modelValue', false)
+  emit('update:isDialogVisible', false)
+}
 
 const downloadQr = () => {
   downloadQrCode(`badge-${employeeNumber.value}`)
@@ -111,9 +126,9 @@ const printBadge = () => {
 
 <template>
   <VDialog
-    :model-value="modelValue"
+    :model-value="isVisible"
     max-width="480"
-    @update:model-value="$emit('update:modelValue', $event)"
+    @update:model-value="val => { $emit('update:modelValue', val); $emit('update:isDialogVisible', val) }"
   >
     <VCard class="employee-badge-dialog d-flex flex-column">
       <VCardTitle class="d-flex align-center gap-3 px-5 py-3">

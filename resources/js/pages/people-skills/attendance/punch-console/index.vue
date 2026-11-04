@@ -27,8 +27,8 @@ definePage({
   meta: {
     layout: 'default',
     module: 'people-skills',
-    action: 'read',
-    subject: 'PeopleSkills',
+    action: 'punch',
+    subject: 'attendance',
   },
 })
 

@@ -11,7 +11,7 @@ class StoreEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', \App\Modules\Hr\Models\Employee::class) ?? false;
     }
 
     protected function prepareForValidation(): void

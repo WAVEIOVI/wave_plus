@@ -321,7 +321,7 @@ const resolveVatStatusVariant = status => ({
             {{ $t('Bank Accounts') }}
           </h5>
           <VBtn
-            v-if="!readOnly"
+            v-if="!readOnly && $can('manage', 'bp-bank-accounts')"
             variant="tonal"
             size="small"
             class="d-none d-md-inline-flex"
@@ -416,7 +416,7 @@ const resolveVatStatusVariant = status => ({
                 </div>
 
                 <VMenu
-                  v-if="!readOnly"
+                  v-if="!readOnly && $can('manage', 'bp-bank-accounts')"
                   location="bottom end"
                 >
                   <template #activator="{ props: menuProps }">
@@ -549,7 +549,7 @@ const resolveVatStatusVariant = status => ({
                 </div>
 
                 <VMenu
-                  v-if="!readOnly"
+                  v-if="!readOnly && $can('manage', 'bp-bank-accounts')"
                   location="bottom end"
                 >
                   <template #activator="{ props: menuProps }">

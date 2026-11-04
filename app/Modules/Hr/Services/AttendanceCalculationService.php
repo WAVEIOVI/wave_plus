@@ -140,9 +140,10 @@ class AttendanceCalculationService
 
         $firstIn = $events->firstWhere('event_type', 'in');
         $lastOut = $events->where('event_type', 'out')->last();
+        $isCurrentlyWorking = $events->isNotEmpty() && $events->last()->event_type === 'in';
 
         $actualInTime = $firstIn ? Carbon::parse($firstIn->event_time)->toTimeString() : null;
-        $actualOutTime = $lastOut ? Carbon::parse($lastOut->event_time)->toTimeString() : null;
+        $actualOutTime = (! $isCurrentlyWorking && $lastOut) ? Carbon::parse($lastOut->event_time)->toTimeString() : null;
 
         $scheduledIn = $schedule?->effective_start_time ?? $schedule?->shift?->start_time;
         $scheduledOut = $schedule?->effective_end_time ?? $schedule?->shift?->end_time;
@@ -155,7 +156,18 @@ class AttendanceCalculationService
             if ($isOvernight || $schedEnd->lte($schedStart)) {
                 $schedEnd->addDay();
             }
-            $scheduledHours = round($schedStart->diffInMinutes($schedEnd) / 60, 2);
+            $spanMinutes = $schedStart->diffInMinutes($schedEnd);
+            $breakMinutes = (int) ($schedule?->shift?->break_duration_minutes ?? 0);
+            $netMinutes = max(0, $spanMinutes - $breakMinutes);
+            $scheduledHours = round($netMinutes / 60, 2);
+
+            // Deduct approved hourly leave duration from planned required hours
+            if ($coveringLeave && $coveringLeave->isHourlyLeave() && ! empty($coveringLeave->start_time) && ! empty($coveringLeave->end_time)) {
+                $leaveStart = Carbon::parse("{$dateString} {$coveringLeave->start_time}");
+                $leaveEnd = Carbon::parse("{$dateString} {$coveringLeave->end_time}");
+                $leaveMinutes = max(0, $leaveStart->diffInMinutes($leaveEnd));
+                $scheduledHours = max(0.0, round(($netMinutes - $leaveMinutes) / 60, 2));
+            }
         } elseif ($schedule) {
             $scheduledHours = 8.00;
         }
@@ -176,7 +188,7 @@ class AttendanceCalculationService
 
         $workedHours = round($totalWorkedMinutes / 60, 2);
 
-        // Compute late minutes & early departure
+        // Compute late minutes & early departure with approved leave and tolerance integration
         $lateMinutes = 0;
         $earlyArrivalMinutes = 0;
         $earlyDepartureMinutes = 0;
@@ -184,21 +196,46 @@ class AttendanceCalculationService
         if ($firstIn && $scheduledIn) {
             $actualStart = Carbon::parse($firstIn->event_time);
             $scheduledStart = Carbon::parse("{$dateString} {$scheduledIn}");
-            if ($actualStart->isAfter($scheduledStart)) {
-                $lateMinutes = (int) $scheduledStart->diffInMinutes($actualStart);
-            } elseif ($actualStart->isBefore($scheduledStart)) {
-                $earlyArrivalMinutes = (int) $actualStart->diffInMinutes($scheduledStart);
+            $expectedArrival = $scheduledStart->copy();
+
+            // Hourly leave covering the morning: expected start shifts to leave end
+            if ($coveringLeave && $coveringLeave->isHourlyLeave() && ! empty($coveringLeave->start_time) && ! empty($coveringLeave->end_time)) {
+                $leaveStart = Carbon::parse("{$dateString} {$coveringLeave->start_time}");
+                $leaveEnd = Carbon::parse("{$dateString} {$coveringLeave->end_time}");
+                $tolerance = $config->hourly_leave_tolerance_minutes ?? 15;
+                if ($leaveStart->lte($scheduledStart->copy()->addMinutes($tolerance))) {
+                    $expectedArrival = $leaveEnd;
+                }
+            }
+
+            if ($actualStart->isAfter($expectedArrival)) {
+                $lateMinutes = (int) $expectedArrival->diffInMinutes($actualStart);
+            } elseif ($actualStart->isBefore($expectedArrival)) {
+                $earlyArrivalMinutes = (int) $actualStart->diffInMinutes($expectedArrival);
             }
         }
 
-        if ($lastOut && $scheduledOut) {
+        if (! $isCurrentlyWorking && $lastOut && $scheduledOut) {
             $actualEnd = Carbon::parse($lastOut->event_time);
             $scheduledEnd = Carbon::parse("{$dateString} {$scheduledOut}");
             if ($isOvernight || $scheduledEnd->lte(Carbon::parse("{$dateString} {$scheduledIn}"))) {
                 $scheduledEnd->addDay();
             }
-            if ($actualEnd->isBefore($scheduledEnd)) {
-                $earlyDepartureMinutes = (int) $actualEnd->diffInMinutes($scheduledEnd);
+
+            $expectedDeparture = $scheduledEnd->copy();
+
+            // Hourly leave covering the afternoon/departure: expected departure shifts to leave start
+            if ($coveringLeave && $coveringLeave->isHourlyLeave() && ! empty($coveringLeave->start_time) && ! empty($coveringLeave->end_time)) {
+                $leaveStart = Carbon::parse("{$dateString} {$coveringLeave->start_time}");
+                $leaveEnd = Carbon::parse("{$dateString} {$coveringLeave->end_time}");
+                $tolerance = $config->hourly_leave_tolerance_minutes ?? 15;
+                if ($leaveEnd->gte($scheduledEnd->copy()->subMinutes($tolerance))) {
+                    $expectedDeparture = $leaveStart;
+                }
+            }
+
+            if ($actualEnd->isBefore($expectedDeparture)) {
+                $earlyDepartureMinutes = (int) $actualEnd->diffInMinutes($expectedDeparture);
             }
         }
 

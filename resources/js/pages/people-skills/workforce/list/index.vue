@@ -22,7 +22,8 @@ import { useHrPlannerStore } from '@/stores/useHrPlannerStore'
 import ShiftFormDialog from '@/views/people-skills/workforce/ShiftFormDialog.vue'
 import WorkforceAvailabilityTab from '@/views/people-skills/workforce/WorkforceAvailabilityTab.vue'
 import WorkforcePlanner from '@/views/people-skills/workforce/WorkforcePlanner.vue'
-import { computed, getCurrentInstance, onMounted, reactive, ref, watch } from 'vue'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 
@@ -33,17 +34,17 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'workforce',
   },
 })
 
 const { t, locale } = useI18n()
 const { smAndDown } = useDisplay()
-const { proxy } = getCurrentInstance()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const hrStore = useHrStore()
 const plannerStore = useHrPlannerStore()
-const canCreate = computed(() => !!proxy?.$can?.('create', 'PeopleSkills'))
+const canCreate = computed(() => ability.can('create', 'workforce') || ability.can('create', 'PeopleSkills'))
 
 // ── Tabs: Shifts / Schedules ─────────────────────────────────────────────
 const activeTab = ref('planner')
@@ -283,6 +284,7 @@ const mobileFabActions = computed(() => {
   if (activeTab.value === 'planner') {
     const actions = [
       { id: 'bulk-schedule', icon: 'tabler-calendar-plus', title: t('workforce.bulk_schedule', 'Bulk schedule'), onClick: () => plannerRef.value?.openBulk() },
+      { id: 'planner-history', icon: 'tabler-history', title: t('workforce.history', 'History'), onClick: () => plannerRef.value?.openHistory() },
       { id: 'planner-filters', icon: 'tabler-filter', title: t('wp.filters.label', 'Filters'), onClick: () => plannerRef.value?.openFilters() },
       { id: 'planner-reload', icon: 'tabler-refresh', title: t('workforce.planner.reload', 'Reload planner'), onClick: () => plannerRef.value?.load() },
     ]
@@ -379,7 +381,7 @@ onMounted(() => hrStore.fetchMeta())
       <template #tab-shifts>
         <WpPageToolbar
           v-model:search="shiftSearch"
-          :create-label="$can('create', 'PeopleSkills') ? $t('workforce.add_shift') : ''"
+          :create-label="canCreate ? $t('workforce.add_shift') : ''"
           hide-create-on-mobile
           @create="openShiftDialog"
           @refresh="shiftListPage.refresh()"

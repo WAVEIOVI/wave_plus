@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Modules\BusinessPartners\Models\BpBankAccount;
 use App\Modules\BusinessPartners\Models\Client;
 use App\Modules\BusinessPartners\Models\Organisation;
 use App\Modules\BusinessPartners\Models\ServiceProvider as ServiceProviderPartner;
 use App\Modules\BusinessPartners\Models\Supplier;
+use App\Modules\BusinessPartners\Policies\BpBankAccountPolicy;
 use App\Modules\BusinessPartners\Policies\ClientPolicy;
 use App\Modules\BusinessPartners\Policies\OrganisationPolicy;
 use App\Modules\BusinessPartners\Policies\ServiceProviderPolicy;
@@ -155,6 +157,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Supplier::class, SupplierPolicy::class);
         Gate::policy(ServiceProviderPartner::class, ServiceProviderPolicy::class);
         Gate::policy(Organisation::class, OrganisationPolicy::class);
+        Gate::policy(BpBankAccount::class, BpBankAccountPolicy::class);
 
         Gate::policy(CatalogItem::class, CatalogItemPolicy::class);
         Gate::policy(CatalogCategory::class, CatalogCategoryPolicy::class);

@@ -10,6 +10,7 @@ export function useAppraisalActions({ dialogs }) {
 
   const isSaving = ref(false)
   const isDeleting = ref(false)
+  const isAcknowledging = ref(false)
 
   const handleSaveCycle = async payload => {
     isSaving.value = true
@@ -49,6 +50,20 @@ export function useAppraisalActions({ dialogs }) {
     }
   }
 
+  const handleAcknowledgeAppraisal = async (id, payload = {}) => {
+    isAcknowledging.value = true
+    try {
+      await store.acknowledgeAppraisal(id, payload)
+      showMessage(t('appraisals.acknowledged_success', 'Appraisal acknowledged successfully.'), 'success')
+      if (dialogs.closeDetail) dialogs.closeDetail()
+    } catch (err) {
+      showMessage(err?.data?.message || t('appraisals.acknowledge_error', 'Failed to acknowledge appraisal.'), 'error')
+      throw err
+    } finally {
+      isAcknowledging.value = false
+    }
+  }
+
   const handleDelete = async () => {
     const item = dialogs.selectedItem.value
     if (!item) return
@@ -73,8 +88,10 @@ export function useAppraisalActions({ dialogs }) {
   return {
     isSaving,
     isDeleting,
+    isAcknowledging,
     handleSaveCycle,
     handleSaveAppraisal,
+    handleAcknowledgeAppraisal,
     handleDelete,
   }
 }

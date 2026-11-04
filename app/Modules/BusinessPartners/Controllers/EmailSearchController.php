@@ -6,7 +6,6 @@ namespace App\Modules\BusinessPartners\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\BusinessPartners\Controllers\Concerns\AuthorizesPartnerRequests;
-use App\Modules\BusinessPartners\Models\Client;
 use App\Modules\BusinessPartners\Services\BusinessPartnerEmailSearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -24,7 +23,10 @@ class EmailSearchController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
-        $this->authorize('viewAny', Client::class);
+        $categories = $this->emailSearchService->getAllowedPartnerCategories($request->user());
+        if ($categories === []) {
+            abort(403, 'You do not have permission to view any partner records.');
+        }
 
         $query = trim($request->input('q', ''));
 

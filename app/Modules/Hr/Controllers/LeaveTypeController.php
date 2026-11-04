@@ -156,6 +156,13 @@ class LeaveTypeController extends Controller
     {
         $this->authorizeHrMutation('hr.leave.manage');
         $leaveType = LeaveType::findOrFail($id);
+
+        abort_if(
+            $leaveType->requests()->exists() || $leaveType->balances()->exists(),
+            422,
+            'Cannot delete leave type because active balances or leave requests are associated with it. Deactivate it instead.'
+        );
+
         $leaveType->delete();
 
         return response()->json([
@@ -194,6 +201,23 @@ class LeaveTypeController extends Controller
         }
 
         $balance->recalculate();
+
+        \App\Modules\Hr\Models\HrAuditLog::create([
+            'auditable_type' => LeaveBalance::class,
+            'auditable_id' => $balance->id,
+            'actor_id' => auth()->id(),
+            'action' => 'LEAVE_BALANCE_ADJUSTED',
+            'new_values' => [
+                'employee_id' => $balance->employee_id,
+                'leave_type_id' => $balance->leave_type_id,
+                'year' => $balance->year,
+                'accrued_days' => $balance->accrued_days,
+                'approved_used_days' => $balance->approved_used_days,
+                'pending_reserved_days' => $balance->pending_reserved_days,
+                'available_days' => $balance->available_days,
+            ],
+            'reason' => $data['notes'] ?? null,
+        ]);
 
         return response()->json([
             'message' => 'Leave balance adjusted successfully.',

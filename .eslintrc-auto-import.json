@@ -900,6 +900,7 @@
     "normalizeExportIds": true,
     "resolveExportFormats": true,
     "DEFAULT_ICONS": true,
-    "DEFAULT_TIMEOUTS": true
+    "DEFAULT_TIMEOUTS": true,
+    "PRIORITY_WEIGHTS": true
   }
 }

@@ -45,6 +45,7 @@ class LeaveRequestResource extends JsonResource
             'rejection_reason' => $this->rejection_reason,
             'decision_note' => $this->decision_note,
             'requested_by_id' => $this->requested_by_id,
+            'requested_by_name' => $this->requestedBy?->name,
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

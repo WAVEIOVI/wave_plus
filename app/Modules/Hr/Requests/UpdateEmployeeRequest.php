@@ -12,7 +12,12 @@ class UpdateEmployeeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $employeeId = $this->route('id');
+        $employee = $employeeId ? \App\Modules\Hr\Models\Employee::find($employeeId) : null;
+
+        return $employee
+            ? ($this->user()?->can('update', $employee) ?? false)
+            : ($this->user()?->can('create', \App\Modules\Hr\Models\Employee::class) ?? false);
     }
 
     protected function prepareForValidation(): void

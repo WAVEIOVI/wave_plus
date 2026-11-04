@@ -62,7 +62,7 @@ class EmployeeDetailResource extends JsonResource
             'issuing_organization' => $ec->issuing_organization,
             'issue_date' => $ec->issue_date?->toDateString(),
             'expiry_date' => $ec->expiry_date?->toDateString(),
-            'status' => $ec->status,
+            'status' => $ec->computed_status ?? $ec->status,
             'is_valid' => $ec->is_valid,
             'verified_at' => $ec->verified_at?->toIso8601String(),
             'notes' => $ec->notes,
@@ -137,7 +137,21 @@ class EmployeeDetailResource extends JsonResource
             'certificate_number' => $et->certificate_number,
         ]);
 
-        $base['appraisals'] = $this->appraisals->map(fn ($ap) => [
+        $user = $request->user();
+        $isSelf = $user && $this->user_id === $user->id;
+        $canViewAppraisals = $user && (
+            $user->hasRole(['Super Admin', 'Admin', 'HR Manager'])
+            || $user->can('hr.appraisals.view')
+            || $isSelf
+        );
+        $canViewDocuments = $user && (
+            $user->hasRole(['Super Admin', 'Admin', 'HR Manager'])
+            || $user->can('hr.employees.view-sensitive')
+            || $user->can('hr.employees.edit')
+            || $isSelf
+        );
+
+        $base['appraisals'] = $canViewAppraisals ? $this->appraisals->map(fn ($ap) => [
             'id' => $ap->id,
             'cycle_name' => $ap->cycle?->name ?? 'N/A',
             'cycle_type' => $ap->cycle?->cycle_type ?? '',
@@ -148,10 +162,13 @@ class EmployeeDetailResource extends JsonResource
             'employee_feedback' => $ap->employee_feedback,
             'goals' => $ap->goals,
             'ratings' => $ap->ratings,
+            'reviewed_at' => $ap->reviewed_at?->toIso8601String(),
+            'acknowledged_at' => $ap->acknowledged_at?->toIso8601String(),
+            'is_completed' => $ap->is_completed,
             'date' => $ap->created_at?->toDateString(),
-        ]);
+        ]) : [];
 
-        $base['documents'] = $this->getMedia('documents')->map(fn ($m) => [
+        $base['documents'] = $canViewDocuments ? $this->getMedia('documents')->map(fn ($m) => [
             'id' => $m->id,
             'name' => $m->file_name,
             'file_name' => $m->file_name,
@@ -159,7 +176,7 @@ class EmployeeDetailResource extends JsonResource
             'size' => $m->size,
             'url' => $m->getUrl(),
             'created_at' => $m->created_at?->toISOString(),
-        ]);
+        ]) : [];
 
         return $base;
     }

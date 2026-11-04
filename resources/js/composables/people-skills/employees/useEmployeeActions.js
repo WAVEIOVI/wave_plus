@@ -35,6 +35,7 @@ export function useEmployeeActions({ onRefresh, onMetaRefresh } = {}) {
   const isCreating       = ref(false)
   const isDeleting       = ref(false)
   const isChangingStatus = ref(false)
+  const isExportingList  = ref(false)
 
   // ── Create ────────────────────────────────────────────────────────────────
   /**
@@ -137,15 +138,87 @@ export function useEmployeeActions({ onRefresh, onMetaRefresh } = {}) {
     }
   }
 
+  // ── Batch Export ──────────────────────────────────────────────────────────
+  /**
+   * Export employee list records as CSV or printable PDF.
+   * @param {Array<object>} items
+   * @param {'csv'|'pdf'} format
+   * @returns {boolean}
+   */
+  const exportEmployees = async (items, format = 'csv') => {
+    if (!items || items.length === 0) {
+      showMessage(t('common.noRecords', 'No records to export'), 'warning')
+
+      return false
+    }
+
+    isExportingList.value = true
+    try {
+      if (format === 'csv') {
+        const escapeCsv = val => `"${String(val ?? '').replace(/"/g, '""')}"`
+
+        const headers = ['Employee #', 'First Name', 'Last Name', 'Department', 'Position', 'Team', 'Work Email', 'Work Phone', 'Hire Date', 'Status']
+
+        const rows = items.map(e => [
+          escapeCsv(e.employee_number),
+          escapeCsv(localizedValue(e.first_name)),
+          escapeCsv(localizedValue(e.last_name)),
+          escapeCsv(localizedValue(e.department?.name)),
+          escapeCsv(localizedValue(e.position?.title)),
+          escapeCsv(localizedValue(e.current_team?.name)),
+          escapeCsv(e.work_email),
+          escapeCsv(e.work_phone),
+          escapeCsv(e.hire_date),
+          escapeCsv(e.status),
+        ].join(','))
+
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n')
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+
+        link.setAttribute('href', url)
+        link.setAttribute('download', `employees_export_${new Date().toISOString().slice(0, 10)}.csv`)
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+
+        showMessage(t('common.exportSuccess', 'Export completed successfully'), 'success')
+
+        return true
+      }
+
+      if (format === 'pdf') {
+        window.print()
+        showMessage(t('common.exportSuccess', 'Print layout generated'), 'success')
+
+        return true
+      }
+
+      return false
+    }
+    catch (err) {
+      showMessage(err?.message || t('common.exportError', 'Failed to export records'), 'error')
+
+      return false
+    }
+    finally {
+      isExportingList.value = false
+    }
+  }
+
   return {
     // States
     isCreating,
     isDeleting,
     isChangingStatus,
+    isExportingList,
 
     // Actions
     createEmployee,
     deleteEmployee,
     changeStatus,
+    exportEmployees,
   }
 }

@@ -13,6 +13,7 @@ import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
 import { useLeaveRequestStore } from '@/stores/useLeaveRequestStore'
 import { usePublicHolidayStore } from '@/stores/usePublicHolidayStore'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import LeavePolicyDialog from './LeavePolicyDialog.vue'
 import LeaveTypeDialog from './LeaveTypeDialog.vue'
 import PublicHolidayDialog from './PublicHolidayDialog.vue'
@@ -20,9 +21,12 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const leaveStore = useLeaveRequestStore()
 const holidayStore = usePublicHolidayStore()
+
+const canManage = computed(() => ability.can('manage', 'leave') || ability.can('create', 'PeopleSkills'))
 
 const currentConfigTab = ref('leave-types')
 const search = ref('')
@@ -35,6 +39,7 @@ const configTabs = computed(() => [
 
 const formatDate = value => {
   if (!value) return '—'
+
   return new Intl.DateTimeFormat(locale.value || undefined, {
     year: 'numeric',
     month: 'short',
@@ -191,6 +196,7 @@ const leaveTypeOptions = computed(() =>
 const filteredLeaveTypes = computed(() => {
   if (!search.value) return leaveStore.leaveTypes
   const q = search.value.toLowerCase()
+
   return leaveStore.leaveTypes.filter(lt =>
     lt.code?.toLowerCase().includes(q) ||
     localizedValue(lt.name).toLowerCase().includes(q),
@@ -200,6 +206,7 @@ const filteredLeaveTypes = computed(() => {
 const filteredPolicies = computed(() => {
   if (!search.value) return leaveStore.leavePolicies
   const q = search.value.toLowerCase()
+
   return leaveStore.leavePolicies.filter(lp =>
     localizedValue(lp.leave_type?.name || lp.leaveType?.name).toLowerCase().includes(q) ||
     localizedValue(lp.department?.name).toLowerCase().includes(q),
@@ -209,6 +216,7 @@ const filteredPolicies = computed(() => {
 const filteredHolidays = computed(() => {
   if (!search.value) return holidayStore.holidays
   const q = search.value.toLowerCase()
+
   return holidayStore.holidays.filter(h =>
     localizedValue(h.name).toLowerCase().includes(q) ||
     h.date?.includes(q),
@@ -248,10 +256,10 @@ defineExpose({
         <VCard elevation="1">
           <WpPageToolbar
             v-model:search="search"
-            :create-label="$can('create', 'PeopleSkills') ? $t('time_off.add_type', 'New Leave Type') : ''"
+            :create-label="canManage ? $t('time_off.add_type', 'New Leave Type') : ''"
             hide-create-on-mobile
             :loading="leaveStore.loading"
-            @create="openType()"
+            @create="openType"
             @refresh="leaveStore.fetchLeaveTypes({ all: true })"
           />
 
@@ -266,7 +274,10 @@ defineExpose({
             <template #item.name="{ item }">
               <div class="d-flex flex-column py-1">
                 <span class="text-body-2 font-weight-medium">{{ localizedValue(item.name) }}</span>
-                <span v-if="localizedValue(item.description)" class="text-caption text-medium-emphasis line-clamp-1">
+                <span
+                  v-if="localizedValue(item.description)"
+                  class="text-caption text-medium-emphasis line-clamp-1"
+                >
                   {{ localizedValue(item.description) }}
                 </span>
               </div>
@@ -281,13 +292,21 @@ defineExpose({
             </template>
 
             <template #item.is_paid="{ item }">
-              <VChip size="small" :color="item.is_paid ? 'success' : 'secondary'" label>
+              <VChip
+                size="small"
+                :color="item.is_paid ? 'success' : 'secondary'"
+                label
+              >
                 {{ item.is_paid ? $t('common.yes', 'Yes') : $t('common.no', 'No') }}
               </VChip>
             </template>
 
             <template #item.is_active="{ item }">
-              <VChip size="small" :color="item.is_active ? 'success' : 'secondary'" label>
+              <VChip
+                size="small"
+                :color="item.is_active ? 'success' : 'secondary'"
+                label
+              >
                 {{ item.is_active ? $t('common.active', 'Active') : $t('common.inactive', 'Inactive') }}
               </VChip>
             </template>
@@ -326,10 +345,10 @@ defineExpose({
         <VCard elevation="1">
           <WpPageToolbar
             v-model:search="search"
-            :create-label="$can('create', 'PeopleSkills') ? $t('time_off.add_policy', 'New Accrual Policy') : ''"
+            :create-label="canManage ? $t('time_off.add_policy', 'New Accrual Policy') : ''"
             hide-create-on-mobile
             :loading="leaveStore.loading"
-            @create="openPolicy()"
+            @create="openPolicy"
             @refresh="leaveStore.fetchLeavePolicies()"
           />
 
@@ -397,10 +416,10 @@ defineExpose({
         <VCard elevation="1">
           <WpPageToolbar
             v-model:search="search"
-            :create-label="$can('create', 'PeopleSkills') ? $t('time_off.add_holiday', 'New Public Holiday') : ''"
+            :create-label="canManage ? $t('time_off.add_holiday', 'New Public Holiday') : ''"
             hide-create-on-mobile
             :loading="holidayStore.loading"
-            @create="openHoliday()"
+            @create="openHoliday"
             @refresh="holidayStore.fetchHolidays()"
           />
 
@@ -415,7 +434,10 @@ defineExpose({
             <template #item.name="{ item }">
               <div class="d-flex flex-column py-1">
                 <span class="text-body-2 font-weight-medium">{{ localizedValue(item.name) }}</span>
-                <span v-if="item.is_half_day" class="text-caption text-warning">
+                <span
+                  v-if="item.is_half_day"
+                  class="text-caption text-warning"
+                >
                   {{ $t('time_off.half_day', 'Half Day Holiday') }}
                 </span>
               </div>
@@ -428,7 +450,11 @@ defineExpose({
             </template>
 
             <template #item.is_recurring="{ item }">
-              <VChip size="small" :color="item.is_recurring ? 'primary' : 'secondary'" label>
+              <VChip
+                size="small"
+                :color="item.is_recurring ? 'primary' : 'secondary'"
+                label
+              >
                 {{ item.is_recurring ? $t('common.annual', 'Annual') : $t('common.one_off', 'One-off') }}
               </VChip>
             </template>
@@ -440,7 +466,11 @@ defineExpose({
             </template>
 
             <template #item.is_active="{ item }">
-              <VChip size="small" :color="item.is_active ? 'success' : 'secondary'" label>
+              <VChip
+                size="small"
+                :color="item.is_active ? 'success' : 'secondary'"
+                label
+              >
                 {{ item.is_active ? $t('common.active', 'Active') : $t('common.inactive', 'Inactive') }}
               </VChip>
             </template>

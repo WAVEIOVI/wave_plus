@@ -37,13 +37,24 @@ class CandidateHiringService
                 throw new InvalidArgumentException("Candidate {$candidate->full_name} is already hired.");
             }
 
+            // Guard against duplicate hire if an employee record already references this candidate
+            $existingEmployee = Employee::where('notes', 'like', "%[{$candidate->reference}]%")->first();
+            if ($existingEmployee) {
+                throw new InvalidArgumentException("Candidate {$candidate->full_name} ({$candidate->reference}) is already hired as employee {$existingEmployee->employee_number}.");
+            }
+
+            $effectiveEmail = $workEmail ?? $candidate->email;
+            if ($effectiveEmail && Employee::where('work_email', $effectiveEmail)->exists()) {
+                throw new InvalidArgumentException("An employee with work email [{$effectiveEmail}] already exists.");
+            }
+
             // Create new Employee
             $employee = Employee::create([
                 'first_name' => $candidate->first_name,
                 'last_name' => $candidate->last_name,
                 'personal_email' => $candidate->email,
                 'personal_phone' => $candidate->phone,
-                'work_email' => $workEmail ?? $candidate->email,
+                'work_email' => $effectiveEmail,
                 'work_phone' => $workPhone,
                 'hire_date' => $hireDate->toDateString(),
                 'status' => 'active',

@@ -255,6 +255,29 @@ export const useEmployeeStore = defineStore('employee', () => {
   const suspend    = (id, reason) => changeStatus(id, 'suspended', reason)
   const terminate  = (id, reason, effectiveDate) => changeStatus(id, 'terminated', reason, effectiveDate)
 
+  // ── Team Assignment ────────────────────────────────────────────────────────
+  const assignTeam = async (id, teamId) => {
+    error.value = null
+    try {
+      const response = await $api(`/hr/employees/${id}/assign-team`, {
+        method: 'POST',
+        body: { team_id: teamId },
+      })
+
+      if (currentItem.value?.id === id) {
+        currentItem.value = { ...deepClone(currentItem.value), current_team_id: teamId }
+      }
+
+      return response
+    }
+    catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      throw err
+    }
+  }
+
   // ── Photo Upload ───────────────────────────────────────────────────────────
 
   /**
@@ -374,6 +397,41 @@ export const useEmployeeStore = defineStore('employee', () => {
     }
   }
 
+  const updateSkill = async (empSkillId, payload) => {
+    error.value = null
+    try {
+      const response = await $api(`/hr/employee-skills/${empSkillId}`, {
+        method: 'PUT',
+        body: payload,
+      })
+
+      return response.data || response
+    }
+    catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      throw err
+    }
+  }
+
+  const deleteSkill = async empSkillId => {
+    error.value = null
+    try {
+      const response = await $api(`/hr/employee-skills/${empSkillId}`, {
+        method: 'DELETE',
+      })
+
+      return response.data || response
+    }
+    catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      throw err
+    }
+  }
+
   const assignCertification = async (employeeId, formData) => {
     error.value = null
     try {
@@ -392,11 +450,63 @@ export const useEmployeeStore = defineStore('employee', () => {
     }
   }
 
+  const updateCertification = async (empCertId, payload) => {
+    error.value = null
+    try {
+      const response = await $api(`/hr/employee-certifications/${empCertId}`, {
+        method: 'PUT',
+        body: payload,
+      })
+
+      return response.data || response
+    }
+    catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      throw err
+    }
+  }
+
+  const deleteCertification = async empCertId => {
+    error.value = null
+    try {
+      const response = await $api(`/hr/employee-certifications/${empCertId}`, {
+        method: 'DELETE',
+      })
+
+      return response.data || response
+    }
+    catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      throw err
+    }
+  }
+
   const verifyCertification = async empCertId => {
     error.value = null
     try {
       const response = await $api(`/hr/employee-certifications/${empCertId}/verify`, {
         method: 'PUT',
+      })
+
+      return response.data || response
+    }
+    catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      throw err
+    }
+  }
+
+  const fetchDevelopmentSummary = async employeeId => {
+    error.value = null
+    try {
+      const response = await $api(`/hr/employees/${employeeId}/development-summary`, {
+        method: 'GET',
       })
 
       return response.data || response
@@ -449,12 +559,18 @@ export const useEmployeeStore = defineStore('employee', () => {
     activate,
     suspend,
     terminate,
+    assignTeam,
     uploadPhoto,
     uploadDocument,
     assignSkill,
+    updateSkill,
+    deleteSkill,
     verifySkill,
     assignCertification,
+    updateCertification,
+    deleteCertification,
     verifyCertification,
+    fetchDevelopmentSummary,
     fetchBadge,
   }
 })

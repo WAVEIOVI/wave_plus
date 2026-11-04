@@ -28,43 +28,68 @@ class EnsureHrModuleAccess
 
     private function canAccessHr(Request $request, $user): bool
     {
-        // Self-service time clock: every linked employee may punch their own
-        // badge; per-endpoint checks below restrict them to their own record.
-        if ($request->is('api/hr/time-clock/*')
-            && Employee::where('user_id', $user->id)->exists()) {
-            return true;
-        }
-        if ($user->hasRole(['Super Admin', 'Admin', 'Attendance Kiosk', 'kiosk'])) {
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager', 'HR Officer', 'Attendance Manager', 'Leave Approver', 'Recruiter', 'Fleet Manager', 'Attendance Kiosk', 'kiosk'])) {
             return true;
         }
 
-        if ($user->can('read-PeopleSkills') || $user->can('hr.attendance.kiosk')) {
+        // Self-service: every linked employee (or Employee Self-Service role)
+        // may access time-clock, their own profile, submit leave requests, view
+        // their own balances and attendances, view appraisals and public holidays.
+        // Per-endpoint policies restrict them strictly to their own records.
+        if (Employee::where('user_id', $user->id)->exists() || $user->hasRole('Employee Self-Service')) {
+            if ($request->is([
+                'api/hr/time-clock/*',
+                'api/hr/leave-requests*',
+                'api/hr/leave-balances*',
+                'api/hr/attendances*',
+                'api/hr/public-holidays*',
+                'api/hr/appraisals*',
+            ])) {
+                return true;
+            }
+
+            if ($request->is('api/hr/employees/*') && $request->isMethod('GET')) {
+                return true;
+            }
+        }
+
+        if ($user->can('read-PeopleSkills') || $user->can('read-hr-dashboard') || $user->can('hr.attendance.kiosk')) {
             return true;
         }
 
         foreach ([
             'hr.employees.view',
-            'hr.attendance.view',
-            'hr.leave.view',
-            'hr.recruitment.view',
-            'hr.training.view',
-            'hr.certifications.view',
-            'hr.workforce.view',
-            // Mutation grants also imply module access; per-endpoint policies
-            // enforce the exact create/edit/archive/approve rights.
             'hr.employees.create',
             'hr.employees.edit',
             'hr.employees.archive',
+            'hr.employees.view-sensitive',
+            'hr.departments.view',
+            'hr.departments.manage',
+            'hr.positions.view',
+            'hr.positions.manage',
+            'hr.teams.view',
+            'hr.teams.manage',
+            'hr.attendance.view',
             'hr.attendance.manage',
             'hr.attendance.correct',
+            'hr.attendance.kiosk',
+            'hr.leave.view',
             'hr.leave.request',
             'hr.leave.approve',
             'hr.leave.manage',
+            'hr.recruitment.view',
             'hr.recruitment.manage',
             'hr.recruitment.hire',
+            'hr.training.view',
             'hr.training.manage',
+            'hr.certifications.view',
             'hr.certifications.manage',
+            'hr.skills.view',
+            'hr.skills.manage',
+            'hr.workforce.view',
             'hr.workforce.assign',
+            'hr.appraisals.view',
+            'hr.appraisals.manage',
             'hr.fleet.view',
             'hr.fleet.manage',
             'hr.fleet.archive',

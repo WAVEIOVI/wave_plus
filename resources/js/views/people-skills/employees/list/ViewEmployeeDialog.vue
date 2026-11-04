@@ -2,11 +2,9 @@
 /* eslint-disable camelcase */
 import {
   WpDetailDialog,
-  WpErrorBanner,
   WpJournalNav,
   WpKpiCard,
   WpKpiGroup,
-  WpLoadingState,
   WpSectionCard,
   WpSimpleTable,
 } from '@/components/shared'
@@ -31,6 +29,7 @@ import TabLeaveBalances from '@/views/people-skills/employees/edit/TabLeaveBalan
 import TabLeaveHistory from '@/views/people-skills/employees/edit/TabLeaveHistory.vue'
 import TabSkillsMatrix from '@/views/people-skills/employees/edit/TabSkillsMatrix.vue'
 import TabTrainingSessions from '@/views/people-skills/employees/edit/TabTrainingSessions.vue'
+import EmployeeBadgeDialog from '@/components/people-skills/EmployeeBadgeDialog.vue'
 import { avatarText } from '@core/utils/formatters'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -58,13 +57,24 @@ const props = defineProps({
 const emit = defineEmits(['update:isDialogVisible', 'edit', 'retry'])
 
 const { t } = useI18n()
-const { smAndDown } = useDisplay()
+const { smAndDown, width } = useDisplay()
 const hrStore = useHrStore()
 
 const activeSection = ref('identity')
+const isBadgeDialogOpen = ref(false)
+const isSmallMobile = computed(() => width.value <= 435)
 
 watch(() => props.isDialogVisible, visible => {
-  if (visible) activeSection.value = 'identity'
+  if (visible) {
+    activeSection.value = 'identity'
+  } else {
+    isBadgeDialogOpen.value = false
+  }
+})
+
+watch(() => props.employee?.id, () => {
+  activeSection.value = 'identity'
+  isBadgeDialogOpen.value = false
 })
 
 // ── Dropdown lookups for employment card ─────────────────────────────────────
@@ -78,7 +88,7 @@ const teamOptions = computed(() =>
   hrStore.teams.map(team => ({ title: localizedValue(team.name), value: team.id })))
 
 const managerOptions = computed(() =>
-  hrStore.employees
+  (Array.isArray(hrStore.managers) ? hrStore.managers : [])
     .filter(e => e.id !== props.employee?.id)
     .map(e => ({
       title: [localizedValue(e.first_name), localizedValue(e.last_name)].filter(Boolean).join(' ') || e.full_name || `#${e.employee_number}`,
@@ -238,6 +248,11 @@ const displayName = computed(() => {
 
   return name || props.employee.full_name || t('employees.view.title', 'Employee Profile')
 })
+
+const handleEdit = () => {
+  emit('update:isDialogVisible', false)
+  emit('edit', props.employee)
+}
 </script>
 
 <template>
@@ -250,6 +265,53 @@ const displayName = computed(() => {
     @update:model-value="emit('update:isDialogVisible', $event)"
     @retry="emit('retry')"
   >
+    <template #loading>
+      <div class="dialog-journal-layout">
+        <nav
+          v-if="!smAndDown"
+          class="dialog-journal-nav glass-panel"
+          aria-hidden="true"
+        >
+          <VSkeletonLoader type="list-item@7" />
+          <VDivider class="my-4" />
+          <VSkeletonLoader type="list-item@5" />
+        </nav>
+        <main
+          class="dialog-journal-feed"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <VCard>
+            <VCardText class="d-flex flex-column align-center py-8">
+              <VSkeletonLoader
+                type="avatar"
+                width="72"
+                height="72"
+                class="bg-transparent mb-3"
+              />
+              <VSkeletonLoader
+                type="heading"
+                width="220"
+                class="bg-transparent mb-2"
+              />
+              <VSkeletonLoader
+                type="text"
+                width="160"
+                class="bg-transparent"
+              />
+            </VCardText>
+            <VCardText>
+              <VSkeletonLoader type="paragraph, paragraph" />
+            </VCardText>
+          </VCard>
+          <VSkeletonLoader
+            type="article"
+            class="rounded-lg"
+          />
+        </main>
+      </div>
+    </template>
+
     <!-- Avatar / Header -->
     <template #avatar>
       <VAvatar
@@ -264,14 +326,18 @@ const displayName = computed(() => {
         />
         <span
           v-else
-          class="font-weight-bold text-subtitle-1"
+          class="font-weight-bold"
+          :class="isSmallMobile ? 'text-caption' : 'text-subtitle-1'"
         >
           {{ avatarText(displayName) }}
         </span>
       </VAvatar>
     </template>
 
-    <template #subtitle>
+    <template
+      v-if="!isSmallMobile"
+      #subtitle
+    >
       <div class="d-flex align-center flex-wrap gap-2">
         <span
           v-if="employee?.position?.title"
@@ -313,16 +379,55 @@ const displayName = computed(() => {
 
     <!-- Actions slot -->
     <template #actions>
-      <div class="d-flex align-center gap-2">
+      <div class="d-flex align-center gap-1 gap-sm-2">
         <VBtn
-          v-if="employee?.id && $can('update', 'PeopleSkills')"
+          v-if="employee?.work_email && $can('create', 'email-messages')"
           variant="tonal"
           size="small"
           color="primary"
+          :density="isSmallMobile ? 'compact' : 'default'"
+          :icon="smAndDown"
+          :prepend-icon="smAndDown ? undefined : 'tabler-mail'"
+          :href="`mailto:${employee.work_email}`"
+          :aria-label="$t('Send Mail', 'Send Mail')"
+        >
+          <VIcon
+            v-if="smAndDown"
+            icon="tabler-mail"
+            size="18"
+          />
+          <span v-else>{{ $t('Send Mail', 'Send Mail') }}</span>
+        </VBtn>
+
+        <VBtn
+          v-if="employee?.id"
+          variant="tonal"
+          size="small"
+          color="secondary"
+          :density="isSmallMobile ? 'compact' : 'default'"
+          :icon="smAndDown"
+          :prepend-icon="smAndDown ? undefined : 'tabler-id-badge-2'"
+          :aria-label="$t('hr.employees.badge.preview', 'Employee Badge')"
+          @click="isBadgeDialogOpen = true"
+        >
+          <VIcon
+            v-if="smAndDown"
+            icon="tabler-id-badge-2"
+            size="18"
+          />
+          <span v-else>{{ $t('hr.employees.badge.preview', 'Badge') }}</span>
+        </VBtn>
+
+        <VBtn
+          v-if="employee?.id && ($can('update', 'employees') || $can('update', 'PeopleSkills'))"
+          variant="tonal"
+          size="small"
+          color="warning"
+          :density="isSmallMobile ? 'compact' : 'default'"
           :icon="smAndDown"
           :prepend-icon="smAndDown ? undefined : 'tabler-edit'"
           :aria-label="$t('Edit')"
-          @click="emit('edit', employee)"
+          @click="handleEdit"
         >
           <VIcon
             v-if="smAndDown"
@@ -599,18 +704,31 @@ const displayName = computed(() => {
       </main>
     </div>
   </WpDetailDialog>
+
+  <EmployeeBadgeDialog
+    v-model="isBadgeDialogOpen"
+    :employee="employee"
+    :employee-id="employee?.id"
+  />
 </template>
 
 <style lang="scss" scoped>
 .dialog-journal-layout {
   display: flex;
+  align-items: flex-start;
   gap: 1.5rem;
+  padding: 1.5rem;
   min-block-size: 500px;
 
   @media (max-width: 960px) {
     flex-direction: column;
-    padding: 0.5rem;
+    padding: 0.75rem;
   }
+}
+
+.dialog-journal-nav {
+  flex: 0 0 220px;
+  inline-size: 220px;
 }
 
 .dialog-journal-feed {

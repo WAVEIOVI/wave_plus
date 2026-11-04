@@ -93,7 +93,7 @@ class SupplierController extends Controller
 
     public function exportPdf(): Response
     {
-        $this->authorize('viewAny', Supplier::class);
+        $this->authorize('export', Supplier::class);
 
         $suppliers = Supplier::with('accountManager')
             ->orderBy('created_at', 'desc')
@@ -121,7 +121,7 @@ class SupplierController extends Controller
             'documents',
         ])->findOrFail($id);
 
-        $this->authorize('view', $supplier);
+        $this->authorize('export', $supplier);
 
         $html = view('pdf.suppliers.supplier-record', compact('supplier'))->render();
 

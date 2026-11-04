@@ -107,7 +107,8 @@ class WorkforcePlannerAndReconciliationTest extends TestCase
     {
         $role = \App\Models\Role::findOrCreate('Employee Viewer', 'web');
         \App\Models\Permission::findOrCreate('hr.employees.view', 'web');
-        $role->givePermissionTo('hr.employees.view');
+        \App\Models\Permission::findOrCreate('hr.appraisals.view', 'web');
+        $role->givePermissionTo(['hr.employees.view', 'hr.appraisals.view']);
 
         $viewer = User::factory()->create();
         $viewer->assignRole($role);
@@ -318,5 +319,102 @@ class WorkforcePlannerAndReconciliationTest extends TestCase
         $this->postJson('/api/hr/workforce/shifts', [
             'name' => 'Shift A', 'code' => 'DS1', 'start_time' => '07:00', 'end_time' => '15:00',
         ])->assertStatus(422);
+    }
+
+    public function test_schedule_history_endpoint_returns_grouped_batches(): void
+    {
+        $this->postJson('/api/hr/workforce/bulk-schedule', [
+            'employee_ids' => [$this->employee->id],
+            'start_date' => '2026-11-09',
+            'end_date' => '2026-11-13',
+            'shift_id' => $this->shift->id,
+            'days_of_week' => [1, 2, 3, 4, 5],
+            'lifecycle_status' => 'draft',
+            'notes' => 'Q4 Operations Week 46',
+        ])->assertCreated();
+
+        $response = $this->getJson('/api/hr/workforce/schedule-history?limit=10');
+        $response->assertOk()
+            ->assertJsonStructure([
+                'batches' => [
+                    '*' => [
+                        'plan_batch_id',
+                        'total_schedules',
+                        'draft_count',
+                        'planned_count',
+                        'completed_count',
+                        'start_date',
+                        'end_date',
+                        'notes',
+                        'created_at',
+                    ],
+                ],
+            ]);
+
+        $batch = collect($response->json('batches'))->firstWhere('notes', 'Q4 Operations Week 46');
+        $this->assertNotNull($batch);
+        $this->assertEquals(5, $batch['total_schedules']);
+        $this->assertEquals(5, $batch['draft_count']);
+        $this->assertEquals('2026-11-09', $batch['start_date']);
+        $this->assertEquals('2026-11-13', $batch['end_date']);
+    }
+
+    public function test_planner_grid_detects_conflicts_and_exceptional_schedules(): void
+    {
+        // 1. Create an approved leave request on 2026-11-10
+        \App\Modules\Hr\Models\LeaveRequest::create([
+            'employee_id' => $this->employee->id,
+            'leave_type_id' => $this->leaveType->id,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'days_taken' => 1.0,
+            'total_days' => 1.0,
+            'status' => 'approved',
+            'reason' => 'Family event',
+        ]);
+
+        // 2. Create a schedule on the same day with exceptional custom hours
+        $schedule = Schedule::create([
+            'employee_id' => $this->employee->id,
+            'shift_id' => $this->shift->id,
+            'date' => '2026-11-10',
+            'custom_start_time' => '09:00:00',
+            'custom_end_time' => '17:30:00',
+            'status' => 'scheduled',
+            'lifecycle_status' => 'draft',
+        ]);
+
+        $res = $this->getJson('/api/hr/workforce/planner-grid?start_date=2026-11-09&end_date=2026-11-15');
+        $res->assertOk();
+
+        $employeeData = collect($res->json('employees'))->firstWhere('id', $this->employee->id);
+        $this->assertNotNull($employeeData);
+
+        $cell = $employeeData['days']['2026-11-10'];
+        $this->assertNotNull($cell);
+        $this->assertNotNull($cell['leave']);
+        $this->assertNotNull($cell['schedule']);
+        $this->assertTrue($cell['schedule']['is_conflict']);
+        $this->assertTrue($cell['schedule']['is_exceptional']);
+    }
+
+    public function test_safety_rules_protect_completed_schedules_and_used_shifts(): void
+    {
+        // 1. Completed schedule cannot be deleted
+        $completed = Schedule::create([
+            'employee_id' => $this->employee->id,
+            'shift_id' => $this->shift->id,
+            'date' => '2026-11-01',
+            'status' => 'completed',
+            'lifecycle_status' => Schedule::STATUS_COMPLETED,
+        ]);
+
+        $this->deleteJson("/api/hr/workforce/schedules/{$completed->id}")
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Cannot delete completed schedule.');
+
+        // 2. Shift with schedules cannot be deleted
+        $this->deleteJson("/api/hr/workforce/shifts/{$this->shift->id}")
+            ->assertStatus(422);
     }
 }

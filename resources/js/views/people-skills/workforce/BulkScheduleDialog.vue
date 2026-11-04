@@ -47,11 +47,14 @@ const dayOptions = computed(() => [
 const rangePresets = computed(() => [
   { key: 'rest_of_week', title: t('workforce.preset.rest_of_week', 'Rest of this week') },
   { key: 'next_week', title: t('workforce.preset.next_week', 'Next week') },
+  { key: 'next_two_weeks', title: t('workforce.preset.next_two_weeks', 'Next 2 weeks') },
   { key: 'rest_of_month', title: t('workforce.preset.rest_of_month', 'Rest of this month') },
+  { key: 'next_month', title: t('workforce.preset.next_month', 'Next month') },
 ])
 
 const dayPresets = computed(() => [
   { key: 'weekdays', title: t('workforce.preset.weekdays', 'Mon–Fri'), days: [1, 2, 3, 4, 5] },
+  { key: 'tunisian_standard', title: t('workforce.preset.tunisian_standard', 'Mon–Sat (TN)'), days: [1, 2, 3, 4, 5, 6] },
   { key: 'every_day', title: t('workforce.preset.every_day', 'Every day'), days: [1, 2, 3, 4, 5, 6, 7] },
   { key: 'weekends', title: t('workforce.preset.weekends', 'Weekends (Sat–Sun)'), days: [6, 7] },
 ])
@@ -107,8 +110,16 @@ const applyRangePreset = key => {
     start = addDays(monday, 7)
     end = addDays(monday, 13)
   }
+  else if (key === 'next_two_weeks') {
+    start = addDays(monday, 7)
+    end = addDays(monday, 20)
+  }
   else if (key === 'rest_of_month') {
     end = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  }
+  else if (key === 'next_month') {
+    start = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+    end = new Date(today.getFullYear(), today.getMonth() + 2, 0)
   }
 
   formState.start_date = toLocalDate(start)

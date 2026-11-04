@@ -168,7 +168,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', () => {
     try {
       return await $api(`/hr/leave-requests/${id}/approve`, {
         method: 'POST',
-        body: notes ? { notes } : {},
+        body: notes ? { decision_note: notes, notes } : {},
       })
     }
     catch (err) {
@@ -183,7 +183,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', () => {
     try {
       return await $api(`/hr/leave-requests/${id}/reject`, {
         method: 'POST',
-        body: { reason },
+        body: { rejection_reason: reason, reason },
       })
     }
     catch (err) {
@@ -211,7 +211,9 @@ export const useLeaveRequestStore = defineStore('leaveRequest', () => {
   const fetchLeaveTypes = async (params = {}) => {
     try {
       const r = await $api('/hr/leave-types', { method: 'GET', params })
+
       leaveTypes.value = r.data || r
+
       return leaveTypes.value
     } catch (err) {
       console.warn('[leaveRequest] fetchLeaveTypes failed:', err?.message)
@@ -221,13 +223,17 @@ export const useLeaveRequestStore = defineStore('leaveRequest', () => {
 
   const createLeaveType = async payload => {
     const r = await $api('/hr/leave-types', { method: 'POST', body: payload })
+
     await fetchLeaveTypes({ all: true })
+
     return r.data || r
   }
 
   const updateLeaveType = async (id, payload) => {
     const r = await $api(`/hr/leave-types/${id}`, { method: 'PUT', body: payload })
+
     await fetchLeaveTypes({ all: true })
+
     return r.data || r
   }
 
@@ -239,7 +245,9 @@ export const useLeaveRequestStore = defineStore('leaveRequest', () => {
   const fetchLeavePolicies = async (params = {}) => {
     try {
       const r = await $api('/hr/leave-policies', { method: 'GET', params })
+
       leavePolicies.value = r.data || r
+
       return leavePolicies.value
     } catch (err) {
       console.warn('[leaveRequest] fetchLeavePolicies failed:', err?.message)
@@ -249,13 +257,17 @@ export const useLeaveRequestStore = defineStore('leaveRequest', () => {
 
   const createLeavePolicy = async payload => {
     const r = await $api('/hr/leave-policies', { method: 'POST', body: payload })
+
     await fetchLeavePolicies()
+
     return r.data || r
   }
 
   const updateLeavePolicy = async (id, payload) => {
     const r = await $api(`/hr/leave-policies/${id}`, { method: 'PUT', body: payload })
+
     await fetchLeavePolicies()
+
     return r.data || r
   }
 
@@ -266,6 +278,7 @@ export const useLeaveRequestStore = defineStore('leaveRequest', () => {
 
   const adjustBalance = async payload => {
     const r = await $api('/hr/leave-balances/adjust', { method: 'POST', body: payload })
+
     return r.data || r
   }
 

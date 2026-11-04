@@ -4,7 +4,6 @@ import {
   WpActiveFilters,
   WpBulkActions,
   WpDeleteDialog,
-  WpEmailDialog,
   WpFilterDialog,
   WpKpiCard,
   WpKpiGroup,
@@ -34,7 +33,7 @@ definePage({
     layout: 'default',
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'organisations',
   },
 })
 
@@ -137,45 +136,52 @@ const handleResetFilters = () => {
 }
 
 // ── Bulk Actions Configuration ───────────────────────────────────────────────
-const bulkActionButtons = computed(() => [
-  {
-    label: t('organisations.list.actions.export_pdf', 'Export PDF'),
-    icon: 'tabler-file-download',
-    emit: 'export-pdf',
-    color: 'secondary',
-    loading: actions.isExportingListPdf.value,
-  },
-  {
-    label: t('organisations.list.actions.send_mail', 'Send Email'),
-    icon: 'tabler-mail',
-    emit: 'send-email',
-    color: 'primary',
-  },
-])
+const bulkActionButtons = computed(() => {
+  const actionsList = []
+
+  if (ability.can('export', 'organisations')) {
+    actionsList.push({
+      label: t('organisations.list.actions.export_pdf', 'Export PDF'),
+      icon: 'tabler-file-download',
+      emit: 'export-pdf',
+      color: 'secondary',
+      loading: actions.isExportingListPdf.value,
+    })
+  }
+
+  if (ability.can('create', 'email-messages')) {
+    actionsList.push({
+      label: t('organisations.list.actions.send_mail', 'Send Email'),
+      icon: 'tabler-mail',
+      emit: 'send-email',
+      color: 'primary',
+    })
+  }
+
+  return actionsList
+})
 
 // ── Row Actions ──────────────────────────────────────────────────────────────
-const getRowActions = () => [
-  { label: t('View'), icon: 'tabler-eye', emit: 'view' },
-  { label: t('Edit'), icon: 'tabler-edit', emit: 'edit' },
-  {
-    label: t('Delete'),
-    icon: 'tabler-trash',
-    emit: 'delete',
-    color: 'error',
-    dividerBefore: true,
-  },
-]
+const getRowActions = () => {
+  const rowActions = [
+    { label: t('View'), icon: 'tabler-eye', emit: 'view' },
+  ]
 
-// ── Email send handler ───────────────────────────────────────────────────────
-const handleSendEmail = async emailData => {
-  const success = await actions.sendEmail({
-    organisationId: dialogs.emailDialog.value.organisationId,
-    emailData,
-  })
-
-  if (success) {
-    dialogs.closeEmail()
+  if (ability.can('update', 'organisations')) {
+    rowActions.push({ label: t('Edit'), icon: 'tabler-edit', emit: 'edit' })
   }
+
+  if (ability.can('delete', 'organisations')) {
+    rowActions.push({
+      label: t('Delete'),
+      icon: 'tabler-trash',
+      emit: 'delete',
+      color: 'error',
+      dividerBefore: true,
+    })
+  }
+
+  return rowActions
 }
 
 const isBulkEmailDialogOpen = ref(false)
@@ -192,7 +198,7 @@ const mobileFabActions = computed(() => [
     id: 'add-organisation',
     icon: 'tabler-building-community',
     title: t('organisations.list.actions.add_new', 'Add Organisation'),
-    disabled: !ability.can('create', 'BusinessPartners'),
+    disabled: !ability.can('create', 'organisations'),
     onClick: () => dialogs.addDialog.open(),
   },
   {
@@ -206,14 +212,14 @@ const mobileFabActions = computed(() => [
     id: 'export-pdf',
     icon: 'tabler-file-type-pdf',
     title: t('organisations.list.actions.export_pdf', 'Export PDF'),
-    disabled: selectedOrganisations.value.length === 0 || actions.isExportingListPdf.value,
+    disabled: selectedOrganisations.value.length === 0 || actions.isExportingListPdf.value || !ability.can('export', 'organisations'),
     onClick: () => actions.exportListPdf(),
   },
   {
     id: 'send-email',
     icon: 'tabler-mail',
     title: t('organisations.list.actions.send_mail', 'Send Email'),
-    disabled: selectedOrganisations.value.length === 0,
+    disabled: selectedOrganisations.value.length === 0 || !ability.can('create', 'email-messages'),
     onClick: openBulkEmail,
   },
   {
@@ -264,7 +270,7 @@ const mobileFabActions = computed(() => [
       <!-- 👉 Page Toolbar inside VCard -->
       <WpPageToolbar
         v-model:search="search"
-        :create-label="$can('create', 'BusinessPartners') ? $t('organisations.list.actions.add_new', 'Add Organisation') : ''"
+        :create-label="$can('create', 'organisations') ? $t('organisations.list.actions.add_new', 'Add Organisation') : ''"
         hide-create-on-mobile
         show-filter
         hide-filter-on-mobile
@@ -758,20 +764,7 @@ const mobileFabActions = computed(() => [
       :organisation="dialogs.viewOrganisation.value"
       :loading="dialogs.viewLoading.value"
       :error="dialogs.viewError.value"
-      @open-email="dialogs.openSingleEmail"
       @retry="dialogs.openView(dialogs.viewDialog.item.value)"
-    />
-
-    <!-- 👉 Email Dialog -->
-    <WpEmailDialog
-      v-model="dialogs.emailDialog.value.isOpen"
-      :title="dialogs.emailDialog.value.isSingle
-        ? `${$t('organisations.list.actions.send_mail', 'Send Email')} — ${localizedValue(dialogs.viewOrganisation.value?.legal_name) || ''}`
-        : $t('organisations.list.actions.send_mail', 'Send Email')"
-      :recipients="dialogs.emailDialog.value.recipients"
-      :loading="actions.isSendingEmail.value"
-      @send="handleSendEmail"
-      @close="dialogs.closeEmail()"
     />
 
     <!-- 👉 Contextual Bulk Email Dialog -->

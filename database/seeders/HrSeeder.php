@@ -55,9 +55,17 @@ class HrSeeder extends Seeder
             'hr.employees.create',
             'hr.employees.edit',
             'hr.employees.archive',
+            'hr.employees.view-sensitive',
+            'hr.departments.view',
+            'hr.departments.manage',
+            'hr.positions.view',
+            'hr.positions.manage',
+            'hr.teams.view',
+            'hr.teams.manage',
             'hr.attendance.view',
             'hr.attendance.manage',
             'hr.attendance.correct',
+            'hr.attendance.kiosk',
             'hr.leave.view',
             'hr.leave.request',
             'hr.leave.approve',
@@ -69,11 +77,16 @@ class HrSeeder extends Seeder
             'hr.training.manage',
             'hr.certifications.view',
             'hr.certifications.manage',
+            'hr.skills.view',
+            'hr.skills.manage',
             'hr.workforce.view',
             'hr.workforce.assign',
+            'hr.appraisals.view',
+            'hr.appraisals.manage',
             'hr.fleet.view',
             'hr.fleet.manage',
             'hr.fleet.archive',
+            'read-hr-dashboard',
         ];
 
         foreach ($permissions as $p) {
@@ -83,6 +96,71 @@ class HrSeeder extends Seeder
         $adminRole = Role::where('name', 'Admin')->first();
         if ($adminRole) {
             $adminRole->givePermissionTo($permissions);
+        }
+
+        // Standard HR Role Templates
+        $hrRoleTemplates = [
+            'HR Manager' => $permissions,
+            'HR Officer' => [
+                'read-PeopleSkills',
+                'read-hr-dashboard',
+                'hr.employees.view',
+                'hr.employees.create',
+                'hr.employees.edit',
+                'hr.departments.view',
+                'hr.positions.view',
+                'hr.teams.view',
+                'hr.attendance.view',
+                'hr.leave.view',
+                'hr.leave.request',
+                'hr.recruitment.view',
+                'hr.recruitment.manage',
+                'hr.training.view',
+                'hr.training.manage',
+                'hr.certifications.view',
+                'hr.certifications.manage',
+                'hr.skills.view',
+                'hr.skills.manage',
+                'hr.workforce.view',
+            ],
+            'Attendance Manager' => [
+                'hr.attendance.view',
+                'hr.attendance.manage',
+                'hr.attendance.correct',
+                'hr.attendance.kiosk',
+                'hr.workforce.view',
+                'hr.workforce.assign',
+                'hr.employees.view',
+            ],
+            'Leave Approver' => [
+                'hr.leave.view',
+                'hr.leave.approve',
+                'hr.leave.request',
+                'hr.employees.view',
+                'hr.attendance.view',
+            ],
+            'Recruiter' => [
+                'hr.recruitment.view',
+                'hr.recruitment.manage',
+                'hr.recruitment.hire',
+                'hr.positions.view',
+                'hr.departments.view',
+                'hr.employees.view',
+            ],
+            'Fleet Manager' => [
+                'hr.fleet.view',
+                'hr.fleet.manage',
+                'hr.fleet.archive',
+                'hr.employees.view',
+            ],
+            'Employee Self-Service' => [
+                'hr.leave.request',
+            ],
+        ];
+
+        foreach ($hrRoleTemplates as $roleName => $perms) {
+            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            $role->syncPermissions($perms);
         }
 
         $opsRole = Role::where('name', 'operations_responsible')->first();
@@ -187,8 +265,8 @@ class HrSeeder extends Seeder
 
         $shiftSummer = Shift::updateOrCreate(['code' => 'SUMMER'], [
             'name' => $this->translations('Summer Shift'),
-            'start_time' => '07:30:00',
-            'end_time' => '14:00:00',
+            'start_time' => '08:00:00',
+            'end_time' => '14:30:00',
             'break_duration_minutes' => 30,
             'is_overnight' => false,
             'is_active' => true,
@@ -197,7 +275,7 @@ class HrSeeder extends Seeder
         $shiftSaturday = Shift::updateOrCreate(['code' => 'SATURDAY'], [
             'name' => $this->translations('Saturday Shift'),
             'start_time' => '08:00:00',
-            'end_time' => '14:00:00',
+            'end_time' => '13:30:00',
             'break_duration_minutes' => 0,
             'is_overnight' => false,
             'is_active' => true,
@@ -658,6 +736,12 @@ class HrSeeder extends Seeder
         $ops->update(['manager_id' => $employeesByEmail['ahmed.mansouri@waveplus.io']->id]);
         $intervention->update(['manager_id' => $employeesByEmail['sami.bensalah@waveplus.io']->id]);
         $teamA->update(['team_leader_id' => $employeesByEmail['sami.bensalah@waveplus.io']->id]);
+
+        // Synchronize EMP document sequence past the seeded employees
+        DB::table('document_sequences')->updateOrInsert(
+            ['document_type' => 'EMP'],
+            ['id' => (string) Str::ulid(), 'current_value' => 50, 'updated_at' => now(), 'created_at' => now()]
+        );
 
         // ── 13. Weekly Schedules (Tunisian 48h Regime & Shifts) ───────
         $currentMonday = Carbon::now()->startOfWeek(Carbon::MONDAY);

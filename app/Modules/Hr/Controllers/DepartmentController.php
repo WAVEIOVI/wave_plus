@@ -19,6 +19,8 @@ class DepartmentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorizeDepartmentRead();
+
         $filters = $request->validate([
             'status' => ['sometimes', 'nullable', 'in:active,inactive'],
             'parent_department_id' => ['sometimes', 'nullable', 'ulid', 'exists:hr_departments,id'],
@@ -81,7 +83,7 @@ class DepartmentController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorizeHrMutation('hr.employees.edit');
+        $this->authorizeDepartmentMutation();
         TranslatableFields::normalizeRequest($request, ['name', 'description']);
 
         $data = $request->validate(array_merge([
@@ -111,6 +113,8 @@ class DepartmentController extends Controller
 
     public function show(string $id): JsonResponse
     {
+        $this->authorizeDepartmentRead();
+
         $department = Department::with([
             'parent',
             'manager',
@@ -139,7 +143,7 @@ class DepartmentController extends Controller
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $this->authorizeHrMutation('hr.employees.edit');
+        $this->authorizeDepartmentMutation();
         $department = Department::findOrFail($id);
         TranslatableFields::normalizeRequest($request, ['name', 'description']);
 
@@ -177,12 +181,56 @@ class DepartmentController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        $this->authorizeHrMutation('hr.employees.archive');
-        $department = Department::findOrFail($id);
+        $this->authorizeDepartmentMutation();
+        $department = Department::withCount(['employees', 'children'])->findOrFail($id);
+
+        if ($department->employees_count > 0) {
+            return response()->json([
+                'message' => 'Cannot delete department with assigned employees. Please reassign them first.',
+            ], 422);
+        }
+
+        if ($department->children_count > 0) {
+            return response()->json([
+                'message' => 'Cannot delete department that has sub-departments. Please reassign or delete sub-departments first.',
+            ], 422);
+        }
+
         $department->delete();
 
         return response()->json([
             'message' => 'Department deleted successfully.',
         ]);
+    }
+
+    protected function authorizeDepartmentRead(): void
+    {
+        $user = request()->user();
+        abort_unless($user, 403);
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager', 'HR Officer'])) {
+            return;
+        }
+        abort_unless(
+            $user->can('hr.departments.view')
+                || $user->can('hr.departments.manage')
+                || $user->can('hr.employees.view')
+                || $user->can('read-PeopleSkills'),
+            403,
+            'You do not have permission to view departments.'
+        );
+    }
+
+    protected function authorizeDepartmentMutation(): void
+    {
+        $user = request()->user();
+        abort_unless($user, 403);
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager'])) {
+            return;
+        }
+        abort_unless(
+            $user->can('hr.departments.manage') || $user->can('hr.employees.edit'),
+            403,
+            'You do not have permission to manage departments.'
+        );
     }
 }

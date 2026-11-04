@@ -361,12 +361,11 @@ class BusinessPartnerEmailSearchService
      */
     public function getAllowedPartnerCategories(User $user): array
     {
-        $hasGlobalBp = $user->hasRole(['Super Admin', 'Admin'])
-            || $user->can('read-BusinessPartners');
+        $isGlobal = $user->hasRole(['Super Admin', 'Admin']);
 
         $categories = [];
 
-        if ($hasGlobalBp || $user->can('read-clients')) {
+        if ($isGlobal || $user->can('read-clients')) {
             $categories[] = [
                 'table' => 'clients',
                 'type' => 'Client',
@@ -375,7 +374,7 @@ class BusinessPartnerEmailSearchService
             ];
         }
 
-        if ($hasGlobalBp || $user->can('read-suppliers')) {
+        if ($isGlobal || $user->can('read-suppliers')) {
             $categories[] = [
                 'table' => 'suppliers',
                 'type' => 'Supplier',
@@ -384,7 +383,7 @@ class BusinessPartnerEmailSearchService
             ];
         }
 
-        if ($hasGlobalBp || $user->can('read-organisations')) {
+        if ($isGlobal || $user->can('read-organisations')) {
             $categories[] = [
                 'table' => 'organisations',
                 'type' => 'Organisation',
@@ -393,7 +392,7 @@ class BusinessPartnerEmailSearchService
             ];
         }
 
-        if ($hasGlobalBp || $user->can('read-service-providers')) {
+        if ($isGlobal || $user->can('read-service-providers')) {
             $categories[] = [
                 'table' => 'service_providers',
                 'type' => 'Service Provider',

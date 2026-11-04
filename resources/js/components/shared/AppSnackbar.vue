@@ -1,8 +1,8 @@
 <script setup>
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
-import { useAppSnackbar } from '@/composables/useAppSnackbar'
 
 const { snackbar, dismiss, handleAction } = useAppSnackbar()
 const { smAndDown } = useDisplay()
@@ -89,20 +89,20 @@ const onModelValueChange = isVisible => {
 
 <style scoped>
 .app-snackbar :deep(.v-snackbar__wrapper) {
-  min-width: 320px;
-  max-width: 520px;
   border-radius: 10px;
   backdrop-filter: blur(8px);
   box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 22%), 0 2px 6px -1px rgba(0, 0, 0, 14%) !important;
-  margin-inline-end: 24px;
   margin-block-end: 24px;
+  margin-inline-end: 24px;
+  max-inline-size: 520px;
+  min-inline-size: 320px;
 }
 
 .app-snackbar--mobile :deep(.v-snackbar__wrapper) {
-  min-width: calc(100vw - 32px) !important;
-  max-width: calc(100vw - 32px) !important;
-  margin-inline: 16px !important;
   margin-block-end: 16px !important;
+  margin-inline: 16px !important;
+  max-inline-size: calc(100vw - 32px) !important;
+  min-inline-size: calc(100vw - 32px) !important;
 }
 
 .app-snackbar__content {

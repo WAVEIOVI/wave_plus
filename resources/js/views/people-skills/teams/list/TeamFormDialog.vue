@@ -1,7 +1,8 @@
 <script setup>
-import { useLocaleField } from '@/composables/useLocaleField'
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
-import { nextTick, reactive, ref, watch } from 'vue'
+/* eslint-disable camelcase */
+import { MultiLangField, WpFormDialog } from '@/components/shared'
+import { ensureTranslatable } from '@/composables/useLocaleField'
+import { reactive, watch } from 'vue'
 import { useDisplay } from 'vuetify'
 
 const props = defineProps({
@@ -18,298 +19,188 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'submit'])
 const { smAndUp } = useDisplay()
-const formId = 'team-form-dialog'
-const formEl = ref(null)
-const formState = reactive({})
-const formRef = ref(formState)
-const nameField = useLocaleField(formRef, 'name')
-const descriptionField = useLocaleField(formRef, 'description')
+
+const formState = reactive({
+  name: ensureTranslatable(),
+  code: '',
+  description: ensureTranslatable(),
+  department_id: null,
+  team_leader_id: null,
+  team_type: 'operational',
+  is_active: true,
+})
 
 const close = () => {
   if (!props.saving)
     emit('update:modelValue', false)
 }
 
-const submit = async () => {
-  const result = await formEl.value?.validate?.()
-  if (result?.valid === false)
-    return
-
-  const submittedForm = Object.fromEntries(
+const submit = () => {
+  emit('submit', Object.fromEntries(
     Object.entries(formState).map(([key, value]) => [
       key,
       value && typeof value === 'object' ? { ...value } : value,
     ]),
-  )
-
-  emit('submit', submittedForm)
+  ))
 }
 
-watch(() => props.modelValue, async isOpen => {
+watch(() => props.modelValue, isOpen => {
   if (isOpen) {
-    Object.assign(formState, Object.fromEntries(
-      Object.entries(props.form).map(([key, value]) => [
-        key,
-        value && typeof value === 'object' ? { ...value } : value,
-      ]),
-    ))
+    Object.assign(formState, {
+      name: ensureTranslatable(props.form?.name),
+      code: props.form?.code || '',
+      description: ensureTranslatable(props.form?.description),
+      department_id: props.form?.department_id || null,
+      team_leader_id: props.form?.team_leader_id || null,
+      team_type: props.form?.team_type || 'operational',
+      is_active: props.form?.is_active ?? true,
+    })
   }
-  await nextTick()
-  formEl.value?.resetValidation?.()
 }, { immediate: true })
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     :model-value="modelValue"
-    max-width="600"
-    :persistent="saving"
-    @update:model-value="value => !value && close()"
+    :title="itemId ? $t('teams.edit') : $t('teams.add')"
+    :subtitle="$t('teams.form.subtitle')"
+    icon="tabler-users-group"
+    :loading="saving"
+    :submit-label="$t(itemId ? 'teams.form.save' : 'teams.form.create')"
+    size="medium"
+    @update:model-value="emit('update:modelValue', $event)"
+    @submit="submit"
+    @cancel="close"
   >
-    <DialogCloseBtn
-      :disabled="saving"
-      @click="close"
+    <VSkeletonLoader
+      v-if="loading"
+      type="article, paragraph, paragraph"
     />
-    <VCard class="dialog-card d-flex flex-column">
-      <VCardItem class="dialog-header">
-        <template #prepend>
-          <VAvatar
-            color="primary"
-            variant="tonal"
-            rounded
-            size="44"
+    <div
+      v-else
+      class="form-sections"
+    >
+      <!-- Identity -->
+      <section>
+        <div class="form-section__header">
+          <VIcon
+            icon="tabler-id"
+            size="18"
+            class="form-section__icon"
+          />
+          <span class="form-section__title">{{ $t('teams.form.sections.identity') }}</span>
+        </div>
+        <VRow>
+          <VCol
+            cols="12"
+            md="8"
           >
-            <VIcon
-              icon="tabler-users-group"
-              size="24"
+            <MultiLangField
+              v-model="formState.name"
+              :label="$t('teams.form.name')"
+              :rules="[rules.required]"
+              required
+              :autofocus="!itemId && smAndUp"
             />
-          </VAvatar>
-        </template>
-        <VCardTitle>
-          {{ itemId ? $t('teams.edit') : $t('teams.add') }}
-        </VCardTitle>
-        <VCardSubtitle class="text-wrap">
-          {{ $t('teams.form.subtitle') }}
-        </VCardSubtitle>
-      </VCardItem>
+          </VCol>
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <AppTextField
+              v-model="formState.code"
+              :label="$t('teams.form.code')"
+              :rules="[rules.required]"
+              autocomplete="off"
+              prepend-inner-icon="tabler-hash"
+              variant="outlined"
+            />
+          </VCol>
+          <VCol cols="12">
+            <MultiLangField
+              v-model="formState.description"
+              :label="$t('teams.form.description')"
+              multiline
+            />
+          </VCol>
+        </VRow>
+      </section>
 
       <VDivider />
 
-      <VCardText class="dialog-body">
-        <PerfectScrollbar
-          class="dialog-scroll"
-          :options="{ wheelPropagation: false }"
-        >
-          <div class="pa-4 pa-sm-6">
-            <VSkeletonLoader
-              v-if="loading"
-              type="article, paragraph, paragraph"
+      <!-- Organization & Composition -->
+      <section>
+        <div class="form-section__header">
+          <VIcon
+            icon="tabler-sitemap"
+            size="18"
+            class="form-section__icon"
+          />
+          <span class="form-section__title">{{ $t('teams.form.sections.organization') }}</span>
+        </div>
+        <VRow>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <AppSelect
+              v-model="formState.team_type"
+              :label="$t('teams.form.type')"
+              :items="teamTypeOptions"
+              variant="outlined"
             />
-            <VForm
-              v-else
-              :id="formId"
-              ref="formEl"
-              validate-on="blur"
-              @submit.prevent="submit"
-            >
-              <div class="form-sections">
-                <section>
-                  <div class="form-section__header">
-                    <VIcon
-                      icon="tabler-id"
-                      size="18"
-                      class="form-section__icon"
-                    />
-                    <span class="form-section__title">{{ $t('teams.form.sections.identity') }}</span>
-                  </div>
-                  <VRow>
-                    <VCol
-                      cols="12"
-                      md="8"
-                    >
-                      <AppTextField
-                        v-model="nameField"
-                        :label="$t('teams.form.name')"
-                        :rules="[rules.required]"
-                        :autofocus="!itemId && smAndUp"
-                        variant="outlined"
-                      />
-                    </VCol>
-                    <VCol
-                      cols="12"
-                      md="4"
-                    >
-                      <AppTextField
-                        v-model="formState.code"
-                        :label="$t('teams.form.code')"
-                        :rules="[rules.required]"
-                        autocomplete="off"
-                        prepend-inner-icon="tabler-hash"
-                        variant="outlined"
-                      />
-                    </VCol>
-                    <VCol cols="12">
-                      <AppTextarea
-                        v-model="descriptionField"
-                        :label="$t('teams.form.description')"
-                        variant="outlined"
-                        rows="3"
-                        auto-grow
-                        max-rows="6"
-                      />
-                    </VCol>
-                  </VRow>
-                </section>
-
-                <VDivider />
-
-                <section>
-                  <div class="form-section__header">
-                    <VIcon
-                      icon="tabler-sitemap"
-                      size="18"
-                      class="form-section__icon"
-                    />
-                    <span class="form-section__title">{{ $t('teams.form.sections.organization') }}</span>
-                  </div>
-                  <VRow>
-                    <VCol
-                      cols="12"
-                      md="6"
-                    >
-                      <AppSelect
-                        v-model="formState.team_type"
-                        :label="$t('teams.form.team_type')"
-                        :items="teamTypeOptions"
-                        variant="outlined"
-                      />
-                    </VCol>
-                    <VCol
-                      cols="12"
-                      md="6"
-                    >
-                      <AppSelect
-                        v-model="formState.department_id"
-                        :label="$t('teams.form.department')"
-                        :items="departmentOptions"
-                        variant="outlined"
-                        clearable
-                      />
-                    </VCol>
-                    <VCol cols="12">
-                      <AppSelect
-                        v-model="formState.team_leader_id"
-                        :label="$t('teams.form.team_leader')"
-                        :items="employeeOptions"
-                        variant="outlined"
-                        clearable
-                      />
-                    </VCol>
-                  </VRow>
-                </section>
-
-                <VDivider />
-
-                <section>
-                  <div class="form-section__header">
-                    <VIcon
-                      icon="tabler-settings"
-                      size="18"
-                      class="form-section__icon"
-                    />
-                    <span class="form-section__title">{{ $t('teams.form.sections.settings') }}</span>
-                  </div>
-                  <VSwitch
-                    v-model="formState.is_active"
-                    :label="$t('teams.form.active')"
-                    color="success"
-                    hide-details
-                  />
-                </section>
-              </div>
-            </VForm>
-          </div>
-        </PerfectScrollbar>
-      </VCardText>
+          </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <AppSelect
+              v-model="formState.department_id"
+              :label="$t('teams.form.department')"
+              :items="departmentOptions"
+              variant="outlined"
+              clearable
+            />
+          </VCol>
+          <VCol cols="12">
+            <AppSelect
+              v-model="formState.team_leader_id"
+              :label="$t('teams.form.leader')"
+              :items="employeeOptions"
+              variant="outlined"
+              clearable
+            />
+          </VCol>
+        </VRow>
+      </section>
 
       <VDivider />
 
-      <VCardActions class="dialog-footer">
-        <VBtn
-          type="button"
-          variant="tonal"
-          color="secondary"
-          class="flex-grow-1 flex-sm-grow-0"
-          :disabled="saving || loading"
-          @click="close"
-        >
-          {{ $t('Cancel') }}
-        </VBtn>
-        <VBtn
-          type="submit"
-          :form="formId"
-          color="primary"
-          class="flex-grow-1 flex-sm-grow-0"
-          :loading="saving"
-          :disabled="loading"
-        >
-          {{ $t(itemId ? 'teams.form.save' : 'teams.form.create') }}
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
+      <!-- Status -->
+      <section>
+        <div class="form-section__header">
+          <VIcon
+            icon="tabler-settings"
+            size="18"
+            class="form-section__icon"
+          />
+          <span class="form-section__title">{{ $t('departments.form.sections.settings') }}</span>
+        </div>
+        <VRow>
+          <VCol cols="12">
+            <VSwitch
+              v-model="formState.is_active"
+              :label="formState.is_active ? $t('Active') : $t('Inactive')"
+              color="primary"
+            />
+          </VCol>
+        </VRow>
+      </section>
+    </div>
+  </WpFormDialog>
 </template>
 
 <style lang="scss" scoped>
-.dialog-header {
-  padding-block: 1rem;
-  padding-inline: 1rem 3.5rem;
-
-  @media (min-width: 600px) {
-    padding-block: 1.25rem;
-    padding-inline: 1.5rem 4rem;
-  }
-}
-
-.dialog-body {
-  flex: 1 1 auto;
-  min-block-size: 0;
-  overflow: hidden;
-  padding: 0;
-}
-
-.dialog-card {
-  max-block-size: 90vh;
-}
-
-.dialog-scroll {
-  block-size: 100%;
-  max-block-size: 65vh;
-}
-
-@media (max-width: 600px) {
-  .dialog-card {
-    block-size: 100vh;
-    max-block-size: 100vh;
-  }
-}
-
-.dialog-footer {
-  justify-content: flex-end;
-  gap: 0.75rem;
-  padding-block: 0.75rem;
-  padding-inline: 1rem;
-
-  @media (min-width: 600px) {
-    padding-block: 1rem;
-    padding-inline: 1.5rem;
-  }
-
-  .v-btn + .v-btn {
-    margin-inline-start: 0;
-  }
-}
-
 .form-sections {
   display: flex;
   flex-direction: column;

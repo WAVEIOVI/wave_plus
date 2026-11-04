@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useVehicleStore } from '@/stores/useVehicleStore'
 import { useCurrency } from '@/composables/useCurrency'
@@ -18,6 +19,7 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
   const isOdometerOpen = ref(false)
   const isRentalOpen = ref(false)
   const isClientUsageOpen = ref(false)
+  const isTelemetryOpen = ref(false)
   const isDeleteOpen = ref(false)
   const isSubmitting = ref(false)
 
@@ -48,6 +50,7 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     fuel_tank_capacity: null,
     battery_capacity_kwh: null,
     odometer_km: null,
+    odometer_last_updated: null,
     next_service_date: null,
     next_inspection_date: null,
     insurance_expiry_date: null,
@@ -55,10 +58,35 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     last_inspection_date: null,
     last_service_date: null,
     default_driver_id: null,
+    tracker_device_id: '',
+    tracker_imei: '',
+    tracker_provider: '',
+    tracker_installed_at: null,
+    last_gps_latitude: null,
+    last_gps_longitude: null,
+    last_location_address: '',
+    last_speed_kmh: null,
     notes: '',
   })
 
   const form = reactive(blankForm())
+
+  const setForm = vehicle => {
+    const defaults = blankForm()
+
+    const values = Object.fromEntries(
+      Object.keys(defaults)
+        .filter(key => vehicle?.[key] !== undefined)
+        .map(key => {
+          const value = vehicle[key]
+          const isDateField = key.endsWith('_date') || key === 'tracker_installed_at'
+
+          return [key, isDateField && typeof value === 'string' ? value.slice(0, 10) : value]
+        }),
+    )
+
+    Object.assign(form, defaults, values)
+  }
 
   const assignment = reactive({
     responsible_employee_id: null,
@@ -105,6 +133,14 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     client_supplies_driver: false,
     client_usage_start: new Date().toISOString().split('T')[0],
     client_usage_end: null,
+  })
+
+  const telemetryData = reactive({
+    last_gps_latitude: null,
+    last_gps_longitude: null,
+    last_location_address: '',
+    last_speed_kmh: null,
+    last_gps_timestamp: new Date().toISOString(),
   })
 
   // Options
@@ -187,14 +223,14 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
 
   // Action openers
   const openCreate = () => {
-    Object.assign(form, blankForm())
+    setForm()
     targetVehicle.value = null
     isFormOpen.value = true
   }
 
   const openEdit = vehicle => {
     targetVehicle.value = vehicle
-    Object.assign(form, blankForm(), vehicle || {})
+    setForm(vehicle)
     isFormOpen.value = true
   }
 
@@ -268,6 +304,18 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
       clientUsageData.client_usage_end = vehicle.client_usage_end || null
     }
     isClientUsageOpen.value = true
+  }
+
+  const openTelemetry = vehicle => {
+    targetVehicle.value = vehicle
+    Object.assign(telemetryData, {
+      last_gps_latitude: vehicle.last_gps_latitude ?? null,
+      last_gps_longitude: vehicle.last_gps_longitude ?? null,
+      last_location_address: vehicle.last_location_address ?? '',
+      last_speed_kmh: vehicle.last_speed_kmh ?? null,
+      last_gps_timestamp: new Date().toISOString(),
+    })
+    isTelemetryOpen.value = true
   }
 
   const openDelete = vehicle => {
@@ -415,6 +463,22 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     }
   }
 
+  const submitTelemetry = async () => {
+    if (!targetVehicle.value?.id) return
+    isSubmitting.value = true
+    try {
+      await store.updateTelemetry(targetVehicle.value.id, { ...telemetryData })
+      showMessage('Telemetry / GPS coordinates updated', 'success')
+      isTelemetryOpen.value = false
+      await onSuccess()
+    } catch (err) {
+      showMessage(err?.data?.message || err?.message || 'Failed to update telemetry', 'error')
+      throw err
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
   const submitDelete = async () => {
     if (!targetVehicle.value?.id) return false
     isSubmitting.value = true
@@ -443,18 +507,21 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     isOdometerOpen,
     isRentalOpen,
     isClientUsageOpen,
+    isTelemetryOpen,
     isDeleteOpen,
     isSubmitting,
     targetVehicle,
 
     // Form states
     form,
+    setForm,
     assignment,
     returnData,
     statusData,
     odometerData,
     rentalData,
     clientUsageData,
+    telemetryData,
 
     // Options
     statusOptions,
@@ -477,6 +544,7 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     openOdometer,
     openRental,
     openClientUsage,
+    openTelemetry,
     openDelete,
 
     // Submitters
@@ -487,6 +555,7 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     submitOdometer,
     submitRental,
     submitClientUsage,
+    submitTelemetry,
     submitDelete,
   }
 }

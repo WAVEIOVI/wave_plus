@@ -72,4 +72,49 @@ class EmployeeCertification extends Model implements HasMedia
 
         return true;
     }
+
+    public function getComputedStatusAttribute(): string
+    {
+        if ($this->status === 'pending_verification') {
+            return 'pending_verification';
+        }
+
+        if ($this->expiry_date) {
+            if ($this->expiry_date->isPast()) {
+                return 'expired';
+            }
+            if (now()->diffInDays($this->expiry_date, false) <= 60) {
+                return 'expiring';
+            }
+        }
+
+        return $this->status ?? 'valid';
+    }
+
+    public function scopeExpiring($query, int $days = 60)
+    {
+        return $query->where('status', '!=', 'pending_verification')
+            ->whereNotNull('expiry_date')
+            ->whereBetween('expiry_date', [now()->toDateString(), now()->addDays($days)->toDateString()]);
+    }
+
+    public function scopeValid($query)
+    {
+        return $query->where('status', 'valid')
+            ->where(function ($q) {
+                $q->whereNull('expiry_date')
+                    ->orWhere('expiry_date', '>=', now()->toDateString());
+            });
+    }
+
+    public function scopeExpired($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('status', 'expired')
+                ->orWhere(function ($sub) {
+                    $sub->whereNotNull('expiry_date')
+                        ->where('expiry_date', '<', now()->toDateString());
+                });
+        });
+    }
 }

@@ -1,4 +1,5 @@
 <script setup>
+import { WpFormDialog } from '@/components/shared'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -47,135 +48,123 @@ const currencyOptions = [
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     :model-value="modelValue"
+    :title="dialogTitle"
+    :icon="isEnding ? 'tabler-car-off' : 'tabler-car'"
+    :icon-color="isEnding ? 'warning' : 'primary'"
     max-width="580"
-    persistent
+    :loading="loading"
+    :submit-label="isEnding ? ($t('fleet.end_rental') || 'End Rental') : ($t('fleet.start_rental') || 'Start Rental')"
+    :submit-icon="isEnding ? 'tabler-arrow-back-up' : 'tabler-file-check'"
+    :submit-color="isEnding ? 'warning' : 'primary'"
     @update:model-value="val => emit('update:modelValue', val)"
+    @submit="emit('save')"
   >
-    <DialogCloseBtn
-      :disabled="loading"
-      @click="emit('update:modelValue', false)"
-    />
-    <VCard :title="dialogTitle">
-      <VCardText class="pt-2">
-        <!-- Ending Rental Form -->
-        <template v-if="isEnding">
-          <VAlert
-            type="warning"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-          >
-            Ending this rental period will return the vehicle to the rental provider and transition status back to <strong>Available</strong>.
-          </VAlert>
+    <!-- Ending Rental Form -->
+    <template v-if="isEnding">
+      <VAlert
+        type="warning"
+        variant="tonal"
+        density="compact"
+        class="mb-4"
+      >
+        Ending this rental period will return the vehicle to the rental provider and transition status back to <strong>Available</strong>.
+      </VAlert>
 
-          <VRow>
-            <VCol cols="12">
-              <AppTextField
-                v-model="rentalData.rental_return_date"
-                label="Return Date *"
-                type="date"
-                required
-              />
-            </VCol>
-          </VRow>
-        </template>
+      <VRow>
+        <VCol cols="12">
+          <AppTextField
+            v-model="rentalData.rental_return_date"
+            label="Return Date *"
+            type="date"
+            required
+            variant="outlined"
+          />
+        </VCol>
+      </VRow>
+    </template>
 
-        <!-- Starting Rental Form -->
-        <template v-else>
-          <VAlert
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-          >
-            Configuring a rental contract sets ownership to <strong>Rental</strong> and vehicle status to <strong>Rental Active</strong>.
-          </VAlert>
+    <!-- Starting Rental Form -->
+    <template v-else>
+      <VAlert
+        type="info"
+        variant="tonal"
+        density="compact"
+        class="mb-4"
+      >
+        Configuring a rental contract sets ownership to <strong>Rental</strong> and vehicle status to <strong>Rental Active</strong>.
+      </VAlert>
 
-          <VRow>
-            <VCol cols="12">
-              <AppSelect
-                v-model="rentalData.rental_provider_id"
-                :label="`${$t('fleet.rental_provider') || 'Rental Service Provider'} *`"
-                :items="providerOptions"
-                placeholder="Select service provider"
-                required
-              />
-            </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppTextField
-                v-model="rentalData.rental_start_date"
-                :label="$t('fleet.start_date') || 'Rental Start Date'"
-                type="date"
-              />
-            </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppTextField
-                v-model="rentalData.rental_end_date"
-                :label="`${$t('fleet.end_date') || 'Rental End Date'} *`"
-                type="date"
-                required
-              />
-            </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppTextField
-                v-model="rentalData.rental_contract_reference"
-                :label="$t('fleet.contract_reference') || 'Contract Reference / Agreement #'"
-                placeholder="e.g. RENT-2026-901"
-              />
-            </VCol>
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <div class="d-flex gap-2">
-                <AppTextField
-                  v-model.number="rentalData.rental_daily_rate"
-                  :label="$t('fleet.daily_rate') || 'Daily Rate'"
-                  type="number"
-                  min="0"
-                  placeholder="0.00"
-                  class="flex-grow-1"
-                />
-                <AppSelect
-                  v-model="rentalData.rental_currency"
-                  label="Curr"
-                  :items="currencyOptions"
-                  style="inline-size: 110px;"
-                />
-              </div>
-            </VCol>
-          </VRow>
-        </template>
-      </VCardText>
-
-      <VCardActions class="justify-end pa-4 gap-2 border-t">
-        <VBtn
-          variant="tonal"
-          :disabled="loading"
-          @click="emit('update:modelValue', false)"
+      <VRow>
+        <VCol cols="12">
+          <AppSelect
+            v-model="rentalData.rental_provider_id"
+            :label="`${$t('fleet.rental_provider') || 'Rental Service Provider'} *`"
+            :items="providerOptions"
+            placeholder="Select service provider"
+            required
+            variant="outlined"
+          />
+        </VCol>
+        <VCol
+          cols="12"
+          md="6"
         >
-          {{ $t('Cancel') }}
-        </VBtn>
-        <VBtn
-          :color="isEnding ? 'warning' : 'primary'"
-          :loading="loading"
-          :prepend-icon="isEnding ? 'tabler-arrow-back-up' : 'tabler-file-check'"
-          @click="emit('save')"
+          <AppTextField
+            v-model="rentalData.rental_start_date"
+            :label="$t('fleet.start_date') || 'Rental Start Date'"
+            type="date"
+            variant="outlined"
+          />
+        </VCol>
+        <VCol
+          cols="12"
+          md="6"
         >
-          {{ isEnding ? ($t('fleet.end_rental') || 'End Rental') : ($t('fleet.start_rental') || 'Start Rental') }}
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
+          <AppTextField
+            v-model="rentalData.rental_end_date"
+            :label="`${$t('fleet.end_date') || 'Rental End Date'} *`"
+            type="date"
+            required
+            variant="outlined"
+          />
+        </VCol>
+        <VCol
+          cols="12"
+          md="6"
+        >
+          <AppTextField
+            v-model="rentalData.rental_contract_reference"
+            :label="$t('fleet.contract_reference') || 'Contract Reference / Agreement #'"
+            placeholder="e.g. RENT-2026-901"
+            variant="outlined"
+          />
+        </VCol>
+        <VCol
+          cols="12"
+          md="6"
+        >
+          <div class="d-flex gap-2">
+            <AppTextField
+              v-model.number="rentalData.rental_daily_rate"
+              :label="$t('fleet.daily_rate') || 'Daily Rate'"
+              type="number"
+              min="0"
+              placeholder="0.00"
+              class="flex-grow-1"
+              variant="outlined"
+            />
+            <AppSelect
+              v-model="rentalData.rental_currency"
+              label="Curr"
+              :items="currencyOptions"
+              style="inline-size: 110px;"
+              variant="outlined"
+            />
+          </div>
+        </VCol>
+      </VRow>
+    </template>
+  </WpFormDialog>
 </template>

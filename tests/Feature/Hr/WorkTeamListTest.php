@@ -109,4 +109,63 @@ class WorkTeamListTest extends TestCase
             ->assertJsonPath('data.members.0.role_in_team', 'Supervisor')
             ->assertJsonStructure(['data' => ['updated_at']]);
     }
+
+    public function test_cannot_delete_team_with_active_members(): void
+    {
+        $employee = Employee::create([
+            'first_name' => 'Sam',
+            'last_name' => 'Taylor',
+            'hire_date' => '2026-01-01',
+        ]);
+        $team = WorkTeam::create([
+            'name' => 'Core Team',
+            'code' => 'CORE',
+        ]);
+        WorkTeamMember::create([
+            'team_id' => $team->id,
+            'employee_id' => $employee->id,
+            'joined_at' => '2026-01-01',
+            'role_in_team' => 'Member',
+        ]);
+
+        $this->deleteJson("/api/hr/teams/{$team->id}")
+            ->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Cannot delete team with active members. Please reassign or remove members first.']);
+    }
+
+    public function test_can_add_and_remove_team_member(): void
+    {
+        $employee = Employee::create([
+            'first_name' => 'Casey',
+            'last_name' => 'Jordan',
+            'hire_date' => '2026-01-01',
+        ]);
+        $team = WorkTeam::create([
+            'name' => 'Deploy Team',
+            'code' => 'DEPLOY',
+        ]);
+
+        $response = $this->postJson("/api/hr/teams/{$team->id}/members", [
+            'employee_id' => $employee->id,
+            'role_in_team' => 'Lead Specialist',
+            'is_primary' => true,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('hr_work_team_members', [
+            'team_id' => $team->id,
+            'employee_id' => $employee->id,
+            'role_in_team' => 'Lead Specialist',
+            'left_at' => null,
+        ]);
+
+        $memberId = $response->json('data.members.0.id');
+
+        $this->deleteJson("/api/hr/teams/{$team->id}/members/{$memberId}")
+            ->assertOk();
+
+        $this->assertDatabaseMissing('hr_work_team_members', [
+            'id' => $memberId,
+            'left_at' => null,
+        ]);
+    }
 }

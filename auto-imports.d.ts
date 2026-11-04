@@ -58,6 +58,7 @@ declare global {
   const PREVIEW_LONG_SIDE: typeof import('./resources/js/composables/documents/scanEngine.js')['PREVIEW_LONG_SIDE']
   const PRICE_LIST_STATUS_MAP: typeof import('./resources/js/utils/crm-constants.js')['PRICE_LIST_STATUS_MAP']
   const PRICE_REQUEST_STATUS_MAP: typeof import('./resources/js/utils/crm-constants.js')['PRICE_REQUEST_STATUS_MAP']
+  const PRIORITY_WEIGHTS: typeof import('./resources/js/composables/useAppSnackbar.js')['PRIORITY_WEIGHTS']
   const QUOTATION_STATUS_MAP: typeof import('./resources/js/utils/crm-constants.js')['QUOTATION_STATUS_MAP']
   const RETURN_STATUS_MAP: typeof import('./resources/js/utils/logistics-constants.js')['RETURN_STATUS_MAP']
   const RFQ_STATUS_MAP: typeof import('./resources/js/utils/procurement-constants.js')['RFQ_STATUS_MAP']

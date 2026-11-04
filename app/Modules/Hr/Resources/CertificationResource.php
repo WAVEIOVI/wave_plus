@@ -20,7 +20,7 @@ class CertificationResource extends JsonResource
             'validity_period_months' => $this->validity_period_months,
             'validity_months' => $this->validity_period_months,
             'is_active' => $this->is_active,
-            'certified_employees_count' => $this->employeeCertifications()->where('status', 'valid')->count(),
+            'certified_employees_count' => $this->active_count ?? $this->employeeCertifications()->where('status', 'valid')->count(),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

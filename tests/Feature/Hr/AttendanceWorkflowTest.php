@@ -452,7 +452,6 @@ class AttendanceWorkflowTest extends TestCase
         $corrector = User::factory()->create();
         Role::firstOrCreate(['name' => 'attendance_corrector', 'guard_name' => 'web'])->givePermissionTo('hr.attendance.correct');
         $corrector->assignRole('attendance_corrector');
-        Sanctum::actingAs($corrector);
 
         $attendance = Attendance::create([
             'employee_id' => $this->employee->id,
@@ -461,12 +460,15 @@ class AttendanceWorkflowTest extends TestCase
             'status' => 'absent',
         ]);
 
+        // Request created by user, decided by independent corrector
+        Sanctum::actingAs($this->user);
         $correctionId = $this->postJson("/api/hr/attendances/{$attendance->id}/request-correction", [
             'requested_actual_in' => '08:00',
             'reason' => 'Gate was closed',
         ])->assertCreated()->json('data.id');
 
         // corrector (hr.attendance.correct) can decide
+        Sanctum::actingAs($corrector);
         $this->postJson("/api/hr/attendance-corrections/{$correctionId}/decide", ['approved' => true])
             ->assertOk();
 

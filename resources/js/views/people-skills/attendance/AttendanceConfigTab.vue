@@ -2,12 +2,15 @@
 /* eslint-disable camelcase */
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useAttendanceStore } from '@/stores/useAttendanceStore'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const { showMessage } = useAppSnackbar()
+const ability = useAbility()
 const attendanceStore = useAttendanceStore()
+const canManage = computed(() => ability.can('manage', 'attendance'))
 
 // ── Form state ────────────────────────────────────────────────────────────
 const form = ref({
@@ -153,7 +156,7 @@ defineExpose({
           {{ $t('attendance.config.unsaved', 'Unsaved changes') }}
         </VChip>
         <VBtn
-          v-if="isDirty"
+          v-if="canManage && isDirty"
           variant="outlined"
           color="secondary"
           prepend-icon="tabler-rotate-clockwise"
@@ -164,6 +167,7 @@ defineExpose({
           {{ $t('Reset') }}
         </VBtn>
         <VBtn
+          v-if="canManage"
           color="primary"
           prepend-icon="tabler-device-floppy"
           class="d-none d-sm-inline-flex"
@@ -231,10 +235,12 @@ defineExpose({
                   density="comfortable"
                   :hint="$t(`attendance.config.${field.key}_hint`)"
                   :rules="rulesFor(field)"
+                  :readonly="!canManage"
                   persistent-hint
                 >
                   <template #prepend-inner>
                     <VBtn
+                      v-if="canManage"
                       icon="tabler-minus"
                       variant="text"
                       density="compact"
@@ -247,6 +253,7 @@ defineExpose({
                   </template>
                   <template #append-inner>
                     <VBtn
+                      v-if="canManage"
                       icon="tabler-plus"
                       variant="text"
                       density="compact"

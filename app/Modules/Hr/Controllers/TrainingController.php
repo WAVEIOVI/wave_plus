@@ -25,6 +25,7 @@ class TrainingController extends Controller
 
     public function programs(): JsonResponse
     {
+        $this->authorizeHrRead('hr.training.view');
         $programs = TrainingProgram::with(['targetSkill', 'targetCertification'])
             ->withCount('sessions')
             ->orderBy('name->'.app()->getLocale())
@@ -71,6 +72,7 @@ class TrainingController extends Controller
 
     public function sessions(Request $request): JsonResponse
     {
+        $this->authorizeHrRead('hr.training.view');
         $query = TrainingSession::with(['program.targetSkill', 'program.targetCertification', 'participants.employee']);
 
         if ($status = $request->input('status')) {
@@ -133,7 +135,7 @@ class TrainingController extends Controller
     public function completeTraining(Request $request, string $participantId): JsonResponse
     {
         $this->authorizeHrMutation('hr.training.manage');
-        $participant = EmployeeTraining::with('session.program')->findOrFail($participantId);
+        $participant = EmployeeTraining::with('session.program.targetCertification')->findOrFail($participantId);
 
         $data = $request->validate([
             'score' => ['nullable', 'numeric', 'min:0', 'max:100'],
@@ -151,37 +153,9 @@ class TrainingController extends Controller
                 'notes' => $data['notes'] ?? null,
             ]);
 
-            // If completed, automatically update employee skill and/or certification if program specifies it
+            // If completed, automatically update employee skill and/or certification without duplicates
             if ($data['status'] === 'completed') {
-                $program = $participant->session?->program;
-
-                if ($program?->target_skill_id) {
-                    EmployeeSkill::updateOrCreate(
-                        ['employee_id' => $participant->employee_id, 'skill_id' => $program->target_skill_id],
-                        [
-                            'level' => 'intermediate',
-                            'acquired_date' => now()->toDateString(),
-                            'is_verified' => true,
-                            'verified_by' => auth()->id(),
-                            'verified_at' => now(),
-                            'notes' => "Awarded via training completion: {$program->name}",
-                        ]
-                    );
-                }
-
-                if ($program?->target_certification_id) {
-                    EmployeeCertification::create([
-                        'employee_id' => $participant->employee_id,
-                        'certification_id' => $program->target_certification_id,
-                        'certificate_number' => $data['certificate_number'] ?? ('CERT-'.strtoupper(uniqid())),
-                        'issue_date' => now()->toDateString(),
-                        'expiry_date' => now()->addMonths($program->targetCertification?->validity_period_months ?? 24)->toDateString(),
-                        'status' => 'valid',
-                        'verified_by' => auth()->id(),
-                        'verified_at' => now(),
-                        'notes' => "Awarded via training program: {$program->name}",
-                    ]);
-                }
+                $this->syncParticipantQualifications($participant, $data['certificate_number'] ?? null);
             }
         });
 
@@ -191,8 +165,127 @@ class TrainingController extends Controller
         ]);
     }
 
+    public function batchAttendance(Request $request, string $sessionId): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.training.manage');
+        $session = TrainingSession::with('program.targetCertification')->findOrFail($sessionId);
+
+        $data = $request->validate([
+            'participants' => ['required', 'array', 'min:1'],
+            'participants.*.id' => ['required', 'ulid', 'exists:hr_employee_trainings,id'],
+            'participants.*.status' => ['required', 'in:enrolled,attended,completed,failed,cancelled'],
+            'participants.*.score' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'participants.*.certificate_number' => ['nullable', 'string', 'max:100'],
+            'participants.*.notes' => ['nullable', 'string'],
+        ]);
+
+        $updated = [];
+
+        DB::transaction(function () use ($data, $session, &$updated) {
+            foreach ($data['participants'] as $pData) {
+                $participant = EmployeeTraining::where('training_session_id', $session->id)
+                    ->where('id', $pData['id'])
+                    ->firstOrFail();
+
+                $updateFields = [
+                    'status' => $pData['status'],
+                    'notes' => $pData['notes'] ?? $participant->notes,
+                ];
+
+                if (array_key_exists('score', $pData)) {
+                    $updateFields['score'] = $pData['score'];
+                }
+                if (! empty($pData['certificate_number'])) {
+                    $updateFields['certificate_number'] = $pData['certificate_number'];
+                }
+                if (in_array($pData['status'], ['completed', 'attended'])) {
+                    $updateFields['completion_date'] = now()->toDateString();
+                }
+
+                $participant->update($updateFields);
+
+                if ($pData['status'] === 'completed') {
+                    $this->syncParticipantQualifications($participant, $pData['certificate_number'] ?? null);
+                }
+
+                $updated[] = $participant->fresh(['employee']);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Batch attendance and completion recorded successfully.',
+            'data' => $updated,
+        ]);
+    }
+
+    protected function syncParticipantQualifications(EmployeeTraining $participant, ?string $certificateNumber = null): void
+    {
+        $program = $participant->session?->program;
+        if (! $program) {
+            return;
+        }
+
+        if ($program->target_skill_id) {
+            $existingSkill = EmployeeSkill::where('employee_id', $participant->employee_id)
+                ->where('skill_id', $program->target_skill_id)
+                ->first();
+
+            $ranks = ['basic' => 1, 'intermediate' => 2, 'advanced' => 3, 'expert' => 4];
+            $targetLevel = 'intermediate';
+            if ($existingSkill && ($ranks[$existingSkill->level] ?? 0) > ($ranks[$targetLevel] ?? 2)) {
+                $targetLevel = $existingSkill->level;
+            }
+
+            EmployeeSkill::updateOrCreate(
+                ['employee_id' => $participant->employee_id, 'skill_id' => $program->target_skill_id],
+                [
+                    'level' => $targetLevel,
+                    'acquired_date' => now()->toDateString(),
+                    'is_verified' => true,
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                    'notes' => "Awarded via training completion: {$program->name}",
+                ]
+            );
+        }
+
+        if ($program->target_certification_id) {
+            $existingCert = EmployeeCertification::where('employee_id', $participant->employee_id)
+                ->where('certification_id', $program->target_certification_id)
+                ->first();
+
+            $validityMonths = $program->targetCertification?->validity_period_months ?? 24;
+            $newExpiry = now()->addMonths($validityMonths)->toDateString();
+
+            if ($existingCert) {
+                $existingCert->update([
+                    'issue_date' => now()->toDateString(),
+                    'expiry_date' => $newExpiry,
+                    'certificate_number' => $certificateNumber ?? $existingCert->certificate_number ?? ('CERT-'.strtoupper(uniqid())),
+                    'status' => 'valid',
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                    'notes' => "Renewed via training program: {$program->name}",
+                ]);
+            } else {
+                EmployeeCertification::create([
+                    'employee_id' => $participant->employee_id,
+                    'certification_id' => $program->target_certification_id,
+                    'certificate_number' => $certificateNumber ?? ('CERT-'.strtoupper(uniqid())),
+                    'issue_date' => now()->toDateString(),
+                    'expiry_date' => $newExpiry,
+                    'status' => 'valid',
+                    'verified_by' => auth()->id(),
+                    'verified_at' => now(),
+                    'notes' => "Awarded via training program: {$program->name}",
+                ]);
+            }
+        }
+    }
+
     public function showProgram(string $id): JsonResponse
     {
+        $this->authorizeHrRead('hr.training.view');
         $program = TrainingProgram::with(['targetSkill', 'targetCertification', 'sessions'])
             ->findOrFail($id);
 
@@ -242,6 +335,7 @@ class TrainingController extends Controller
 
     public function showSession(string $id): JsonResponse
     {
+        $this->authorizeHrRead('hr.training.view');
         $session = TrainingSession::with(['program.targetSkill', 'program.targetCertification', 'participants.employee'])
             ->findOrFail($id);
 

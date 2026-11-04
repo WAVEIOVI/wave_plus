@@ -11,6 +11,7 @@ import { localizedValue } from '@/composables/useLocaleField'
 import { useHrStore } from '@/stores/hrStore'
 import { useLeaveRequestStore } from '@/stores/useLeaveRequestStore'
 import { $api } from '@/utils/api'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import AdjustBalanceDialog from './AdjustBalanceDialog.vue'
 import { avatarText } from '@core/utils/formatters'
 import { computed, onMounted, ref } from 'vue'
@@ -19,9 +20,12 @@ import { useI18n } from 'vue-i18n'
 const emit = defineEmits(['createRequest'])
 
 const { t } = useI18n()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const hrStore = useHrStore()
 const leaveStore = useLeaveRequestStore()
+
+const canManageBalances = computed(() => ability.can('manage', 'leave') || ability.can('update', 'leave') || ability.can('update', 'PeopleSkills'))
 
 const loading = ref(false)
 const balances = ref([])
@@ -149,6 +153,7 @@ const filteredBalances = computed(() => {
 
 // ── Filter Dialog & Expose ─────────────────────────────────────────────────
 const isFilterDialogOpen = ref(false)
+
 const staged = reactive({
   year: new Date().getFullYear(),
   department: null,
@@ -338,7 +343,7 @@ onMounted(() => {
               @click="emit('createRequest', item)"
             />
             <VBtn
-              v-if="$can('update', 'PeopleSkills')"
+              v-if="canManageBalances"
               icon="tabler-adjustments"
               variant="text"
               size="x-small"
@@ -390,7 +395,7 @@ onMounted(() => {
                   @click="emit('createRequest', item)"
                 />
                 <VBtn
-                  v-if="$can('update', 'PeopleSkills')"
+                  v-if="canManageBalances"
                   icon="tabler-adjustments"
                   variant="tonal"
                   size="x-small"

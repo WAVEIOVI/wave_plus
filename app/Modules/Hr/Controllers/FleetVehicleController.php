@@ -151,6 +151,29 @@ class FleetVehicleController extends Controller
         return response()->json(['data' => VehicleResource::make($this->fleet->updateOdometer($vehicle, $data['odometer_km'], $request->user()?->id))]);
     }
 
+    public function updateTelemetry(Request $request, string $vehicle): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.fleet.manage');
+
+        $data = $request->validate([
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'last_gps_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'last_gps_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'last_location_address' => ['nullable', 'string', 'max:500'],
+            'speed_kmh' => ['nullable', 'numeric', 'min:0'],
+            'last_speed_kmh' => ['nullable', 'numeric', 'min:0'],
+            'odometer_km' => ['nullable', 'integer', 'min:0'],
+            'timestamp' => ['nullable', 'date'],
+            'last_gps_timestamp' => ['nullable', 'date'],
+            'tracker_device_id' => ['nullable', 'string', 'max:100'],
+            'tracker_provider' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        return response()->json(['data' => VehicleResource::make($this->fleet->updateTelemetry($vehicle, $data, $request->user()?->id))]);
+    }
+
     public function startRental(Request $request, string $vehicle): JsonResponse
     {
         $this->authorizeHrMutation('hr.fleet.manage');
@@ -246,6 +269,15 @@ class FleetVehicleController extends Controller
             'insurance_expiry_date' => ['nullable', 'date'], 'registration_expiry_date' => ['nullable', 'date'], 'notes' => ['nullable', 'string'],
             'default_driver_id' => ['nullable', 'ulid', 'exists:users,id'],
             'last_inspection_date' => ['nullable', 'date'], 'last_service_date' => ['nullable', 'date'],
+            'tracker_device_id' => ['nullable', 'string', 'max:100'],
+            'tracker_imei' => ['nullable', 'string', 'max:50'],
+            'tracker_provider' => ['nullable', 'string', 'max:100'],
+            'tracker_installed_at' => ['nullable', 'date'],
+            'last_gps_latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'last_gps_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'last_gps_timestamp' => ['nullable', 'date'],
+            'last_location_address' => ['nullable', 'string', 'max:500'],
+            'last_speed_kmh' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 }

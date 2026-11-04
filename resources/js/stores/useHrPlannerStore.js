@@ -2,23 +2,50 @@
 import { defineStore } from 'pinia'
 import { $api } from '@/utils/api'
 
+const pad = n => String(n).padStart(2, '0')
+const toIsoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+
+const computePeriodRange = (mode, baseDate = new Date()) => {
+  const d = new Date(baseDate)
+
+  d.setHours(0, 0, 0, 0)
+
+  if (mode === 'month') {
+    const start = new Date(d.getFullYear(), d.getMonth(), 1)
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+
+    return { start: toIsoDate(start), end: toIsoDate(end) }
+  }
+
+  // Monday-based calculation
+  const day = d.getDay()
+  const diffToMonday = d.getDate() - day + (day === 0 ? -6 : 1)
+  const monday = new Date(d.getFullYear(), d.getMonth(), diffToMonday)
+
+  if (mode === 'biweekly') {
+    const end = new Date(monday)
+
+    end.setDate(monday.getDate() + 13)
+
+    return { start: toIsoDate(monday), end: toIsoDate(end) }
+  }
+
+  // default 'week'
+  const end = new Date(monday)
+
+  end.setDate(monday.getDate() + 6)
+
+  return { start: toIsoDate(monday), end: toIsoDate(end) }
+}
+
 export const useHrPlannerStore = defineStore('hrPlannerStore', {
   state: () => {
-    const today = new Date()
-
-    // Find current Monday
-    const day = today.getDay()
-    const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
-    const monday = new Date(today.setDate(diffToMonday))
-    const sunday = new Date(monday)
-
-    sunday.setDate(monday.getDate() + 6)
-
-    const toIsoDate = d => d.toISOString().split('T')[0]
+    const { start, end } = computePeriodRange('week', new Date())
 
     return {
-      startDate: toIsoDate(monday),
-      endDate: toIsoDate(sunday),
+      rangeMode: 'week', // 'week' | 'biweekly' | 'month' | 'custom'
+      startDate: start,
+      endDate: end,
       departmentId: null,
       teamId: null,
       search: '',
@@ -26,9 +53,12 @@ export const useHrPlannerStore = defineStore('hrPlannerStore', {
       shifts: [],
       employees: [],
       meta: {},
+      historyList: [],
+      isHistoryLoading: false,
       isLoading: false,
       isSaving: false,
       isBulkDialogOpen: false,
+      isHistoryDialogOpen: false,
       selectedBatchId: null,
     }
   },
@@ -41,42 +71,75 @@ export const useHrPlannerStore = defineStore('hrPlannerStore', {
       return this.fetchPlannerGrid()
     },
 
-    nextWeek() {
+    setRangeMode(mode) {
+      this.rangeMode = mode
+      if (mode !== 'custom') {
+        const { start, end } = computePeriodRange(mode, new Date(this.startDate))
+
+        return this.setDateRange(start, end)
+      }
+      
+      return this.fetchPlannerGrid()
+    },
+
+    nextPeriod() {
+      if (this.rangeMode === 'month') {
+        const current = new Date(this.startDate)
+        const nextMonth = new Date(current.getFullYear(), current.getMonth() + 1, 1)
+        const endMonth = new Date(current.getFullYear(), current.getMonth() + 2, 0)
+
+        return this.setDateRange(toIsoDate(nextMonth), toIsoDate(endMonth))
+      }
+
+      const daysToAdd = this.rangeMode === 'biweekly' ? 14 : 7
       const start = new Date(this.startDate)
 
-      start.setDate(start.getDate() + 7)
+      start.setDate(start.getDate() + daysToAdd)
 
       const end = new Date(this.endDate)
 
-      end.setDate(end.getDate() + 7)
+      end.setDate(end.getDate() + daysToAdd)
       
-      return this.setDateRange(start.toISOString().split('T')[0], end.toISOString().split('T')[0])
+      return this.setDateRange(toIsoDate(start), toIsoDate(end))
+    },
+
+    prevPeriod() {
+      if (this.rangeMode === 'month') {
+        const current = new Date(this.startDate)
+        const prevMonth = new Date(current.getFullYear(), current.getMonth() - 1, 1)
+        const endMonth = new Date(current.getFullYear(), current.getMonth(), 0)
+
+        return this.setDateRange(toIsoDate(prevMonth), toIsoDate(endMonth))
+      }
+
+      const daysToSub = this.rangeMode === 'biweekly' ? 14 : 7
+      const start = new Date(this.startDate)
+
+      start.setDate(start.getDate() - daysToSub)
+
+      const end = new Date(this.endDate)
+
+      end.setDate(end.getDate() - daysToSub)
+      
+      return this.setDateRange(toIsoDate(start), toIsoDate(end))
+    },
+
+    goToCurrentPeriod() {
+      const { start, end } = computePeriodRange(this.rangeMode, new Date())
+      
+      return this.setDateRange(start, end)
+    },
+
+    nextWeek() {
+      return this.nextPeriod()
     },
 
     prevWeek() {
-      const start = new Date(this.startDate)
-
-      start.setDate(start.getDate() - 7)
-
-      const end = new Date(this.endDate)
-
-      end.setDate(end.getDate() - 7)
-      
-      return this.setDateRange(start.toISOString().split('T')[0], end.toISOString().split('T')[0])
+      return this.prevPeriod()
     },
 
     goToCurrentWeek() {
-      const today = new Date()
-      const day = today.getDay()
-      const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1)
-      const monday = new Date(today.setDate(diffToMonday))
-      const sunday = new Date(monday)
-
-      sunday.setDate(monday.getDate() + 6)
-
-      const toIsoDate = d => d.toISOString().split('T')[0]
-      
-      return this.setDateRange(toIsoDate(monday), toIsoDate(sunday))
+      return this.goToCurrentPeriod()
     },
 
     async fetchPlannerGrid() {
@@ -104,6 +167,25 @@ export const useHrPlannerStore = defineStore('hrPlannerStore', {
         console.error('Failed to load workforce planner grid:', error)
       } finally {
         this.isLoading = false
+      }
+    },
+
+    async fetchScheduleHistory(limit = 20) {
+      this.isHistoryLoading = true
+      try {
+        const res = await $api('/hr/workforce/schedule-history', {
+          method: 'GET',
+          params: { limit },
+        })
+
+        this.historyList = res.batches || []
+        
+        return res
+      } catch (error) {
+        console.error('Failed to load schedule history:', error)
+        throw error
+      } finally {
+        this.isHistoryLoading = false
       }
     },
 
@@ -164,13 +246,17 @@ export const useHrPlannerStore = defineStore('hrPlannerStore', {
     async publishSchedules(payload = {}) {
       this.isSaving = true
       try {
+        const body = { ...payload }
+
+        // Only default to date range if batch_id is not specified
+        if (!body.batch_id && !body.schedule_ids) {
+          body.start_date = this.startDate
+          body.end_date = this.endDate
+        }
+
         const res = await $api('/hr/workforce/publish-schedules', {
           method: 'POST',
-          body: {
-            start_date: this.startDate,
-            end_date: this.endDate,
-            ...payload,
-          },
+          body,
         })
 
         await this.fetchPlannerGrid()
@@ -187,13 +273,17 @@ export const useHrPlannerStore = defineStore('hrPlannerStore', {
     async clearSchedules(payload = {}) {
       this.isSaving = true
       try {
+        const body = { ...payload }
+
+        // Only default to date range if batch_id is not specified
+        if (!body.batch_id && !body.schedule_ids) {
+          body.start_date = this.startDate
+          body.end_date = this.endDate
+        }
+
         const res = await $api('/hr/workforce/clear-schedules', {
           method: 'POST',
-          body: {
-            start_date: this.startDate,
-            end_date: this.endDate,
-            ...payload,
-          },
+          body,
         })
 
         await this.fetchPlannerGrid()

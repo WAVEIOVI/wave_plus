@@ -150,9 +150,15 @@ class WorkforcePlannerService
                     return $h->department_id === $emp->department_id;
                 });
 
+                $isConflict = ($schedule && $coveringLeave && in_array($coveringLeave->status, ['approved', 'submitted']))
+                    || ($schedule && $schedule->coverage_status === Schedule::COVERAGE_CONFLICT);
+
                 $cell = [
                     'date' => $dateStr,
                     'is_weekend' => $date->isWeekend(),
+                    'is_conflict' => $isConflict,
+                    'conflict_reason' => $isConflict ? ($coveringLeave ? "Schedule overlaps with {$coveringLeave->status} leave" : 'Schedule conflict detected') : null,
+                    'is_exceptional' => (bool) ($schedule && (! empty($schedule->custom_start_time) || ! empty($schedule->custom_end_time) || $schedule->is_overnight_override)),
                     'holiday' => $matchingEmpHoliday ? [
                         'id' => $matchingEmpHoliday->id,
                         'name' => $matchingEmpHoliday->getTranslation('name', app()->getLocale()) ?? $matchingEmpHoliday->name,
@@ -170,6 +176,9 @@ class WorkforcePlannerService
                         'lifecycle_status' => $schedule->lifecycle_status ?? $schedule->status,
                         'coverage_status' => $schedule->coverage_status,
                         'is_overnight' => $schedule->is_overnight,
+                        'is_conflict' => $isConflict,
+                        'conflict_reason' => $isConflict ? ($coveringLeave ? "Schedule overlaps with {$coveringLeave->status} leave" : 'Schedule conflict detected') : null,
+                        'is_exceptional' => ! empty($schedule->custom_start_time) || ! empty($schedule->custom_end_time) || (bool) $schedule->is_overnight_override,
                         'notes' => $schedule->notes,
                     ] : null,
                     'leave' => $coveringLeave ? [
@@ -425,5 +434,62 @@ class WorkforcePlannerService
         $query->whereNotIn('lifecycle_status', [Schedule::STATUS_COMPLETED]);
 
         return $query->delete();
+    }
+
+    /**
+     * Retrieve batch history of bulk scheduling operations.
+     */
+    public function getScheduleHistory(int $limit = 25): array
+    {
+        $batches = Schedule::whereNotNull('plan_batch_id')
+            ->select(
+                'plan_batch_id',
+                DB::raw('MIN(created_at) as created_at'),
+                DB::raw('MIN(created_by_id) as created_by_id'),
+                DB::raw('MIN(date) as min_date'),
+                DB::raw('MAX(date) as max_date'),
+                DB::raw('COUNT(*) as total_slots'),
+                DB::raw("COUNT(CASE WHEN lifecycle_status = 'draft' THEN 1 END) as draft_slots"),
+                DB::raw("COUNT(CASE WHEN lifecycle_status = 'planned' THEN 1 END) as planned_slots"),
+                DB::raw("COUNT(CASE WHEN lifecycle_status = 'completed' THEN 1 END) as completed_slots"),
+                DB::raw('COUNT(DISTINCT employee_id) as employee_count'),
+                DB::raw('MIN(notes) as notes'),
+                DB::raw('MIN(shift_id) as shift_id')
+            )
+            ->groupBy('plan_batch_id')
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get();
+
+        $shiftIds = $batches->pluck('shift_id')->filter()->unique();
+        $shifts = Shift::whereIn('id', $shiftIds)->get()->keyBy('id');
+        $creatorIds = $batches->pluck('created_by_id')->filter()->unique();
+        $creators = \App\Models\User::whereIn('id', $creatorIds)->get(['id', 'name', 'email'])->keyBy('id');
+
+        return $batches->map(function ($batch) use ($shifts, $creators) {
+            $shift = $shifts->get($batch->shift_id);
+            $creator = $creators->get($batch->created_by_id);
+
+            return [
+                'batch_id' => $batch->plan_batch_id,
+                'plan_batch_id' => $batch->plan_batch_id,
+                'created_at' => $batch->created_at,
+                'created_by' => $creator ? ['id' => $creator->id, 'name' => $creator->name] : null,
+                'shift_name' => $shift?->name,
+                'shift_code' => $shift?->code,
+                'start_date' => Carbon::parse($batch->min_date)->toDateString(),
+                'end_date' => Carbon::parse($batch->max_date)->toDateString(),
+                'notes' => $batch->notes,
+                'total_schedules' => (int) $batch->total_slots,
+                'total_slots' => (int) $batch->total_slots,
+                'draft_count' => (int) $batch->draft_slots,
+                'draft_slots' => (int) $batch->draft_slots,
+                'planned_count' => (int) $batch->planned_slots,
+                'planned_slots' => (int) $batch->planned_slots,
+                'completed_count' => (int) $batch->completed_slots,
+                'completed_slots' => (int) $batch->completed_slots,
+                'employee_count' => (int) $batch->employee_count,
+            ];
+        })->values()->toArray();
     }
 }

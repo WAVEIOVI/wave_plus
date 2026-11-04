@@ -1,6 +1,7 @@
 <script setup>
 /* eslint-disable camelcase */
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
+import { localizedValue } from '@/composables/useLocaleField'
 import { useRecruitmentStore } from '@/stores/useRecruitmentStore'
 import { useHrStore } from '@/stores/hrStore'
 import { computed, onMounted, reactive, ref, watch } from 'vue'
@@ -77,11 +78,11 @@ const canGoNext = computed(() => {
 })
 
 const departmentOptions = computed(() =>
-  hrStore.departments.map(d => ({ title: d.name, value: d.id })),
+  hrStore.departments.map(d => ({ title: localizedValue(d.name), value: d.id })),
 )
 
 const positionOptions = computed(() =>
-  hrStore.positions.map(p => ({ title: p.title ?? p.name, value: p.id })),
+  hrStore.positions.map(p => ({ title: localizedValue(p.title ?? p.name), value: p.id })),
 )
 
 const employmentTypeOptions = computed(() => [
@@ -114,8 +115,10 @@ const handleSubmit = async () => {
     // (pay rate lives on the Position record), so they are not sent.
     const payload = {
       full_name: form.full_name,
-      email: form.email,
-      phone: form.phone,
+      work_email: form.email || undefined,
+      work_phone: form.phone || undefined,
+      email: form.email || undefined,
+      phone: form.phone || undefined,
       employee_number: form.employee_number || undefined,
       position_id: form.position_id,
       department_id: form.department_id,
@@ -150,7 +153,7 @@ const resetForm = () => {
 }
 
 // ── Watchers ──────────────────────────────────────────────────────────────
-watch(() => props.candidate, (newCandidate) => {
+watch(() => props.candidate, newCandidate => {
   if (newCandidate) {
     form.full_name = newCandidate.full_name || ''
     form.email = newCandidate.email || ''
@@ -158,7 +161,7 @@ watch(() => props.candidate, (newCandidate) => {
   }
 }, { immediate: true })
 
-watch(isOpen, (open) => {
+watch(isOpen, open => {
   if (!open) {
     resetForm()
   }
@@ -168,7 +171,6 @@ watch(isOpen, (open) => {
 onMounted(() => {
   hrStore.fetchEmployeesMeta()
 })
-
 </script>
 
 <template>
@@ -332,8 +334,10 @@ onMounted(() => {
             </VRow>
           </VWindowItem>
 
-          <!-- Step 3: Employment Extras. Compensation lives on the Position record (standard_hourly_rate),
-               so the hire wizard no longer collects an unsaved salary. -->
+          <!--
+            Step 3: Employment Extras. Compensation lives on the Position record (standard_hourly_rate),
+            so the hire wizard no longer collects an unsaved salary.
+          -->
           <VWindowItem :value="3">
             <div class="mb-4">
               <h6 class="text-h6 mb-2">{{ $t('hire_wizard.step3_subtitle') }}</h6>

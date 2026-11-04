@@ -21,6 +21,7 @@ class CertificationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorizeHrRead('hr.certifications.view');
         $query = Certification::withCount(['employeeCertifications as active_count' => fn ($q) => $q->where('status', 'valid')]);
 
         if ($search = $request->input('search')) {
@@ -92,6 +93,38 @@ class CertificationController extends Controller
         ]);
     }
 
+    public function expiringCertifications(Request $request): JsonResponse
+    {
+        $this->authorizeHrRead('hr.certifications.view');
+        $days = (int) $request->input('days', 60);
+        $days = max(1, min(365, $days));
+
+        $expiring = EmployeeCertification::with(['employee.department', 'employee.position', 'certification'])
+            ->expiring($days)
+            ->orderBy('expiry_date')
+            ->get();
+
+        return response()->json([
+            'data' => $expiring->map(fn ($c) => [
+                'id' => $c->id,
+                'employee_id' => $c->employee_id,
+                'employee_name' => $c->employee?->full_name ?? '',
+                'employee_number' => $c->employee?->employee_number ?? '',
+                'department' => $c->employee?->department?->name ?? '',
+                'position' => $c->employee?->position?->title ?? '',
+                'certification_id' => $c->certification_id,
+                'certification_name' => $c->certification?->getTranslations('name') ?? [],
+                'code' => $c->certification?->code ?? '',
+                'certificate_number' => $c->certificate_number,
+                'issuing_organization' => $c->issuing_organization,
+                'issue_date' => $c->issue_date?->toDateString(),
+                'expiry_date' => $c->expiry_date?->toDateString(),
+                'days_until_expiry' => $c->expiry_date ? (int) now()->diffInDays($c->expiry_date, false) : null,
+                'status' => $c->computed_status,
+            ]),
+        ]);
+    }
+
     public function assignToEmployee(Request $request, string $employeeId): JsonResponse
     {
         $this->authorizeHrMutation('hr.certifications.manage');
@@ -107,16 +140,34 @@ class CertificationController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        $empCert = EmployeeCertification::create([
-            'employee_id' => $employee->id,
-            'certification_id' => $data['certification_id'],
-            'certificate_number' => $data['certificate_number'] ?? null,
-            'issuing_organization' => $data['issuing_organization'] ?? null,
-            'issue_date' => $data['issue_date'],
-            'expiry_date' => $data['expiry_date'] ?? null,
-            'status' => $data['status'] ?? 'valid',
-            'notes' => $data['notes'] ?? null,
-        ]);
+        $existing = EmployeeCertification::where('employee_id', $employee->id)
+            ->where('certification_id', $data['certification_id'])
+            ->first();
+
+        if ($existing) {
+            $existing->update([
+                'certificate_number' => $data['certificate_number'] ?? $existing->certificate_number,
+                'issuing_organization' => $data['issuing_organization'] ?? $existing->issuing_organization,
+                'issue_date' => $data['issue_date'],
+                'expiry_date' => $data['expiry_date'] ?? null,
+                'status' => $data['status'] ?? 'valid',
+                'notes' => $data['notes'] ?? $existing->notes,
+            ]);
+            $empCert = $existing;
+            $statusCode = 200;
+        } else {
+            $empCert = EmployeeCertification::create([
+                'employee_id' => $employee->id,
+                'certification_id' => $data['certification_id'],
+                'certificate_number' => $data['certificate_number'] ?? null,
+                'issuing_organization' => $data['issuing_organization'] ?? null,
+                'issue_date' => $data['issue_date'],
+                'expiry_date' => $data['expiry_date'] ?? null,
+                'status' => $data['status'] ?? 'valid',
+                'notes' => $data['notes'] ?? null,
+            ]);
+            $statusCode = 201;
+        }
 
         if ($request->hasFile('file')) {
             $fileMeta = MediaValidationService::validateAndProcess(
@@ -136,7 +187,55 @@ class CertificationController extends Controller
         return response()->json([
             'message' => 'Certification assigned to employee.',
             'data' => $empCert->load('certification'),
-        ], 201);
+        ], $statusCode);
+    }
+
+    public function updateEmployeeCertification(Request $request, string $id): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.certifications.manage');
+        $empCert = EmployeeCertification::findOrFail($id);
+
+        $data = $request->validate([
+            'certificate_number' => ['nullable', 'string', 'max:100'],
+            'issuing_organization' => ['nullable', 'string', 'max:150'],
+            'issue_date' => ['sometimes', 'required', 'date'],
+            'expiry_date' => ['nullable', 'date'],
+            'status' => ['nullable', 'in:valid,expiring,expired,pending_verification'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $empCert->update(array_filter($data, fn ($val) => $val !== null));
+
+        if ($request->hasFile('file')) {
+            $fileMeta = MediaValidationService::validateAndProcess(
+                $request->file('file'),
+                MediaValidationService::CATEGORY_CERTIFICATE,
+                'file'
+            );
+            $empCert->addMediaFromRequest('file')
+                ->usingFileName($fileMeta['original_name'])
+                ->withCustomProperties([
+                    'uploaded_by' => $fileMeta['uploaded_by'],
+                    'uploaded_by_id' => $fileMeta['uploaded_by_id'],
+                ])
+                ->toMediaCollection('certificate_files');
+        }
+
+        return response()->json([
+            'message' => 'Certification updated successfully.',
+            'data' => $empCert->load('certification'),
+        ]);
+    }
+
+    public function destroyEmployeeCertification(string $id): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.certifications.manage');
+        $empCert = EmployeeCertification::findOrFail($id);
+        $empCert->delete();
+
+        return response()->json([
+            'message' => 'Certification removed from employee.',
+        ]);
     }
 
     public function verifyEmployeeCertification(Request $request, string $id): JsonResponse

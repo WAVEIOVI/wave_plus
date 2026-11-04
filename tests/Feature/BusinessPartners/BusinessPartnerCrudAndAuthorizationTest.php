@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\BusinessPartners;
 
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use App\Modules\BusinessPartners\Models\BpAddress;
 use App\Modules\BusinessPartners\Models\BpContact;
@@ -15,8 +17,6 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
-use App\Models\Permission;
-use App\Models\Role;
 use Tests\TestCase;
 
 class BusinessPartnerCrudAndAuthorizationTest extends TestCase
@@ -55,9 +55,20 @@ class BusinessPartnerCrudAndAuthorizationTest extends TestCase
         $this->postJson('/api/bp/clients', ['legal_name' => 'Acme'])->assertForbidden();
     }
 
-    public function test_reader_can_list_but_cannot_create(): void
+    public function test_read_business_partners_permission_only_controls_module_visibility_not_entities(): void
     {
         $this->actingWithPermissions(['read-BusinessPartners']);
+
+        // Allowed through bp.access middleware but denied by entity policies
+        $this->getJson('/api/bp/clients')->assertForbidden();
+        $this->getJson('/api/bp/suppliers')->assertForbidden();
+        $this->getJson('/api/bp/service-providers')->assertForbidden();
+        $this->getJson('/api/bp/organisations')->assertForbidden();
+    }
+
+    public function test_reader_with_read_clients_can_list_but_cannot_create(): void
+    {
+        $this->actingWithPermissions(['read-clients']);
 
         $this->getJson('/api/bp/clients')->assertOk();
 
@@ -488,5 +499,273 @@ class BusinessPartnerCrudAndAuthorizationTest extends TestCase
         $response->assertOk()
             ->assertJsonPath('data.recent_partners.0.name.en', 'Southern Chemical Industries LLC')
             ->assertJsonPath('data.recent_partners.0.name.fr', 'Industries Chimiques du Sud SARL');
+    }
+
+    public function test_dashboard_stats_requires_read_bp_dashboard_permission(): void
+    {
+        // User with only read-clients cannot view dashboard stats
+        $this->actingWithPermissions(['read-clients']);
+        $this->getJson('/api/bp/dashboard-stats')->assertForbidden();
+
+        // User with only read-BusinessPartners cannot view dashboard stats
+        $this->actingWithPermissions(['read-BusinessPartners']);
+        $this->getJson('/api/bp/dashboard-stats')->assertForbidden();
+
+        // User with read-bp-dashboard can view
+        $this->actingWithPermissions(['read-bp-dashboard']);
+        $this->getJson('/api/bp/dashboard-stats')->assertOk();
+    }
+
+    public function test_bank_account_authorization_requires_granular_permissions(): void
+    {
+        $client = Client::create(['legal_name' => 'Bank Client', 'status' => 'active']);
+
+        // User with only read-clients cannot read bank accounts
+        $this->actingWithPermissions(['read-clients']);
+        $this->getJson("/api/bp/clients/{$client->id}/bank-accounts")->assertForbidden();
+
+        // User with read-clients AND read-bp-bank-accounts can view bank accounts
+        $this->actingWithPermissions(['read-clients', 'read-bp-bank-accounts']);
+        $this->getJson("/api/bp/clients/{$client->id}/bank-accounts")->assertOk();
+
+        // But cannot create bank account
+        $this->postJson("/api/bp/clients/{$client->id}/bank-accounts", [
+            'bank_name' => 'BIAT',
+            'iban' => 'TN5912345678901234567890',
+        ])->assertForbidden();
+
+        // User with edit-clients AND manage-bp-bank-accounts can create bank account
+        $this->actingWithPermissions(['edit-clients', 'manage-bp-bank-accounts']);
+        $create = $this->postJson("/api/bp/clients/{$client->id}/bank-accounts", [
+            'bank_name' => 'BIAT',
+            'iban' => 'TN5912345678901234567890',
+        ])->assertCreated();
+
+        $bankAccountId = $create->json('data.id');
+
+        // Can view the created bank account with read-bp-bank-accounts + read-clients
+        $this->actingWithPermissions(['read-clients', 'read-bp-bank-accounts']);
+        $this->getJson("/api/bp/bank-accounts/{$bankAccountId}")->assertOk();
+
+        // Cannot update if missing manage-bp-bank-accounts
+        $this->putJson("/api/bp/bank-accounts/{$bankAccountId}", [
+            'bank_name' => 'BIAT Updated',
+        ])->assertForbidden();
+
+        // Can update with manage-bp-bank-accounts + edit-clients
+        $this->actingWithPermissions(['edit-clients', 'manage-bp-bank-accounts']);
+        $this->putJson("/api/bp/bank-accounts/{$bankAccountId}", [
+            'bank_name' => 'BIAT Updated',
+        ])->assertOk();
+
+        // Can delete with manage-bp-bank-accounts + edit-clients
+        $this->deleteJson("/api/bp/bank-accounts/{$bankAccountId}")->assertOk();
+    }
+
+    public function test_bulk_email_batches_authorization(): void
+    {
+        $profile = \App\Modules\Communications\Email\Models\EmailSenderProfile::create([
+            'name' => 'WAVE System',
+            'email' => 'system@waveplus.xyz',
+            'department' => 'System',
+            'is_system' => true,
+            'is_active' => true,
+        ]);
+
+        $user1 = $this->actingWithPermissions(['read-clients']);
+        $batch1 = \App\Modules\BusinessPartners\Models\BpBulkEmailBatch::create([
+            'partner_type' => 'client',
+            'sender_profile_id' => $profile->id,
+            'created_by_user_id' => $user1->id,
+            'total_count' => 1,
+            'status' => 'completed',
+        ]);
+
+        $user2 = $this->actingWithPermissions(['read-clients']);
+        $batch2 = \App\Modules\BusinessPartners\Models\BpBulkEmailBatch::create([
+            'partner_type' => 'client',
+            'sender_profile_id' => $profile->id,
+            'created_by_user_id' => $user2->id,
+            'total_count' => 1,
+            'status' => 'completed',
+        ]);
+
+        // User 2 can view own batch
+        $this->getJson("/api/bp/bulk-email/batches/{$batch2->id}")->assertOk();
+        // User 2 cannot view user 1's batch
+        $this->getJson("/api/bp/bulk-email/batches/{$batch1->id}")->assertForbidden();
+
+        // In listBatches, user 2 only sees own batch
+        $list = $this->getJson('/api/bp/bulk-email/batches')->assertOk();
+        $this->assertCount(1, $list->json('data'));
+        $this->assertSame($batch2->id, $list->json('data.0.id'));
+
+        // User with view-all-bp-email-batches can view user 1's batch and see all in list
+        $this->actingWithPermissions(['read-clients', 'view-all-bp-email-batches']);
+        $this->getJson("/api/bp/bulk-email/batches/{$batch1->id}")->assertOk();
+        $allList = $this->getJson('/api/bp/bulk-email/batches')->assertOk();
+        $this->assertCount(2, $allList->json('data'));
+    }
+
+    public function test_export_permissions_for_all_partner_types(): void
+    {
+        $supplier = Supplier::create(['legal_name' => 'Export Supplier', 'status' => 'active']);
+        $serviceProvider = \App\Modules\BusinessPartners\Models\ServiceProvider::create(['legal_name' => 'Export SP', 'status' => 'active']);
+        $organisation = Organisation::create([
+            'legal_name' => 'Export Org',
+            'organisation_type' => 'government_agency',
+            'scope' => 'national',
+            'status' => 'active',
+        ]);
+
+        // Without export permissions, export endpoints are forbidden
+        $this->actingWithPermissions(['read-suppliers', 'read-service-providers', 'read-organisations']);
+        $this->getJson('/api/bp/suppliers/export/pdf')->assertForbidden();
+        $this->getJson("/api/bp/suppliers/{$supplier->id}/export/pdf")->assertForbidden();
+        $this->getJson('/api/bp/service-providers/export/pdf')->assertForbidden();
+        $this->getJson("/api/bp/service-providers/{$serviceProvider->id}/export/pdf")->assertForbidden();
+        $this->getJson('/api/bp/organisations/export/pdf')->assertForbidden();
+        $this->getJson("/api/bp/organisations/{$organisation->id}/export/pdf")->assertForbidden();
+    }
+
+    public function test_super_admin_bypasses_all_bp_authorization_checks(): void
+    {
+        $this->actingAsSuperAdmin();
+
+        $client = Client::create(['legal_name' => 'Super Admin Client', 'status' => 'active']);
+
+        // Dashboard
+        $this->getJson('/api/bp/dashboard-stats')->assertOk();
+
+        // List & view clients
+        $this->getJson('/api/bp/clients')->assertOk();
+        $this->getJson("/api/bp/clients/{$client->id}")->assertOk();
+
+        // Bank accounts
+        $this->getJson("/api/bp/clients/{$client->id}/bank-accounts")->assertOk();
+        $bank = $this->postJson("/api/bp/clients/{$client->id}/bank-accounts", [
+            'bank_name' => 'Admin Bank',
+            'iban' => 'TN5999999999999999999999',
+        ])->assertCreated();
+
+        $this->getJson("/api/bp/bank-accounts/{$bank->json('data.id')}")->assertOk();
+        $this->deleteJson("/api/bp/bank-accounts/{$bank->json('data.id')}")->assertOk();
+    }
+
+    public function test_dashboard_statistics_scoped_to_accessible_partner_types(): void
+    {
+        Client::create(['legal_name' => 'Accessible Client', 'status' => 'active']);
+        Supplier::create(['legal_name' => 'Hidden Supplier', 'status' => 'active']);
+
+        // User can only read clients and dashboard
+        $this->actingWithPermissions(['read-bp-dashboard', 'read-clients']);
+
+        $res = $this->getJson('/api/bp/dashboard-stats')->assertOk();
+        $this->assertArrayHasKey('clients', $res->json('data.kpis'));
+        $this->assertArrayNotHasKey('suppliers', $res->json('data.kpis'));
+
+        // Recent partners must only contain clients, no suppliers
+        $recent = collect($res->json('data.recent_partners'));
+        $this->assertTrue($recent->every(fn ($p) => $p['type'] === 'client'));
+        $this->assertTrue($recent->contains(fn ($p) => ($p['name']['en'] ?? null) === 'Accessible Client'));
+    }
+
+    public function test_contextual_email_preparation_and_sending_authorization(): void
+    {
+        $client = Client::create(['legal_name' => 'Email Client', 'primary_email' => 'client@test.com', 'status' => 'active']);
+
+        // 1. User with create-email-messages but no read-clients cannot prepare or send
+        $this->actingWithPermissions(['read-BusinessPartners', 'create-email-messages']);
+        $this->getJson("/api/bp/clients/{$client->id}/contextual-email")->assertForbidden();
+        $this->postJson("/api/bp/clients/{$client->id}/send-email", [
+            'to' => [['email' => 'to@test.com']],
+            'subject' => 'Hello',
+            'body_html' => '<p>Hello</p>',
+        ])->assertForbidden();
+
+        // 2. User with read-clients but without create-email-messages cannot prepare or send
+        $this->actingWithPermissions(['read-clients']);
+        $this->getJson("/api/bp/clients/{$client->id}/contextual-email")->assertForbidden();
+        $this->postJson("/api/bp/clients/{$client->id}/send-email", [
+            'to' => [['email' => 'to@test.com']],
+            'subject' => 'Hello',
+            'body_html' => '<p>Hello</p>',
+        ])->assertForbidden();
+
+        // 3. User without create-email-messages cannot invoke bulk preview or bulk send
+        $this->postJson('/api/bp/clients/bulk-email/preview', [
+            'partner_ids' => [$client->id],
+        ])->assertForbidden();
+        $this->postJson('/api/bp/clients/bulk-email', [
+            'partner_ids' => [$client->id],
+        ])->assertForbidden();
+    }
+
+    public function test_bulk_email_batch_partner_type_verification(): void
+    {
+        $profile = \App\Modules\Communications\Email\Models\EmailSenderProfile::create([
+            'name' => 'WAVE System 2',
+            'email' => 'system2@waveplus.xyz',
+            'department' => 'System',
+            'is_system' => true,
+            'is_active' => true,
+        ]);
+
+        $supplierBatch = \App\Modules\BusinessPartners\Models\BpBulkEmailBatch::create([
+            'partner_type' => 'supplier',
+            'sender_profile_id' => $profile->id,
+            'total_count' => 1,
+            'status' => 'completed',
+        ]);
+
+        // User with view-all-bp-email-batches and read-clients, but lacking read-suppliers
+        $this->actingWithPermissions(['read-clients', 'view-all-bp-email-batches']);
+
+        // Cannot view supplier batch
+        $this->getJson("/api/bp/bulk-email/batches/{$supplierBatch->id}")->assertForbidden();
+
+        // Requesting supplier batches is forbidden
+        $this->getJson('/api/bp/bulk-email/batches?partner_type=supplier')->assertForbidden();
+    }
+
+    public function test_legacy_email_endpoint_authorization(): void
+    {
+        // 1. Without create-email-messages, legacy sendEmailList is forbidden
+        $this->actingWithPermissions(['read-clients']);
+        $this->postJson('/api/bp/clients/send-email', [
+            'emailTo' => ['test@example.com'],
+            'subject' => 'Test List',
+            'message' => 'Please find attached',
+        ])->assertForbidden();
+
+        // 2. Without read-clients, legacy sendEmailList is forbidden even with create-email-messages
+        $this->actingWithPermissions(['create-email-messages', 'read-BusinessPartners']);
+        $this->postJson('/api/bp/clients/send-email', [
+            'emailTo' => ['test@example.com'],
+            'subject' => 'Test List',
+            'message' => 'Please find attached',
+        ])->assertForbidden();
+    }
+
+    public function test_bank_account_details_hidden_from_partner_resource_without_permissions(): void
+    {
+        $client = Client::create(['legal_name' => 'Bank Protect Client', 'status' => 'active']);
+        \App\Modules\BusinessPartners\Models\BpBankAccount::create([
+            'bankable_type' => Client::class,
+            'bankable_id' => $client->id,
+            'bank_name' => 'Secret Bank',
+            'account_number' => 'ACC123456789',
+        ]);
+
+        // User with only read-clients
+        $this->actingWithPermissions(['read-clients']);
+        $res = $this->getJson("/api/bp/clients/{$client->id}")->assertOk();
+        $this->assertEmpty($res->json('data.bank_accounts'));
+
+        // User with read-clients AND read-bp-bank-accounts
+        $this->actingWithPermissions(['read-clients', 'read-bp-bank-accounts']);
+        $resWithBank = $this->getJson("/api/bp/clients/{$client->id}")->assertOk();
+        $this->assertNotEmpty($resWithBank->json('data.bank_accounts'));
+        $this->assertSame('Secret Bank', $resWithBank->json('data.bank_accounts.0.bank_name'));
     }
 }

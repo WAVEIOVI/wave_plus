@@ -14,6 +14,7 @@ import { useHrStore } from '@/stores/hrStore'
 import { useHrPlannerStore } from '@/stores/useHrPlannerStore'
 import BulkScheduleDialog from '@/views/people-skills/workforce/BulkScheduleDialog.vue'
 import ScheduleFormDialog from '@/views/people-skills/workforce/ScheduleFormDialog.vue'
+import ScheduleHistoryDialog from '@/views/people-skills/workforce/ScheduleHistoryDialog.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
@@ -39,6 +40,7 @@ const plannerScrollOptions = {
 const bulkOpen = ref(false)
 const slotOpen = ref(false)
 const filterOpen = ref(false)
+const historyOpen = ref(false)
 const activeCell = ref(null)
 const activeEmployee = ref(null)
 const actionLoading = ref(false)
@@ -291,7 +293,7 @@ const clear = async () => {
   }
 }
 
-defineExpose({ openBulk, openFilters, publish, load, clear, draftCount })
+defineExpose({ openBulk, openFilters, openHistory: () => { historyOpen.value = true }, publish, load, clear, draftCount })
 
 onMounted(load)
 </script>
@@ -301,21 +303,50 @@ onMounted(load)
     <VCard class="pa-3 pa-sm-4 planner-toolbar-card">
       <div class="planner-toolbar">
         <div class="planner-week-controls">
+          <VBtnToggle
+            :model-value="planner.rangeMode"
+            mandatory
+            density="compact"
+            color="primary"
+            variant="outlined"
+            class="range-mode-toggle me-sm-2"
+            @update:model-value="planner.setRangeMode($event)"
+          >
+            <VBtn
+              value="week"
+              size="small"
+            >
+              {{ t('workforce.planner.week', 'Week') }}
+            </VBtn>
+            <VBtn
+              value="biweekly"
+              size="small"
+            >
+              {{ t('workforce.planner.two_weeks', '2 Weeks') }}
+            </VBtn>
+            <VBtn
+              value="month"
+              size="small"
+            >
+              {{ t('workforce.planner.month', 'Month') }}
+            </VBtn>
+          </VBtnToggle>
+
           <div class="planner-week-nav">
             <VBtn
               icon="tabler-chevron-left"
               variant="tonal"
               density="comfortable"
               :disabled="planner.isLoading"
-              :aria-label="t('workforce.planner.previous_week', 'Previous week')"
-              @click="planner.prevWeek()"
+              :aria-label="t('workforce.planner.previous_period', 'Previous period')"
+              @click="planner.prevPeriod()"
             />
             <VBtn
               variant="tonal"
               color="primary"
               class="today-button"
               :disabled="planner.isLoading"
-              @click="planner.goToCurrentWeek()"
+              @click="planner.goToCurrentPeriod()"
             >
               Today
             </VBtn>
@@ -324,8 +355,8 @@ onMounted(load)
               variant="tonal"
               density="comfortable"
               :disabled="planner.isLoading"
-              :aria-label="t('workforce.planner.next_week', 'Next week')"
-              @click="planner.nextWeek()"
+              :aria-label="t('workforce.planner.next_period', 'Next period')"
+              @click="planner.nextPeriod()"
             />
           </div>
 
@@ -343,6 +374,15 @@ onMounted(load)
         </div>
 
         <div class="planner-actions d-none d-md-flex">
+          <VBtn
+            variant="outlined"
+            prepend-icon="tabler-history"
+            :disabled="actionLoading"
+            @click="historyOpen = true"
+          >
+            {{ t('workforce.history', 'History') }}
+          </VBtn>
+
           <VBtn
             variant="outlined"
             :aria-label="t('wp.filters.label', 'Filters')"
@@ -408,7 +448,7 @@ onMounted(load)
               <VListItem
                 prepend-icon="tabler-trash"
                 class="text-error"
-                title="Clear uncompleted week"
+                title="Clear uncompleted period"
                 :disabled="actionLoading || planner.isLoading"
                 @click="clear"
               />
@@ -507,6 +547,11 @@ onMounted(load)
                   :color="cellColor(employee.days[day.date])"
                   :variant="employee.days[day.date].schedule || employee.days[day.date].leave || employee.days[day.date].holiday ? 'tonal' : 'outlined'"
                   class="mobile-slot"
+                  :class="{
+                    'slot--conflict': employee.days[day.date].schedule?.is_conflict,
+                    'slot--exceptional': employee.days[day.date].schedule?.is_exceptional,
+                    'slot--draft': employee.days[day.date].schedule?.lifecycle_status === 'draft',
+                  }"
                   :disabled="actionLoading"
                   :aria-label="`${localizedValue(employee.full_name)} — ${day.day_name} ${day.day_number}: ${cellText(employee.days[day.date])}`"
                   @click="openSlot(employee.days[day.date], employee)"
@@ -524,6 +569,20 @@ onMounted(load)
                     class="me-1 text-warning"
                   />
                   <span class="mobile-slot-label">{{ cellText(employee.days[day.date]) }}</span>
+                  <VIcon
+                    v-if="employee.days[day.date].schedule?.is_conflict"
+                    icon="tabler-alert-triangle"
+                    size="16"
+                    color="error"
+                    class="ms-1 flex-shrink-0"
+                  />
+                  <VIcon
+                    v-if="employee.days[day.date].schedule?.is_exceptional"
+                    icon="tabler-clock-edit"
+                    size="14"
+                    color="info"
+                    class="ms-1 flex-shrink-0"
+                  />
                 </VBtn>
                 <div
                   v-else
@@ -610,6 +669,11 @@ onMounted(load)
                     :variant="employee.days[day.date].schedule || employee.days[day.date].leave || employee.days[day.date].holiday ? 'tonal' : 'text'"
                     size="small"
                     class="slot"
+                    :class="{
+                      'slot--conflict': employee.days[day.date].schedule?.is_conflict,
+                      'slot--exceptional': employee.days[day.date].schedule?.is_exceptional,
+                      'slot--draft': employee.days[day.date].schedule?.lifecycle_status === 'draft',
+                    }"
                     :disabled="actionLoading"
                     :aria-label="`${localizedValue(employee.full_name)} — ${day.day_name} ${day.day_number}: ${cellText(employee.days[day.date])}`"
                     @click="openSlot(employee.days[day.date], employee)"
@@ -626,7 +690,39 @@ onMounted(load)
                       size="14"
                       class="me-1 text-warning"
                     />
-                    {{ cellText(employee.days[day.date]) }}
+                    <span class="text-truncate">{{ cellText(employee.days[day.date]) }}</span>
+
+                    <VTooltip
+                      v-if="employee.days[day.date].schedule?.is_conflict"
+                      location="top"
+                    >
+                      <template #activator="{ props: tipProps }">
+                        <VIcon
+                          v-bind="tipProps"
+                          icon="tabler-alert-triangle"
+                          size="14"
+                          color="error"
+                          class="ms-1 flex-shrink-0"
+                        />
+                      </template>
+                      <span>{{ employee.days[day.date].schedule.conflict_reason || t('workforce.conflict_leave_detected', 'Conflict: Approved leave overlap') }}</span>
+                    </VTooltip>
+
+                    <VTooltip
+                      v-if="employee.days[day.date].schedule?.is_exceptional"
+                      location="top"
+                    >
+                      <template #activator="{ props: tipProps }">
+                        <VIcon
+                          v-bind="tipProps"
+                          icon="tabler-clock-edit"
+                          size="13"
+                          color="info"
+                          class="ms-1 flex-shrink-0"
+                        />
+                      </template>
+                      <span>{{ t('workforce.exceptional_schedule', 'Custom shift times / override') }}</span>
+                    </VTooltip>
                   </VBtn>
                 </td>
               </tr>
@@ -694,6 +790,8 @@ onMounted(load)
       :saving="actionLoading"
       @submit="saveBulk"
     />
+
+    <ScheduleHistoryDialog v-model="historyOpen" />
   </div>
 </template>
 
@@ -877,6 +975,24 @@ onMounted(load)
   min-inline-size: 100px;
   text-transform: none;
   white-space: normal;
+}
+
+.range-mode-toggle {
+  min-block-size: 36px;
+}
+
+.slot--conflict {
+  border: 1px solid rgb(var(--v-theme-error)) !important;
+  background-color: rgba(var(--v-theme-error), 0.08) !important;
+}
+
+.slot--draft {
+  border-style: dashed !important;
+  opacity: 0.9;
+}
+
+.slot--exceptional {
+  position: relative;
 }
 
 .mobile-planner {

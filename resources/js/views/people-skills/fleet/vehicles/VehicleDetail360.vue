@@ -33,6 +33,7 @@ const emit = defineEmits([
   'return',
   'status',
   'odometer',
+  'telemetry',
   'rental',
   'clientUsage',
   'delete',
@@ -77,7 +78,16 @@ const formatDate = val => {
     <VCard class="pa-6">
       <div class="d-flex flex-wrap align-start justify-space-between gap-4">
         <!-- Identity info -->
-        <div class="d-flex align-start gap-4">
+        <div class="d-flex align-start gap-3">
+          <VBtn
+            icon="tabler-arrow-left"
+            variant="text"
+            color="default"
+            class="mt-1"
+            to="/people-skills/fleet/vehicles"
+            :title="$t('Back')"
+            :aria-label="$t('Back')"
+          />
           <VAvatar
             color="primary"
             variant="tonal"
@@ -217,6 +227,13 @@ const formatDate = val => {
                 prepend-icon="tabler-building-estate"
                 :title="$t('fleet.start_client_usage')"
                 @click="emit('clientUsage', vehicle, false)"
+              />
+
+              <VListItem
+                v-if="canManageFleet"
+                prepend-icon="tabler-map-pin"
+                :title="$t('fleet.update_telemetry') || 'Update GPS Telemetry'"
+                @click="emit('telemetry', vehicle)"
               />
 
               <VDivider
@@ -373,6 +390,7 @@ const formatDate = val => {
               @return="emit('return', $event)"
               @status="emit('status', $event)"
               @odometer="emit('odometer', $event)"
+              @telemetry="emit('telemetry', $event)"
               @rental="emit('rental', $event)"
               @client-usage="emit('clientUsage', $event)"
             />

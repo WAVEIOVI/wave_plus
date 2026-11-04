@@ -36,7 +36,7 @@ const blankForm = () => ({
   unit: 'L',
   unit_price: null,
   total_cost: null,
-  currency: 'SAR',
+  currency: 'TND',
   odometer_km: props.vehicle.odometer_km || null,
   supplier: '',
   station: '',

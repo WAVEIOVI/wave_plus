@@ -36,7 +36,7 @@ const blankForm = () => ({
   labor_cost: null,
   parts_cost: null,
   total_cost: null,
-  currency: 'SAR',
+  currency: 'TND',
   invoice_number: '',
   next_service_date: null,
   next_service_km: null,

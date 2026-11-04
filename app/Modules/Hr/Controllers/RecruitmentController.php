@@ -7,6 +7,7 @@ namespace App\Modules\Hr\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\Hr\Concerns\AuthorizesHrMutations;
 use App\Modules\Hr\Models\Candidate;
+use App\Modules\Hr\Models\HrAuditLog;
 use App\Modules\Hr\Models\Interview;
 use App\Modules\Hr\Models\JobOpening;
 use App\Modules\Hr\Requests\HireCandidateRequest;
@@ -29,10 +30,18 @@ class RecruitmentController extends Controller
 
     public function jobOpenings(Request $request): JsonResponse
     {
+        $this->authorizeHrRead('hr.recruitment.view');
         $query = JobOpening::with(['department', 'position'])->withCount('applications');
 
         if ($status = $request->input('status')) {
             $query->where('status', $status);
+        }
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('reference', 'like', "%{$search}%");
+            });
         }
 
         $openings = $query->orderByDesc('created_at')->get();
@@ -57,6 +66,10 @@ class RecruitmentController extends Controller
             'published_at' => ['nullable', 'date'],
         ]);
 
+        if (($data['status'] ?? null) === 'published' && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+
         $opening = JobOpening::create($data);
 
         return response()->json([
@@ -67,10 +80,17 @@ class RecruitmentController extends Controller
 
     public function candidates(Request $request): JsonResponse
     {
+        $this->authorizeHrRead('hr.recruitment.view');
         $query = Candidate::with(['applications.jobOpening', 'interviews.interviewer']);
 
         if ($status = $request->input('status')) {
             $query->where('status', $status);
+        }
+
+        if ($openingId = $request->input('job_opening_id') ?: $request->input('opening_id')) {
+            $query->whereHas('applications', function ($q) use ($openingId) {
+                $q->where('job_opening_id', $openingId);
+            });
         }
 
         if ($search = $request->input('search')) {
@@ -184,15 +204,72 @@ class RecruitmentController extends Controller
         $this->authorizeHrMutation('hr.recruitment.manage');
         $candidate = Candidate::findOrFail($candidateId);
 
-        $request->validate([
-            'status' => ['required', 'in:applied,screening,interview,evaluated,selected,offer,rejected'],
+        $data = $request->validate([
+            'status' => ['required', 'in:applied,screening,interview,evaluated,selected,offer,hired,rejected'],
+            'notes' => ['nullable', 'string'],
         ]);
 
-        $candidate->update(['status' => $request->input('status')]);
+        $previousStatus = $candidate->status;
+        $candidate->update([
+            'status' => $data['status'],
+            'notes' => ! empty($data['notes'])
+                ? trim(($candidate->notes ? $candidate->notes."\n" : '').$data['notes'])
+                : $candidate->notes,
+        ]);
+
+        HrAuditLog::create([
+            'auditable_type' => Candidate::class,
+            'auditable_id' => $candidate->id,
+            'actor_id' => auth()->id(),
+            'action' => 'STAGE_CHANGE',
+            'old_values' => ['status' => $previousStatus],
+            'new_values' => ['status' => $candidate->status],
+            'reason' => $data['notes'] ?? "Stage transitioned from {$previousStatus} to {$candidate->status}.",
+        ]);
 
         return response()->json([
             'message' => 'Candidate status updated.',
             'status' => $candidate->status,
+            'data' => new CandidateResource($candidate->fresh(['applications.jobOpening', 'interviews.interviewer'])),
+        ]);
+    }
+
+    public function updateInterview(Request $request, string $id): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.recruitment.manage');
+        $interview = Interview::findOrFail($id);
+
+        $data = $request->validate([
+            'scheduled_at' => ['sometimes', 'required', 'date'],
+            'duration_minutes' => ['nullable', 'integer', 'min:15', 'max:180'],
+            'interviewer_id' => ['nullable', 'ulid', 'exists:users,id'],
+            'feedback' => ['nullable', 'string'],
+            'rating' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'status' => ['nullable', 'in:scheduled,completed,cancelled'],
+        ]);
+
+        $interview->update($data);
+
+        if (($data['status'] ?? null) === 'completed' && $interview->candidate && $interview->candidate->status === 'interview') {
+            $interview->candidate->update(['status' => 'evaluated']);
+        }
+
+        HrAuditLog::create([
+            'auditable_type' => Interview::class,
+            'auditable_id' => $interview->id,
+            'actor_id' => auth()->id(),
+            'action' => 'INTERVIEW_EVALUATION',
+            'new_values' => [
+                'rating' => $interview->rating,
+                'status' => $interview->status,
+                'candidate_id' => $interview->candidate_id,
+            ],
+            'reason' => 'Interview evaluation updated.',
+        ]);
+
+        return response()->json([
+            'message' => 'Interview evaluation updated successfully.',
+            'data' => $interview->fresh(['interviewer', 'jobOpening', 'candidate']),
         ]);
     }
 
@@ -201,18 +278,36 @@ class RecruitmentController extends Controller
         $this->authorizeHrMutation('hr.recruitment.hire');
         $candidate = Candidate::findOrFail($candidateId);
 
-        $employee = $this->hiringService->hireCandidate(
-            candidate: $candidate,
-            departmentId: $request->input('department_id'),
-            positionId: $request->input('position_id'),
-            hireDate: Carbon::parse($request->input('hire_date')),
-            managerId: $request->input('manager_id'),
-            workEmail: $request->input('work_email'),
-            workPhone: $request->input('work_phone'),
-            employmentType: $request->input('employment_type', 'full_time'),
-            contractType: $request->input('contract_type', 'permanent'),
-            actorId: auth()->id()
-        );
+        if ($candidate->status === 'hired') {
+            return response()->json([
+                'message' => "Candidate {$candidate->full_name} is already hired.",
+                'errors' => [
+                    'candidate' => ["Candidate {$candidate->full_name} is already hired."],
+                ],
+            ], 422);
+        }
+
+        try {
+            $employee = $this->hiringService->hireCandidate(
+                candidate: $candidate,
+                departmentId: $request->input('department_id'),
+                positionId: $request->input('position_id'),
+                hireDate: Carbon::parse($request->input('hire_date')),
+                managerId: $request->input('manager_id'),
+                workEmail: $request->input('work_email'),
+                workPhone: $request->input('work_phone'),
+                employmentType: $request->input('employment_type', 'full_time'),
+                contractType: $request->input('contract_type', 'permanent'),
+                actorId: auth()->id()
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => [
+                    'candidate' => [$e->getMessage()],
+                ],
+            ], 422);
+        }
 
         return response()->json([
             'message' => "Candidate {$candidate->full_name} successfully hired as employee {$employee->employee_number}.",
@@ -222,6 +317,7 @@ class RecruitmentController extends Controller
 
     public function showJobOpening(string $id): JsonResponse
     {
+        $this->authorizeHrRead('hr.recruitment.view');
         $opening = JobOpening::with(['department', 'position', 'applications.candidate'])->findOrFail($id);
 
         return response()->json([
@@ -246,6 +342,13 @@ class RecruitmentController extends Controller
             'closed_at' => ['nullable', 'date'],
         ]);
 
+        if (($data['status'] ?? null) === 'published' && empty($opening->published_at) && empty($data['published_at'])) {
+            $data['published_at'] = now();
+        }
+        if (($data['status'] ?? null) === 'closed' && empty($opening->closed_at) && empty($data['closed_at'])) {
+            $data['closed_at'] = now();
+        }
+
         $opening->update($data);
 
         return response()->json([
@@ -267,6 +370,7 @@ class RecruitmentController extends Controller
 
     public function showCandidate(string $id): JsonResponse
     {
+        $this->authorizeHrRead('hr.recruitment.view');
         $candidate = Candidate::with(['applications.jobOpening', 'interviews.interviewer'])->findOrFail($id);
 
         return response()->json([
@@ -326,6 +430,64 @@ class RecruitmentController extends Controller
         }
 
         return $media->toResponse(request());
+    }
+
+    public function storeMedia(Request $request, string $id): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.recruitment.manage');
+        $candidate = Candidate::findOrFail($id);
+
+        $request->validate([
+            'file' => ['required', 'file'],
+            'collection' => ['nullable', 'in:resume,documents'],
+        ]);
+
+        $collection = $request->input('collection', 'documents');
+        $category = $collection === 'resume'
+            ? MediaValidationService::CATEGORY_RESUME
+            : MediaValidationService::CATEGORY_DOCUMENT;
+
+        $fileMeta = MediaValidationService::validateAndProcess(
+            $request->file('file'),
+            $category,
+            'file'
+        );
+
+        if ($collection === 'resume') {
+            $candidate->clearMediaCollection('resume');
+        }
+
+        $media = $candidate->addMediaFromRequest('file')
+            ->usingFileName($fileMeta['original_name'])
+            ->withCustomProperties([
+                'uploaded_by' => $fileMeta['uploaded_by'],
+                'uploaded_by_id' => $fileMeta['uploaded_by_id'],
+            ])
+            ->toMediaCollection($collection);
+
+        return response()->json([
+            'message' => 'File uploaded successfully.',
+            'media' => [
+                'id' => $media->id,
+                'name' => $media->file_name,
+                'size' => $media->size,
+                'mime_type' => $media->mime_type,
+                'collection' => $media->collection_name,
+                'url' => url("/api/hr/recruitment/candidates/{$candidate->id}/media/{$media->id}/download"),
+                'download_url' => url("/api/hr/recruitment/candidates/{$candidate->id}/media/{$media->id}/download"),
+                'is_private' => true,
+            ],
+        ], 201);
+    }
+
+    public function destroyMedia(string $id, string $mediaId): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.recruitment.manage');
+        $candidate = Candidate::findOrFail($id);
+        $media = $candidate->media()->findOrFail($mediaId);
+        $media->delete();
+
+        return response()->json(['message' => 'Document deleted.']);
     }
 
     public function destroyCandidate(string $id): JsonResponse

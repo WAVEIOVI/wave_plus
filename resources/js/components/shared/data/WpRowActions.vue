@@ -61,12 +61,18 @@ const props = defineProps({
 })
 
 /* eslint-disable vue/valid-define-emits */
-const emit = defineEmits(['view', 'edit', 'delete'])
+const emit = defineEmits(['view', 'edit', 'delete', 'action'])
 
 const { t } = useI18n()
 
 const triggerTooltip = computed(() => props.tooltip || t('wp.actions.more', 'Actions'))
 const editAction = computed(() => props.actions.find(a => a.emit === 'edit'))
+
+const handleAction = emitName => {
+  if (!emitName) return
+  emit(emitName)
+  emit('action', emitName)
+}
 </script>
 
 <template>
@@ -85,7 +91,7 @@ const editAction = computed(() => props.actions.find(a => a.emit === 'edit'))
           color="default"
           class="wp-row-actions"
           :aria-label="editAction.label || $t('Edit')"
-          @click.stop="$emit('edit')"
+          @click.stop="handleAction('edit')"
         >
           <VIcon
             :icon="editAction.icon || 'tabler-edit'"
@@ -139,7 +145,7 @@ const editAction = computed(() => props.actions.find(a => a.emit === 'edit'))
                   :class="action.color ? `text-${action.color}` : ''"
                   class="wp-row-actions__item"
                   role="menuitem"
-                  @click="$emit(action.emit)"
+                  @click="handleAction(action.emit)"
                 >
                   <template #prepend>
                     <VIcon

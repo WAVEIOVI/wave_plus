@@ -1,8 +1,9 @@
 <script setup>
 /* eslint-disable camelcase */
-import { WpFormDialog, WpSectionCard, WpSimpleTable } from '@/components/shared'
+import { WpDeleteDialog, WpFormDialog, WpSectionCard, WpSimpleTable } from '@/components/shared'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { useTrainingStore } from '@/stores/useTrainingStore'
 import { resolveStatusColor } from '@/utils/hr-lookups'
 import EmployeeEditEmptyState from '@/views/people-skills/employees/edit/EmployeeEditEmptyState.vue'
@@ -20,6 +21,7 @@ const emit = defineEmits(['refresh'])
 const { t } = useI18n()
 const { showMessage } = useAppSnackbar()
 const trainingStore = useTrainingStore()
+const ability = useAbility()
 
 // ── Enroll Dialog State ─────────────────────────────────────────────────────
 const isEnrollDialogOpen = ref(false)
@@ -33,6 +35,11 @@ const completingProgramName = ref('')
 const completeScore = ref(null)
 const completeCertificateNumber = ref('')
 const isSubmittingComplete = ref(false)
+
+// ── Delete Dialog State ─────────────────────────────────────────────────────
+const isDeleteDialogOpen = ref(false)
+const itemToDelete = ref(null)
+const isDeleting = ref(false)
 
 onMounted(async () => {
   if (!trainingStore.sessions.length && !props.readOnly) {
@@ -131,6 +138,27 @@ const handleComplete = async () => {
   }
 }
 
+const openDelete = item => {
+  itemToDelete.value = item
+  isDeleteDialogOpen.value = true
+}
+
+const handleDelete = async () => {
+  if (!itemToDelete.value?.id) return
+  isDeleting.value = true
+  try {
+    await trainingStore.removeParticipant(itemToDelete.value.id)
+    showMessage(t('hr.employees.trainings.remove_success', 'Participant removed from session'), 'success')
+    isDeleteDialogOpen.value = false
+    itemToDelete.value = null
+    emit('refresh')
+  } catch (err) {
+    showMessage(err?.data?.message || t('common.delete_error', 'Failed to remove participant'), 'error')
+  } finally {
+    isDeleting.value = false
+  }
+}
+
 defineExpose({ openEnroll: openEnrollDialog })
 </script>
 
@@ -210,20 +238,26 @@ defineExpose({ openEnroll: openEnrollDialog })
         v-if="!readOnly"
         #cell.actions="{ item }"
       >
-        <VBtn
-          v-if="item.status === 'enrolled' || item.status === 'in_progress'"
-          size="x-small"
-          color="success"
-          variant="tonal"
-          prepend-icon="tabler-certificate"
-          @click="openCompleteDialog(item)"
-        >
-          {{ t('hr.employees.trainings.complete', 'Complete') }}
-        </VBtn>
-        <span
-          v-else
-          class="text-caption text-medium-emphasis"
-        >—</span>
+        <div class="d-flex align-center gap-1 justify-center">
+          <VBtn
+            v-if="(item.status === 'enrolled' || item.status === 'in_progress') && ability.can('manage', 'training')"
+            size="x-small"
+            color="success"
+            variant="tonal"
+            prepend-icon="tabler-certificate"
+            @click="openCompleteDialog(item)"
+          >
+            {{ t('hr.employees.trainings.complete', 'Complete') }}
+          </VBtn>
+          <VBtn
+            v-if="ability.can('manage', 'training')"
+            icon="tabler-trash"
+            size="x-small"
+            variant="text"
+            color="error"
+            @click="openDelete(item)"
+          />
+        </div>
       </template>
 
       <template #empty>
@@ -300,5 +334,14 @@ defineExpose({ openEnroll: openEnrollDialog })
         </VCol>
       </VRow>
     </WpFormDialog>
+    <!-- ── Remove Participant Dialog ── -->
+    <WpDeleteDialog
+      v-model:is-dialog-visible="isDeleteDialogOpen"
+      :title="t('common.delete', 'Delete Record')"
+      :confirmation-text="t('common.delete_confirm', 'Are you sure you want to remove this employee from the training session?')"
+      :item-name="localizedValue(itemToDelete?.program_name)"
+      :loading="isDeleting"
+      @confirm="handleDelete"
+    />
   </WpSectionCard>
 </template>

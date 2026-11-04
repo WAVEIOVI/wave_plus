@@ -116,7 +116,7 @@ class PartnerQueryService
      */
     public function getSelectedClientsForExport(User $user, array $ids): Collection
     {
-        Gate::forUser($user)->authorize('viewAny', Client::class);
+        Gate::forUser($user)->authorize('export', Client::class);
 
         $normalizedIds = array_values(array_unique(array_filter(
             array_map(static fn ($id) => trim((string) $id), $ids),
@@ -133,7 +133,7 @@ class PartnerQueryService
             ->get();
 
         foreach ($clients as $client) {
-            Gate::forUser($user)->authorize('view', $client);
+            Gate::forUser($user)->authorize('export', $client);
         }
 
         return $clients;

@@ -30,6 +30,7 @@ import { avatarText } from '@core/utils/formatters'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
 
@@ -40,13 +41,14 @@ definePage({
     layout: 'default',
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'service-providers',
   },
 })
 
 const route = useRoute('business-partners-service-providers-edit-id')
 const router = useRouter()
 const serviceProviderStore = useServiceProviderStore()
+const ability = useAbility()
 const { success: showSuccess, showApiError } = useAppSnackbar()
 const { t, locale } = useI18n()
 const { smAndDown } = useDisplay()
@@ -55,6 +57,10 @@ const addressesCardRef = ref(null)
 const contactsCardRef = ref(null)
 const financialCardRef = ref(null)
 const documentsCardRef = ref(null)
+
+// ── Permissions & Read-only State ───────────────────────────────────────────
+const isReadOnly = computed(() => !ability.can('update', 'service-providers'))
+const canDelete = computed(() => ability.can('delete', 'service-providers'))
 
 // ── State ────────────────────────────────────────────────────────────────────
 const isDeleteDialogVisible = ref(false)
@@ -337,58 +343,69 @@ const handleDelete = async () => {
   }
 }
 
-const quickActions = computed(() => [
-  {
-    id: 'add-address',
-    title: t('Add New Address'),
-    icon: 'tabler-map-pin-plus',
-    disabled: loading.value || !fetchedServiceProvider.value,
-    onClick: () => addressesCardRef.value?.openAdd(),
-  },
-  {
-    id: 'add-contact',
-    title: t('Add New Contact'),
-    icon: 'tabler-user-plus',
-    disabled: loading.value || !fetchedServiceProvider.value,
-    onClick: () => contactsCardRef.value?.openAdd(),
-  },
-  {
-    id: 'add-bank-account',
-    title: t('Add Bank Account'),
-    icon: 'tabler-building-bank',
-    disabled: loading.value || !fetchedServiceProvider.value,
-    onClick: () => financialCardRef.value?.openAddBank(),
-  },
-  {
-    id: 'add-vat-certificate',
-    title: t('Add VAT Certificate'),
-    icon: 'tabler-file-certificate',
-    disabled: loading.value || !fetchedServiceProvider.value,
-    onClick: () => financialCardRef.value?.openAddVatCert(),
-  },
-  {
-    id: 'add-document',
-    title: t('Add New Document'),
-    icon: 'tabler-file-plus',
-    disabled: loading.value || !fetchedServiceProvider.value,
-    onClick: () => documentsCardRef.value?.openAdd(),
-  },
-  {
-    id: 'save-changes',
-    title: t('Save Changes'),
-    icon: 'tabler-device-floppy',
-    color: 'success',
-    disabled: saving.value || !isDirty.value,
-    onClick: handleUpdate,
-  },
-  {
-    id: 'remove-service-provider',
-    title: t('Delete'),
-    icon: 'tabler-trash',
-    color: 'error',
-    onClick: () => { isDeleteDialogVisible.value = true },
-  },
-])
+const quickActions = computed(() => {
+  const actions = []
+
+  if (!isReadOnly.value) {
+    actions.push(
+      {
+        id: 'add-address',
+        title: t('Add New Address'),
+        icon: 'tabler-map-pin-plus',
+        disabled: loading.value || !fetchedServiceProvider.value,
+        onClick: () => addressesCardRef.value?.openAdd(),
+      },
+      {
+        id: 'add-contact',
+        title: t('Add New Contact'),
+        icon: 'tabler-user-plus',
+        disabled: loading.value || !fetchedServiceProvider.value,
+        onClick: () => contactsCardRef.value?.openAdd(),
+      },
+      {
+        id: 'add-bank-account',
+        title: t('Add Bank Account'),
+        icon: 'tabler-building-bank',
+        disabled: loading.value || !fetchedServiceProvider.value || !ability.can('manage', 'bp-bank-accounts'),
+        onClick: () => financialCardRef.value?.openAddBank(),
+      },
+      {
+        id: 'add-vat-certificate',
+        title: t('Add VAT Certificate'),
+        icon: 'tabler-file-certificate',
+        disabled: loading.value || !fetchedServiceProvider.value,
+        onClick: () => financialCardRef.value?.openAddVatCert(),
+      },
+      {
+        id: 'add-document',
+        title: t('Add New Document'),
+        icon: 'tabler-file-plus',
+        disabled: loading.value || !fetchedServiceProvider.value,
+        onClick: () => documentsCardRef.value?.openAdd(),
+      },
+      {
+        id: 'save-changes',
+        title: t('Save Changes'),
+        icon: 'tabler-device-floppy',
+        color: 'success',
+        disabled: saving.value || !isDirty.value,
+        onClick: handleUpdate,
+      },
+    )
+  }
+
+  if (canDelete.value) {
+    actions.push({
+      id: 'remove-service-provider',
+      title: t('Delete'),
+      icon: 'tabler-trash',
+      color: 'error',
+      onClick: () => { isDeleteDialogVisible.value = true },
+    })
+  }
+
+  return actions
+})
 
 onMounted(async () => {
   await fetchServiceProvider()
@@ -452,6 +469,7 @@ onMounted(async () => {
         </template>
         <template #footer>
           <VBtn
+            v-if="!isReadOnly"
             block
             color="primary"
             :disabled="saving || !isDirty"
@@ -466,6 +484,7 @@ onMounted(async () => {
             {{ $t('Save') }}
           </VBtn>
           <VBtn
+            v-if="canDelete"
             block
             variant="tonal"
             color="error"
@@ -513,6 +532,7 @@ onMounted(async () => {
           </div>
           <div class="d-flex gap-2">
             <VBtn
+              v-if="!isReadOnly"
               size="small"
               color="primary"
               :loading="saving"
@@ -521,6 +541,7 @@ onMounted(async () => {
               {{ $t('Save') }}
             </VBtn>
             <VBtn
+              v-if="canDelete"
               size="small"
               icon
               variant="tonal"
@@ -570,6 +591,7 @@ onMounted(async () => {
                   </VOverlay>
                 </VAvatar>
                 <VBtn
+                  v-if="!isReadOnly"
                   icon
                   size="x-small"
                   color="primary"
@@ -676,6 +698,7 @@ onMounted(async () => {
               v-model="fetchedServiceProvider"
               :addresses="addressData"
               partner-type="serviceProvider"
+              :read-only="isReadOnly"
             />
           </div>
         </section>
@@ -692,6 +715,7 @@ onMounted(async () => {
               partner-type="serviceProvider"
               :address-data="addressData"
               :contact-data="contactData"
+              :read-only="isReadOnly"
               @refresh="refreshAddresses"
             />
           </div>
@@ -709,6 +733,7 @@ onMounted(async () => {
               partner-type="serviceProvider"
               :contact-data="contactData"
               :address-data="addressData"
+              :read-only="isReadOnly"
               @refresh="refreshContacts"
             />
           </div>
@@ -727,6 +752,7 @@ onMounted(async () => {
               partner-type="serviceProvider"
               :bank-account-data="bankAccountData"
               :vat-cert-data="vatCertData"
+              :read-only="isReadOnly"
               @refresh-bank-accounts="refreshBankAccounts"
               @refresh-vat-certs="refreshVatCerts"
             />
@@ -744,6 +770,7 @@ onMounted(async () => {
               :partner-id="route.params.id"
               partner-type="serviceProvider"
               :document-data="documentData"
+              :read-only="isReadOnly"
               @refresh="refreshDocuments"
             />
           </div>
@@ -758,6 +785,7 @@ onMounted(async () => {
             <PartnerCardStatus
               v-model="fetchedServiceProvider"
               partner-type="serviceProvider"
+              :read-only="isReadOnly"
             />
           </div>
         </section>

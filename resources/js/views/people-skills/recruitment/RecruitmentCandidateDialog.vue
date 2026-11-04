@@ -1,4 +1,5 @@
 <script setup>
+/* eslint-disable camelcase */
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -77,14 +78,20 @@ const handleSubmit = () => {
 
       <VCardText class="pt-4">
         <VRow>
-          <VCol cols="12" sm="6">
+          <VCol
+            cols="12"
+            sm="6"
+          >
             <AppTextField
               v-model="form.first_name"
               :label="t('common.first_name', 'First Name')"
               required
             />
           </VCol>
-          <VCol cols="12" sm="6">
+          <VCol
+            cols="12"
+            sm="6"
+          >
             <AppTextField
               v-model="form.last_name"
               :label="t('common.last_name', 'Last Name')"
@@ -99,7 +106,10 @@ const handleSubmit = () => {
               clearable
             />
           </VCol>
-          <VCol cols="12" sm="6">
+          <VCol
+            cols="12"
+            sm="6"
+          >
             <AppTextField
               v-model="form.email"
               :label="t('common.email', 'Email')"
@@ -107,7 +117,10 @@ const handleSubmit = () => {
               required
             />
           </VCol>
-          <VCol cols="12" sm="6">
+          <VCol
+            cols="12"
+            sm="6"
+          >
             <AppTextField
               v-model="form.phone"
               :label="t('common.phone', 'Phone')"

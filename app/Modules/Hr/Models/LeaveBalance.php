@@ -50,7 +50,8 @@ class LeaveBalance extends Model
      */
     public function recalculate(): void
     {
-        $this->available_days = max(0, (float) $this->accrued_days - ((float) $this->approved_used_days + (float) $this->pending_reserved_days));
+        $net = (float) $this->accrued_days - ((float) $this->approved_used_days + (float) $this->pending_reserved_days);
+        $this->available_days = max(0, round($net, 2));
         $this->save();
     }
 }

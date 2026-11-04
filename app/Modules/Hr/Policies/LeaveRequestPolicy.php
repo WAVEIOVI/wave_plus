@@ -22,7 +22,8 @@ class LeaveRequestPolicy
     {
         return $user->can('hr.leave.view')
             || $user->can('read-PeopleSkills')
-            || $user->hasRole(['operations_responsible', 'Staff', 'Responsable']);
+            || $user->hasRole(['operations_responsible', 'Staff', 'Responsable'])
+            || \App\Modules\Hr\Models\Employee::where('user_id', $user->id)->exists();
     }
 
     public function view(User $user, LeaveRequest $request): bool
@@ -34,12 +35,41 @@ class LeaveRequestPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('hr.leave.request') || $user->can('read-PeopleSkills');
+        return $user->can('hr.leave.request') || $user->can('hr.leave.manage');
+    }
+
+    public function update(User $user, LeaveRequest $request): bool
+    {
+        if ($request->status !== 'draft') {
+            return false;
+        }
+
+        $ownsRequest = $request->employee?->user_id === $user->id
+            || $request->requested_by_id === $user->id;
+
+        return $ownsRequest || $user->can('hr.leave.manage');
+    }
+
+    public function delete(User $user, LeaveRequest $request): bool
+    {
+        if (! in_array($request->status, ['draft', 'cancelled'], true)) {
+            return false;
+        }
+
+        $ownsRequest = $request->employee?->user_id === $user->id
+            || $request->requested_by_id === $user->id;
+
+        return $ownsRequest || $user->can('hr.leave.manage') || $user->can('hr.leave.archive');
     }
 
     public function approve(User $user, LeaveRequest $request): bool
     {
-        return $user->can('hr.leave.approve') || $user->hasRole(['Super Admin', 'Admin', 'Responsable']);
+        // Approvers cannot approve their own leave request (strict separation of duties)
+        if ($request->employee?->user_id === $user->id || $request->requested_by_id === $user->id) {
+            return false;
+        }
+
+        return $user->can('hr.leave.approve') || $user->can('hr.leave.manage');
     }
 
     /**
@@ -48,7 +78,6 @@ class LeaveRequestPolicy
     public function submit(User $user, LeaveRequest $request): bool
     {
         return $user->can('hr.leave.request')
-            || $user->can('read-PeopleSkills')
             || $user->can('hr.leave.approve')
             || $request->employee?->user_id === $user->id
             || $request->requested_by_id === $user->id;

@@ -11,16 +11,20 @@ import {
 } from '@/components/shared'
 import { useListPage } from '@/composables/list'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
+import { localizedValue } from '@/composables/useLocaleField'
 import { useHrStore } from '@/stores/hrStore'
 import { useAttendanceStore } from '@/stores/useAttendanceStore'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { avatarText } from '@core/utils/formatters'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
 const { showMessage } = useAppSnackbar()
+const ability = useAbility()
 const attendanceStore = useAttendanceStore()
 const hrStore = useHrStore()
+const canCorrect = computed(() => ability.can('correct', 'attendance') || ability.can('manage', 'attendance'))
 
 // ── List ──────────────────────────────────────────────────────────────────
 const listPage = useListPage({
@@ -33,7 +37,7 @@ const listPage = useListPage({
 
 // ── Department options ────────────────────────────────────────────────────
 const departmentOptions = computed(() =>
-  hrStore.departments.map(d => ({ title: d.name, value: d.id })),
+  hrStore.departments.map(d => ({ title: localizedValue(d.name), value: d.id })),
 )
 
 // ── Exception type options ────────────────────────────────────────────────
@@ -127,7 +131,7 @@ const isReviewable = item => item.review_status === 'open' || item.review_status
 const getRowActions = item => {
   const acts = [{ label: t('View'), icon: 'tabler-eye', emit: 'view' }]
 
-  if (isReviewable(item)) {
+  if (canCorrect.value && isReviewable(item)) {
     if (item.review_status === 'open') {
       acts.push({ label: t('attendance.exception.acknowledge'), icon: 'tabler-check', emit: 'acknowledge', color: 'secondary', dividerBefore: true })
     }
@@ -562,7 +566,7 @@ defineExpose({ openFilters })
 
         <!-- Review actions -->
         <div
-          v-if="isReviewable(viewItem)"
+          v-if="canCorrect && isReviewable(viewItem)"
           class="d-flex flex-wrap justify-end gap-2 mt-6"
         >
           <VBtn

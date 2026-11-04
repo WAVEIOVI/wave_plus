@@ -97,23 +97,32 @@ class ClientExportTest extends TestCase
         $this->postJson('/api/bp/clients/export/csv', ['ids' => [$client->id]])->assertForbidden();
     }
 
-    public function test_user_with_read_clients_permission_can_export_csv(): void
+    public function test_user_with_read_clients_permission_cannot_export_csv_without_export_permission(): void
     {
         $client = Client::create(['legal_name' => 'ReadClient SARL', 'status' => 'active']);
         $this->actingWithPermissions(['read-clients']);
 
         $response = $this->post('/api/bp/clients/export/csv', ['ids' => [$client->id]]);
-        $response->assertOk();
-        $this->assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
+        $response->assertForbidden();
     }
 
-    public function test_user_with_read_business_partners_permission_can_export_csv(): void
+    public function test_user_with_read_business_partners_permission_alone_cannot_export_csv(): void
     {
         $client = Client::create(['legal_name' => 'ReadBp SARL', 'status' => 'active']);
         $this->actingWithPermissions(['read-BusinessPartners']);
 
         $response = $this->post('/api/bp/clients/export/csv', ['ids' => [$client->id]]);
+        $response->assertForbidden();
+    }
+
+    public function test_user_with_export_clients_permission_can_export_csv(): void
+    {
+        $client = Client::create(['legal_name' => 'ExportClient SARL', 'status' => 'active']);
+        $this->actingWithPermissions(['export-clients']);
+
+        $response = $this->post('/api/bp/clients/export/csv', ['ids' => [$client->id]]);
         $response->assertOk();
+        $this->assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
     }
 
     public function test_super_admin_can_export_clients_csv(): void
@@ -289,10 +298,10 @@ class ClientExportTest extends TestCase
         $this->postJson('/api/bp/clients/export/pdf', ['ids' => [1]])->assertForbidden();
     }
 
-    public function test_user_without_read_permission_cannot_export_pdf(): void
+    public function test_user_without_export_permission_cannot_export_pdf(): void
     {
         $client = Client::create(['legal_name' => 'NoRead PDF Corp', 'status' => 'active']);
-        $this->actingWithPermissions(['create-clients']);
+        $this->actingWithPermissions(['read-clients']);
 
         $this->postJson('/api/bp/clients/export/pdf', ['ids' => [$client->id]])->assertForbidden();
     }
@@ -329,7 +338,7 @@ class ClientExportTest extends TestCase
 
     public function test_pdf_export_with_multiple_selected_records_includes_only_selected(): void
     {
-        $this->actingWithPermissions(['read-clients']);
+        $this->actingWithPermissions(['export-clients']);
 
         $c1 = Client::create(['legal_name' => 'PdfMulti One', 'status' => 'active']);
         $c2 = Client::create(['legal_name' => 'PdfMulti Two', 'status' => 'active']);
@@ -359,11 +368,23 @@ class ClientExportTest extends TestCase
         $this->getJson('/api/bp/clients/'.$client->id.'/export/pdf')->assertUnauthorized();
     }
 
-    public function test_user_without_read_permission_cannot_export_single_client_pdf(): void
+    public function test_user_without_export_permission_cannot_export_single_client_pdf(): void
     {
-        $this->actingWithPermissions(['create-clients']);
+        $this->actingWithPermissions(['read-clients']);
 
         $client = Client::create(['legal_name' => 'Test Client', 'status' => 'active']);
         $this->getJson('/api/bp/clients/'.$client->id.'/export/pdf')->assertForbidden();
+    }
+
+    public function test_user_with_export_permission_can_export_single_client_pdf(): void
+    {
+        $this->actingWithPermissions(['export-clients']);
+
+        $client = Client::create(['legal_name' => 'Test Client', 'status' => 'active']);
+
+        $capturedHtml = null;
+        $this->mockBrowsershot($capturedHtml);
+
+        $this->getJson('/api/bp/clients/'.$client->id.'/export/pdf')->assertOk();
     }
 }

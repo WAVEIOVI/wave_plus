@@ -17,6 +17,7 @@ import { useTrainingActions } from '@/composables/people-skills/training/useTrai
 import { useTrainingDialogs } from '@/composables/people-skills/training/useTrainingDialogs'
 import { useTrainingList } from '@/composables/people-skills/training/useTrainingList'
 import { localizedValue } from '@/composables/useLocaleField'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import TrainingEnrollDialog from '@/views/people-skills/training/TrainingEnrollDialog.vue'
 import TrainingProgramDialog from '@/views/people-skills/training/TrainingProgramDialog.vue'
 import TrainingSessionDialog from '@/views/people-skills/training/TrainingSessionDialog.vue'
@@ -30,11 +31,12 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'training',
   },
 })
 
 const { t } = useI18n()
+const ability = useAbility()
 
 // ── List Orchestration ──────────────────────────────────────────────────────
 const {
@@ -106,7 +108,10 @@ const mobileFabActions = computed(() => [
       :subtitle="$t('training.subtitle', 'Plan learning programs, schedule sessions, enroll employees, and certify skills.')"
       icon="tabler-school"
     >
-      <template #actions>
+      <template
+        v-if="ability.can('manage', 'training')"
+        #actions
+      >
         <VBtn
           variant="outlined"
           color="secondary"
@@ -156,7 +161,7 @@ const mobileFabActions = computed(() => [
         <VCard>
           <WpPageToolbar
             v-model:search="search"
-            :create-label="$t('training.schedule_session', 'Schedule Session')"
+            :create-label="ability.can('manage', 'training') ? $t('training.schedule_session', 'Schedule Session') : ''"
             :loading="store.loading"
             @create="dialogs.openSession()"
             @refresh="loadData"
@@ -247,7 +252,7 @@ const mobileFabActions = computed(() => [
         <VCard>
           <WpPageToolbar
             v-model:search="search"
-            :create-label="$t('training.new_program', 'New Program')"
+            :create-label="ability.can('manage', 'training') ? $t('training.new_program', 'New Program') : ''"
             :loading="store.loading"
             @create="dialogs.openProgram()"
             @refresh="loadData"
@@ -404,7 +409,7 @@ const mobileFabActions = computed(() => [
               </VChip>
 
               <VBtn
-                v-if="participant.status !== 'completed'"
+                v-if="participant.status !== 'completed' && ability.can('manage', 'training')"
                 size="small"
                 color="success"
                 variant="tonal"
@@ -416,6 +421,7 @@ const mobileFabActions = computed(() => [
               </VBtn>
 
               <VBtn
+                v-if="ability.can('manage', 'training')"
                 icon="tabler-trash"
                 size="x-small"
                 variant="text"

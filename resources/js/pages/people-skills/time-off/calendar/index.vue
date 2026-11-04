@@ -9,7 +9,7 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'leave',
   },
 })
 

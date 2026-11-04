@@ -17,9 +17,27 @@ export const useAppraisalStore = defineStore('appraisalStore', () => {
   // ── State ─────────────────────────────────────────────────────────────────
   const cycles = ref([])
   const appraisals = ref([])
+  const kpis = ref(null)
   const loading = ref(false)
   const error = ref(null)
   const validationErrors = ref({})
+
+  // ── KPIs ──────────────────────────────────────────────────────────────────
+  const fetchKpis = async (params = {}) => {
+    try {
+      const response = await $api('/hr/appraisals/kpis', {
+        method: 'GET',
+        params,
+      })
+
+      kpis.value = response.data || null
+
+      return response
+    } catch (err) {
+      // Don't overwrite general error for background KPI fetch
+      console.error('Failed to fetch appraisal KPIs', err)
+    }
+  }
 
   // ── Cycles ────────────────────────────────────────────────────────────────
   const fetchCycles = async () => {
@@ -59,6 +77,46 @@ export const useAppraisalStore = defineStore('appraisalStore', () => {
 
       error.value = apiError.message
       validationErrors.value = apiError.errors || {}
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const updateCycle = async (id, payload) => {
+    loading.value = true
+    error.value = null
+    validationErrors.value = {}
+    try {
+      const response = await $api(`/hr/appraisals/cycles/${id}`, {
+        method: 'PUT',
+        body: payload,
+      })
+
+      const updated = response.data || response
+      const idx = cycles.value.findIndex(c => c.id === id)
+      if (idx > -1) cycles.value[idx] = updated
+
+      return response
+    } catch (err) {
+      const apiError = extractApiError(err)
+
+      error.value = apiError.message
+      validationErrors.value = apiError.errors || {}
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const destroyCycle = async id => {
+    loading.value = true
+    error.value = null
+    try {
+      await $api(`/hr/appraisals/cycles/${id}`, { method: 'DELETE' })
+      cycles.value = cycles.value.filter(c => c.id !== id)
+    } catch (err) {
+      error.value = extractApiError(err).message
       throw err
     } finally {
       loading.value = false
@@ -122,45 +180,6 @@ export const useAppraisalStore = defineStore('appraisalStore', () => {
     }
   }
 
-  const updateCycle = async (id, payload) => {
-    loading.value = true
-    error.value = null
-    validationErrors.value = {}
-    try {
-      const response = await $api(`/hr/appraisals/cycles/${id}`, {
-        method: 'PUT',
-        body: payload,
-      })
-
-      const updated = response.data || response
-      const idx = cycles.value.findIndex(c => c.id === id)
-      if (idx > -1) cycles.value[idx] = updated
-
-      return response
-    } catch (err) {
-      const apiError = extractApiError(err)
-      error.value = apiError.message
-      validationErrors.value = apiError.errors || {}
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const destroyCycle = async id => {
-    loading.value = true
-    error.value = null
-    try {
-      await $api(`/hr/appraisals/cycles/${id}`, { method: 'DELETE' })
-      cycles.value = cycles.value.filter(c => c.id !== id)
-    } catch (err) {
-      error.value = extractApiError(err).message
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
   const updateAppraisal = async (id, payload) => {
     loading.value = true
     error.value = null
@@ -178,6 +197,33 @@ export const useAppraisalStore = defineStore('appraisalStore', () => {
       return response
     } catch (err) {
       const apiError = extractApiError(err)
+
+      error.value = apiError.message
+      validationErrors.value = apiError.errors || {}
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const acknowledgeAppraisal = async (id, payload = {}) => {
+    loading.value = true
+    error.value = null
+    validationErrors.value = {}
+    try {
+      const response = await $api(`/hr/appraisals/${id}/acknowledge`, {
+        method: 'POST',
+        body: payload,
+      })
+
+      const updated = response.data || response
+      const idx = appraisals.value.findIndex(a => a.id === id)
+      if (idx > -1) appraisals.value[idx] = updated
+
+      return response
+    } catch (err) {
+      const apiError = extractApiError(err)
+
       error.value = apiError.message
       validationErrors.value = apiError.errors || {}
       throw err
@@ -209,9 +255,11 @@ export const useAppraisalStore = defineStore('appraisalStore', () => {
   return {
     cycles,
     appraisals,
+    kpis,
     loading,
     error,
     validationErrors,
+    fetchKpis,
     fetchCycles,
     createCycle,
     updateCycle,
@@ -219,6 +267,7 @@ export const useAppraisalStore = defineStore('appraisalStore', () => {
     fetchAppraisals,
     createAppraisal,
     updateAppraisal,
+    acknowledgeAppraisal,
     destroyAppraisal,
     resetErrors,
   }

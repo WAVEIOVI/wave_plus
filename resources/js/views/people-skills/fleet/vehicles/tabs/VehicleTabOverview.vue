@@ -9,7 +9,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['assign', 'return', 'status', 'odometer', 'rental', 'clientUsage'])
+const emit = defineEmits(['assign', 'return', 'status', 'odometer', 'rental', 'clientUsage', 'telemetry'])
 
 const { t } = useI18n()
 
@@ -379,6 +379,101 @@ const currentAssignment = computed(() => {
             </VRow>
           </VCardText>
         </VCard>
+
+        <!-- GPS Tracker & Telemetry Card -->
+        <VCard
+          variant="outlined"
+          class="mt-6"
+        >
+          <VCardItem>
+            <template #prepend>
+              <VAvatar
+                :color="vehicle.tracker_device_id ? 'success' : 'secondary'"
+                variant="tonal"
+                class="me-2"
+              >
+                <VIcon icon="tabler-gps" />
+              </VAvatar>
+            </template>
+            <VCardTitle class="text-base">
+              GPS Tracker & Location Telemetry
+            </VCardTitle>
+            <template #append>
+              <div class="d-flex align-center gap-2">
+                <VChip
+                  :color="vehicle.tracker_device_id ? 'success' : 'secondary'"
+                  size="small"
+                  label
+                >
+                  {{ vehicle.tracker_device_id ? 'Tracker Active' : 'No Tracker Configured' }}
+                </VChip>
+                <VBtn
+                  size="small"
+                  variant="tonal"
+                  density="compact"
+                  prepend-icon="tabler-map-pin"
+                  @click="emit('telemetry', vehicle)"
+                >
+                  Update GPS
+                </VBtn>
+              </div>
+            </template>
+          </VCardItem>
+          <VCardText>
+            <VRow>
+              <VCol cols="12" sm="4">
+                <div class="text-caption text-medium-emphasis">Device ID / Provider</div>
+                <div class="text-body-2 font-weight-medium">
+                  {{ vehicle.tracker_device_id || '—' }}
+                  <span v-if="vehicle.tracker_provider" class="text-caption text-medium-emphasis">({{ vehicle.tracker_provider }})</span>
+                </div>
+              </VCol>
+              <VCol cols="12" sm="4">
+                <div class="text-caption text-medium-emphasis">IMEI Number</div>
+                <div class="text-body-2 font-mono">{{ vehicle.tracker_imei || '—' }}</div>
+              </VCol>
+              <VCol cols="12" sm="4">
+                <div class="text-caption text-medium-emphasis">Installed Date</div>
+                <div class="text-body-2">{{ formatDate(vehicle.tracker_installed_at) }}</div>
+              </VCol>
+
+              <VCol cols="12" sm="8" class="mt-2">
+                <div class="text-caption text-medium-emphasis">Last Known Location Address</div>
+                <div class="text-body-2 font-weight-medium">
+                  <VIcon icon="tabler-map-pin" size="16" class="me-1 text-primary" />
+                  {{ vehicle.last_location_address || vehicle.current_location_notes || '—' }}
+                </div>
+              </VCol>
+              <VCol cols="12" sm="4" class="mt-2">
+                <div class="text-caption text-medium-emphasis">Last GPS Ping</div>
+                <div class="text-body-2">{{ formatDate(vehicle.last_gps_timestamp) }}</div>
+              </VCol>
+
+              <VCol v-if="vehicle.last_gps_latitude && vehicle.last_gps_longitude" cols="12" class="mt-2">
+                <div class="d-flex align-center gap-3 flex-wrap">
+                  <VChip variant="tonal" size="small" color="primary">
+                    Lat: {{ Number(vehicle.last_gps_latitude).toFixed(5) }}, Long: {{ Number(vehicle.last_gps_longitude).toFixed(5) }}
+                  </VChip>
+                  <VChip v-if="vehicle.last_speed_kmh != null" variant="tonal" size="small" color="info">
+                    {{ vehicle.last_speed_kmh }} km/h
+                  </VChip>
+                  <VBtn
+                    variant="text"
+                    size="small"
+                    density="compact"
+                    color="primary"
+                    prepend-icon="tabler-external-link"
+                    :href="`https://maps.google.com/?q=${vehicle.last_gps_latitude},${vehicle.last_gps_longitude}`"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View on Map
+                  </VBtn>
+                </div>
+              </VCol>
+            </VRow>
+          </VCardText>
+        </VCard>
       </VCol>
 
       <!-- Ownership & Operational Status -->
@@ -416,7 +511,7 @@ const currentAssignment = computed(() => {
               </div>
               <div class="d-flex justify-space-between align-center">
                 <span class="text-caption text-medium-emphasis">Daily Rate:</span>
-                <span>{{ vehicle.rental_daily_rate ? `${vehicle.rental_daily_rate} ${vehicle.rental_currency || 'SAR'}` : '—' }}</span>
+                <span>{{ vehicle.rental_daily_rate ? `${vehicle.rental_daily_rate} ${vehicle.rental_currency || 'TND'}` : '—' }}</span>
               </div>
               <div class="d-flex justify-space-between align-center">
                 <span class="text-caption text-medium-emphasis">Contract Expiry:</span>

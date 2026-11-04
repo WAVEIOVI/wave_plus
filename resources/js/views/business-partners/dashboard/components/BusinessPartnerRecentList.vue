@@ -4,6 +4,7 @@ import { localizedValue } from '@/composables/useLocaleField'
 import { avatarText } from '@core/utils/formatters'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 
 const props = defineProps({
   partners: { type: Array, default: () => [] },
@@ -12,6 +13,18 @@ const props = defineProps({
 
 const emit = defineEmits(['retry'])
 const { t, locale } = useI18n()
+const ability = useAbility()
+
+const canViewPartner = partner => {
+  const subjectMap = {
+    client: 'clients',
+    supplier: 'suppliers',
+    'service_provider': 'service-providers',
+    organisation: 'organisations',
+  }
+
+  return ability.can('read', subjectMap[partner.type] || partner.type)
+}
 
 const headers = computed(() => [
   { title: t('bp_dashboard.table.partner'), key: 'partner', sortable: false },
@@ -129,6 +142,7 @@ const formatDate = value => value
       </template>
       <template #item.actions="{ item }">
         <VBtn
+          v-if="canViewPartner(item)"
           :to="routeFor(item)"
           icon="tabler-eye"
           size="small"
@@ -163,6 +177,7 @@ const formatDate = value => value
           </template>
           <template #actions>
             <VBtn
+              v-if="canViewPartner(item)"
               :to="routeFor(item)"
               icon="tabler-eye"
               size="small"

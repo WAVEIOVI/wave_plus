@@ -10,6 +10,7 @@ const props = defineProps({
   employee: { type: Object, required: true },
   saving: { type: Boolean, default: false },
   isDirty: { type: Boolean, default: false },
+  canDelete: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['save', 'delete', 'open-photo-dialog', 'open-badge-dialog'])
@@ -147,6 +148,7 @@ const lastUpdated = computed(() => {
           {{ $t('attendance.employee_badge', 'Badge') }}
         </VBtn>
         <VBtn
+          v-if="canDelete"
           variant="tonal"
           color="error"
           prepend-icon="tabler-trash"

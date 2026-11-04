@@ -1,9 +1,10 @@
 <script setup>
+/* eslint-disable camelcase */
 import { localizedValue } from '@/composables/useLocaleField'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 
-/* eslint-disable camelcase */
 const props = defineProps({
   recruitment: {
     type: Object,
@@ -12,6 +13,7 @@ const props = defineProps({
       candidates_count: 0,
       interviews_scheduled: 0,
       offers_extended: 0,
+      by_stage: {},
     }),
   },
   training: {
@@ -19,6 +21,17 @@ const props = defineProps({
     default: () => ({
       upcoming_sessions: 0,
       in_progress: 0,
+      active_programs: 0,
+      enrolled_employees: 0,
+    }),
+  },
+  appraisals: {
+    type: Object,
+    default: () => ({
+      active_cycles: 0,
+      pending_reviews: 0,
+      pending_acknowledgement: 0,
+      average_score: 0,
     }),
   },
   upcomingSession: {
@@ -27,20 +40,20 @@ const props = defineProps({
   },
   loading: { type: Boolean, default: false },
 })
-/* eslint-enable camelcase */
 
 const { locale } = useI18n()
+const router = useRouter()
 
 const recruitmentRows = computed(() => [
-  { key: 'open_positions', label: 'hr.dashboard.open_positions', icon: 'tabler-briefcase', color: 'info', value: props.recruitment.open_positions || 0 },
-  { key: 'candidates_count', label: 'hr.dashboard.active_candidates', icon: 'tabler-users', color: 'primary', value: props.recruitment.candidates_count || 0 },
-  { key: 'interviews_scheduled', label: 'hr.dashboard.interviews_scheduled', icon: 'tabler-calendar-event', color: 'warning', value: props.recruitment.interviews_scheduled || 0 },
-  { key: 'offers_extended', label: 'hr.dashboard.offers_extended', icon: 'tabler-file-check', color: 'success', value: props.recruitment.offers_extended || 0 },
+  { key: 'open_positions', label: 'hr.dashboard.open_positions', icon: 'tabler-briefcase', color: 'info', value: props.recruitment.open_positions || 0, route: { name: 'people-skills-recruitment-list', query: { tab: 'openings' } } },
+  { key: 'candidates_count', label: 'hr.dashboard.active_candidates', icon: 'tabler-users', color: 'primary', value: props.recruitment.candidates_count || 0, route: { name: 'people-skills-recruitment-list', query: { tab: 'candidates' } } },
+  { key: 'interviews_scheduled', label: 'hr.dashboard.interviews_scheduled', icon: 'tabler-calendar-event', color: 'warning', value: props.recruitment.interviews_scheduled || 0, route: { name: 'people-skills-recruitment-list', query: { tab: 'interviews' } } },
+  { key: 'offers_extended', label: 'hr.dashboard.offers_extended', icon: 'tabler-file-check', color: 'success', value: props.recruitment.offers_extended || 0, route: { name: 'people-skills-recruitment-list', query: { tab: 'candidates', stage: 'offer' } } },
 ])
 
 const trainingRows = computed(() => [
-  { key: 'upcoming_sessions', label: 'hr.dashboard.upcoming_sessions', icon: 'tabler-calendar-plus', color: 'info', value: props.training.upcoming_sessions || 0 },
-  { key: 'in_progress', label: 'hr.dashboard.training_in_progress', icon: 'tabler-progress', color: 'warning', value: props.training.in_progress || 0 },
+  { key: 'upcoming_sessions', label: 'hr.dashboard.upcoming_sessions', icon: 'tabler-calendar-plus', color: 'info', value: props.training.upcoming_sessions || 0, route: { name: 'people-skills-training-list', query: { tab: 'sessions' } } },
+  { key: 'in_progress', label: 'hr.dashboard.training_in_progress', icon: 'tabler-progress', color: 'warning', value: props.training.in_progress || 0, route: { name: 'people-skills-training-list', query: { tab: 'sessions', status: 'in_progress' } } },
 ])
 
 const formatSessionDateValue = value => {
@@ -78,6 +91,12 @@ const sessionName = computed(() =>
 )
 
 const sessionLocation = computed(() => localizedValue(props.upcomingSession?.location, ''))
+
+const navigate = route => {
+  if (route) {
+    router.push(route)
+  }
+}
 </script>
 
 <template>
@@ -94,10 +113,10 @@ const sessionLocation = computed(() => localizedValue(props.upcomingSession?.loc
       </template>
 
       <VCardTitle class="text-h6 font-weight-semibold">
-        {{ $t('hr.dashboard.pipeline_title') }}
+        {{ $t('hr.dashboard.pipeline_title', 'Talent & Development') }}
       </VCardTitle>
       <VCardSubtitle>
-        {{ $t('hr.dashboard.pipeline_subtitle') }}
+        {{ $t('hr.dashboard.pipeline_subtitle', 'Recruitment pipeline, training, and appraisals') }}
       </VCardSubtitle>
       <template #append>
         <VBtn
@@ -106,7 +125,7 @@ const sessionLocation = computed(() => localizedValue(props.upcomingSession?.loc
           class="hr-dashboard-card-action"
           :to="{ name: 'people-skills-recruitment-list' }"
         >
-          {{ $t('hr.dashboard.view_all') }}
+          {{ $t('hr.dashboard.view_all', 'Recruitment') }}
         </VBtn>
       </template>
     </VCardItem>
@@ -122,75 +141,93 @@ const sessionLocation = computed(() => localizedValue(props.upcomingSession?.loc
 
       <template v-else>
         <!-- ─── Recruitment ─────────────────────────────── -->
-        <div class="text-caption text-uppercase font-weight-bold text-medium-emphasis mb-3">
-          {{ $t('hr.dashboard.recruitment_pipeline') }}
+        <div class="d-flex align-center justify-space-between mb-2">
+          <span class="text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ $t('hr.dashboard.recruitment_pipeline', 'Recruitment Pipeline') }}
+          </span>
+          <span class="text-caption font-weight-semibold text-primary">
+            {{ recruitment.open_positions }} {{ $t('hr.dashboard.openings', 'Openings') }}
+          </span>
         </div>
 
-        <div class="d-flex flex-column gap-y-3 mb-5">
+        <div class="d-flex flex-column gap-y-2 mb-4">
           <div
             v-for="row in recruitmentRows"
             :key="row.key"
-            class="d-flex align-center justify-space-between"
+            class="d-flex align-center justify-space-between pa-1.5 rounded border cursor-pointer hover-item"
+            @click="navigate(row.route)"
           >
             <span class="d-flex align-center gap-2">
               <VAvatar
-                size="28"
+                size="26"
                 :color="row.color"
                 variant="tonal"
               >
                 <VIcon
                   :icon="row.icon"
-                  size="16"
+                  size="15"
                 />
               </VAvatar>
-              <span class="text-body-2">{{ $t(row.label) }}</span>
+              <span class="text-body-2 font-weight-medium">{{ $t(row.label) }}</span>
             </span>
-            <span class="font-weight-bold">{{ row.value }}</span>
+            <span class="font-weight-bold text-body-2">{{ row.value }}</span>
           </div>
         </div>
 
         <VDivider class="mb-4" />
 
         <!-- ─── Training ────────────────────────────────── -->
-        <div class="text-caption text-uppercase font-weight-bold text-medium-emphasis mb-3">
-          {{ $t('hr.dashboard.training_snapshot') }}
+        <div class="d-flex align-center justify-space-between mb-2">
+          <span class="text-caption text-uppercase font-weight-bold text-medium-emphasis">
+            {{ $t('hr.dashboard.training_snapshot', 'Training & Programs') }}
+          </span>
+          <VBtn
+            size="x-small"
+            variant="text"
+            color="primary"
+            :to="{ name: 'people-skills-training-list' }"
+          >
+            {{ $t('hr.nav.training', 'Training') }}
+          </VBtn>
         </div>
 
-        <div class="d-flex flex-column gap-y-3">
+        <div class="d-flex flex-column gap-y-2 mb-4">
           <div
             v-for="row in trainingRows"
             :key="row.key"
-            class="d-flex align-center justify-space-between"
+            class="d-flex align-center justify-space-between pa-1.5 rounded border cursor-pointer hover-item"
+            @click="navigate(row.route)"
           >
             <span class="d-flex align-center gap-2">
               <VAvatar
-                size="28"
+                size="26"
                 :color="row.color"
                 variant="tonal"
               >
                 <VIcon
                   :icon="row.icon"
-                  size="16"
+                  size="15"
                 />
               </VAvatar>
-              <span class="text-body-2">{{ $t(row.label) }}</span>
+              <span class="text-body-2 font-weight-medium">{{ $t(row.label) }}</span>
             </span>
-            <span class="font-weight-bold">{{ row.value }}</span>
+            <span class="font-weight-bold text-body-2">{{ row.value }}</span>
           </div>
         </div>
 
         <!-- ─── Next Scheduled Session ──────────────────── -->
         <div
           v-if="upcomingSession"
-          class="pa-3 rounded bg-var-theme-background border mt-4"
+          class="pa-3 rounded border mb-4 cursor-pointer hover-item"
+          @click="navigate({ name: 'people-skills-training-list', query: { tab: 'sessions' } })"
         >
-          <div class="text-caption text-uppercase font-weight-bold text-medium-emphasis mb-2">
-            {{ $t('hr.dashboard.next_training_session') }}
+          <div class="text-caption text-uppercase font-weight-bold text-medium-emphasis mb-1">
+            {{ $t('hr.dashboard.next_training_session', 'Next Training Session') }}
           </div>
           <div class="text-subtitle-2 font-weight-bold mb-1">
-            {{ sessionName || $t('hr.dashboard.training_session') }}
+            {{ sessionName || $t('hr.dashboard.training_session', 'Scheduled Training Session') }}
           </div>
-          <div class="text-caption text-medium-emphasis mb-3">
+          <div class="text-caption text-medium-emphasis mb-2">
             {{ formatSessionDate(upcomingSession) }}
           </div>
           <div class="d-flex flex-wrap gap-2">
@@ -199,57 +236,69 @@ const sessionLocation = computed(() => localizedValue(props.upcomingSession?.loc
               variant="tonal"
               color="primary"
             >
-              {{ sessionLocation || $t('hr.dashboard.location_tbc') }}
+              {{ upcomingSession.status }}
             </VChip>
             <VChip
+              v-if="sessionLocation"
               size="small"
-              variant="tonal"
-              color="secondary"
+              variant="outlined"
             >
-              {{ upcomingSession.participants?.length || 0 }} /
-              {{ upcomingSession.max_participants || '—' }}
+              <VIcon
+                icon="tabler-map-pin"
+                start
+                size="12"
+              />
+              {{ sessionLocation }}
             </VChip>
           </div>
         </div>
 
-        <VAlert
-          v-else
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mt-4"
+        <!-- ─── Appraisals Snapshot ──────────────────────── -->
+        <VDivider class="mb-3" />
+        <div
+          class="pa-3 rounded border cursor-pointer hover-item"
+          @click="navigate({ name: 'people-skills-performance-appraisals' })"
         >
-          {{ $t('hr.dashboard.no_upcoming_training') }}
-        </VAlert>
-
-        <VBtn
-          block
-          variant="tonal"
-          color="primary"
-          size="small"
-          class="mt-4"
-          :to="{ name: 'people-skills-training-list' }"
-        >
-          {{ $t('hr.dashboard.open_training') }}
-        </VBtn>
+          <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center gap-2">
+              <VAvatar
+                size="28"
+                color="warning"
+                variant="tonal"
+              >
+                <VIcon
+                  icon="tabler-award"
+                  size="16"
+                />
+              </VAvatar>
+              <div>
+                <div class="text-subtitle-2 font-weight-bold">
+                  {{ $t('hr.dashboard.performance_reviews', 'Performance Reviews') }}
+                </div>
+                <div class="text-caption text-medium-emphasis">
+                  {{ (appraisals.pending_reviews ?? 0) + (appraisals.pending_acknowledgement ?? 0) }} {{ $t('hr.dashboard.pending_evaluations', 'pending evaluation / sign-off') }}
+                </div>
+              </div>
+            </div>
+            <VChip
+              color="warning"
+              size="small"
+              label
+              variant="tonal"
+            >
+              ★ {{ appraisals.average_score ?? 0 }} / 5
+            </VChip>
+          </div>
+        </div>
       </template>
     </VCardText>
   </VCard>
 </template>
 
 <style scoped>
-.hr-dashboard-card-header :deep(.v-card-item__content) {
-  min-inline-size: 0;
-}
-
-.hr-dashboard-card-action {
-  max-inline-size: 100%;
-  white-space: normal;
-}
-
-.hr-dashboard-card-action :deep(.v-btn__content) {
-  white-space: normal;
-  overflow-wrap: anywhere;
-  text-align: end;
+.hover-item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+  border-color: rgba(var(--v-theme-primary), 0.3) !important;
+  transition: all 0.2s ease;
 }
 </style>

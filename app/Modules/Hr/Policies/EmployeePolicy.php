@@ -22,13 +22,20 @@ class EmployeePolicy
     {
         return $user->can('hr.employees.view')
             || $user->can('read-PeopleSkills')
-            || $user->hasRole(['operations_responsible', 'Staff', 'Responsable']);
+            || $user->hasRole(['operations_responsible', 'Responsable']);
     }
 
     public function view(User $user, Employee $employee): bool
     {
         return $user->can('hr.employees.view')
             || $user->can('read-PeopleSkills')
+            || $employee->user_id === $user->id;
+    }
+
+    public function viewSensitive(User $user, Employee $employee): bool
+    {
+        return $user->hasRole(['Super Admin', 'Admin', 'HR Manager'])
+            || $user->can('hr.employees.view-sensitive')
             || $employee->user_id === $user->id;
     }
 

@@ -1,8 +1,9 @@
 <script setup>
 /* eslint-disable camelcase */
-import { WpFormDialog, WpSectionCard, WpSimpleTable } from '@/components/shared'
+import { WpDeleteDialog, WpFormDialog, WpSectionCard, WpSimpleTable } from '@/components/shared'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { useHrStore } from '@/stores/hrStore'
 import { useEmployeeStore } from '@/stores/useEmployeeStore'
 import { resolveStatusColor } from '@/utils/hr-lookups'
@@ -22,6 +23,7 @@ const hrStore = useHrStore()
 const employeeStore = useEmployeeStore()
 const { showMessage } = useAppSnackbar()
 const { t } = useI18n()
+const ability = useAbility()
 
 const isAssignDialogVisible = ref(false)
 const selectedCertId = ref(null)
@@ -33,6 +35,9 @@ const certFile = ref(null)
 const notes = ref('')
 const isSubmitting = ref(false)
 const verifyingId = ref(null)
+const isDeleteDialogOpen = ref(false)
+const itemToDelete = ref(null)
+const isDeleting = ref(false)
 
 const columns = computed(() => {
   const cols = [
@@ -44,6 +49,7 @@ const columns = computed(() => {
     { key: 'status', title: t('hr.employees.fields.status') },
     { key: 'files', title: t('hr.employees.fields.files', 'Files') },
   ]
+
   if (!props.readOnly) cols.push({ key: 'actions', title: t('common.actions', 'Action'), align: 'center' })
 
   return cols
@@ -114,6 +120,27 @@ const handleVerify = async certRecordId => {
     showMessage(err?.data?.message || t('hr.employees.certifications.verify_error', 'Failed to verify certification'), 'error')
   } finally {
     verifyingId.value = null
+  }
+}
+
+const openDelete = item => {
+  itemToDelete.value = item
+  isDeleteDialogOpen.value = true
+}
+
+const handleDelete = async () => {
+  if (!itemToDelete.value?.id) return
+  isDeleting.value = true
+  try {
+    await employeeStore.deleteCertification(itemToDelete.value.id)
+    showMessage(t('hr.employees.certifications.delete_success', 'Certification removed from employee'), 'success')
+    isDeleteDialogOpen.value = false
+    itemToDelete.value = null
+    emit('refresh')
+  } catch (err) {
+    showMessage(err?.data?.message || t('common.delete_error', 'Failed to delete record'), 'error')
+  } finally {
+    isDeleting.value = false
   }
 }
 </script>
@@ -188,7 +215,7 @@ const handleVerify = async certRecordId => {
             :key="f.id"
             :href="f.url"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             class="text-caption text-primary d-inline-flex align-center gap-1"
           >
             <VIcon
@@ -204,20 +231,26 @@ const handleVerify = async certRecordId => {
         >—</span>
       </template>
       <template #cell.actions="{ item }">
-        <VBtn
-          v-if="!item.verified_at"
-          size="x-small"
-          variant="tonal"
-          color="success"
-          :loading="verifyingId === item.id"
-          @click="handleVerify(item.id)"
-        >
-          {{ t('hr.employees.verify', 'Verify') }}
-        </VBtn>
-        <span
-          v-else
-          class="text-caption text-success font-weight-medium"
-        >{{ t('hr.employees.fields.verified') }}</span>
+        <div class="d-flex align-center gap-1 justify-center">
+          <VBtn
+            v-if="!item.verified_at && ability.can('manage', 'certifications')"
+            size="x-small"
+            variant="tonal"
+            color="success"
+            :loading="verifyingId === item.id"
+            @click="handleVerify(item.id)"
+          >
+            {{ t('hr.employees.verify', 'Verify') }}
+          </VBtn>
+          <VBtn
+            v-if="ability.can('manage', 'certifications')"
+            icon="tabler-trash"
+            size="x-small"
+            variant="text"
+            color="error"
+            @click="openDelete(item)"
+          />
+        </div>
       </template>
 
       <template #empty>
@@ -227,6 +260,15 @@ const handleVerify = async certRecordId => {
         />
       </template>
     </WpSimpleTable>
+
+    <WpDeleteDialog
+      v-model:is-dialog-visible="isDeleteDialogOpen"
+      :title="t('common.delete', 'Delete Record')"
+      :confirmation-text="t('common.delete_confirm', 'Are you sure you want to remove this certification from the employee?')"
+      :item-name="localizedValue(itemToDelete?.name)"
+      :loading="isDeleting"
+      @confirm="handleDelete"
+    />
 
     <WpFormDialog
       v-model="isAssignDialogVisible"

@@ -15,6 +15,7 @@ import {
 import { useDialog } from '@/composables/dialog/useDialog'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { useHrStore } from '@/stores/hrStore'
 import CertificationDialog from '@/views/people-skills/skills/CertificationDialog.vue'
 import SkillDialog from '@/views/people-skills/skills/SkillDialog.vue'
@@ -28,27 +29,37 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'skills',
   },
 })
 
 const { t } = useI18n()
 const { showMessage } = useAppSnackbar()
 const hrStore = useHrStore()
+const ability = useAbility()
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 const activeTab = ref('skills')
 const skillSearch = ref('')
 const certSearch = ref('')
+const expiringSearch = ref('')
 
 const tabs = computed(() => [
   { title: t('skills.tab_skills', 'Skills & Competencies'), value: 'skills', icon: 'tabler-award' },
   { title: t('skills.tab_certifications', 'Certifications & Licenses'), value: 'certifications', icon: 'tabler-certificate' },
+  {
+    title: t('skills.tab_expiring', 'Expiring & Alerts'),
+    value: 'expiring',
+    icon: 'tabler-alert-triangle',
+    badge: hrStore.expiringCertifications.length > 0 ? String(hrStore.expiringCertifications.length) : undefined,
+    badgeColor: 'warning',
+  },
 ])
 
 // ── Filtered Lists ─────────────────────────────────────────────────────────
 const filteredSkills = computed(() => {
   const q = skillSearch.value.toLowerCase().trim()
+
   return q
     ? hrStore.skills.filter(s => localizedValue(s.name).toLowerCase().includes(q) || s.code?.toLowerCase().includes(q) || s.category?.toLowerCase().includes(q))
     : hrStore.skills
@@ -56,9 +67,24 @@ const filteredSkills = computed(() => {
 
 const filteredCerts = computed(() => {
   const q = certSearch.value.toLowerCase().trim()
+
   return q
     ? hrStore.certifications.filter(c => localizedValue(c.name).toLowerCase().includes(q) || c.code?.toLowerCase().includes(q))
     : hrStore.certifications
+})
+
+const filteredExpiring = computed(() => {
+  const q = expiringSearch.value.toLowerCase().trim()
+
+  return q
+    ? hrStore.expiringCertifications.filter(c =>
+      c.employee_name?.toLowerCase().includes(q)
+      || c.employee_number?.toLowerCase().includes(q)
+      || localizedValue(c.certification_name).toLowerCase().includes(q)
+      || c.code?.toLowerCase().includes(q)
+      || c.certificate_number?.toLowerCase().includes(q),
+    )
+    : hrStore.expiringCertifications
 })
 
 // ── KPIs ───────────────────────────────────────────────────────────────────
@@ -66,13 +92,13 @@ const kpiCards = computed(() => {
   const totalSkills = hrStore.skills.length
   const activeSkills = hrStore.skills.filter(s => s.is_active).length
   const totalCerts = hrStore.certifications.length
-  const activeCerts = hrStore.certifications.filter(c => c.is_active).length
+  const expiringCount = hrStore.expiringCertifications.length
 
   return [
     { title: t('skills.kpi.total_skills', 'Total Skills'), value: totalSkills, icon: 'tabler-award', color: 'primary' },
     { title: t('skills.kpi.active_skills', 'Active Skills'), value: activeSkills, icon: 'tabler-circle-check', color: 'success' },
     { title: t('skills.kpi.total_certs', 'Certifications'), value: totalCerts, icon: 'tabler-certificate', color: 'info' },
-    { title: t('skills.kpi.active_certs', 'Active Certs'), value: activeCerts, icon: 'tabler-badge-check', color: 'warning' },
+    { title: t('skills.kpi.expiring_soon', 'Expiring (60d)'), value: expiringCount, icon: 'tabler-alert-triangle', color: expiringCount > 0 ? 'warning' : 'secondary' },
   ]
 })
 
@@ -92,6 +118,15 @@ const certHeaders = computed(() => [
   { title: t('certifications.col.validity', 'Validity'), key: 'validity_months', sortable: false, width: '140px' },
   { title: t('certifications.col.status', 'Status'), key: 'is_active', sortable: false, width: '120px' },
   { title: '', key: 'actions', sortable: false, width: '60px' },
+])
+
+const expiringHeaders = computed(() => [
+  { title: t('hr.employees.fields.employee', 'Employee'), key: 'employee', sortable: false, minWidth: '200px' },
+  { title: t('certifications.col.name', 'Certification'), key: 'certification', sortable: false, minWidth: '200px' },
+  { title: t('hr.employees.fields.certificateNumber', 'Certificate No.'), key: 'certificate_number', sortable: false, width: '150px' },
+  { title: t('hr.employees.fields.expiryDate', 'Expiry Date'), key: 'expiry_date', sortable: false, width: '140px' },
+  { title: t('skills.days_left', 'Days Remaining'), key: 'days_until_expiry', sortable: false, width: '150px' },
+  { title: t('common.status', 'Status'), key: 'status', sortable: false, width: '120px' },
 ])
 
 // ── Dialog States ──────────────────────────────────────────────────────────
@@ -207,6 +242,7 @@ const mobileFabActions = computed(() => [
 onMounted(() => {
   hrStore.fetchSkills()
   hrStore.fetchCertifications()
+  hrStore.fetchExpiringCertifications(60)
 })
 </script>
 
@@ -220,20 +256,18 @@ onMounted(() => {
     >
       <template #actions>
         <VBtn
-          v-if="activeTab === 'skills'"
-          v-can="'create', 'PeopleSkills'"
+          v-if="activeTab === 'skills' && ability.can('manage', 'skills')"
           color="primary"
           prepend-icon="tabler-plus"
-          @click="openSkill()"
+          @click="openSkill"
         >
           {{ $t('skills.add', 'New Skill') }}
         </VBtn>
         <VBtn
-          v-else
-          v-can="'create', 'PeopleSkills'"
+          v-else-if="activeTab === 'certifications' && ability.can('manage', 'certifications')"
           color="primary"
           prepend-icon="tabler-plus"
-          @click="openCert()"
+          @click="openCert"
         >
           {{ $t('certifications.add', 'New Certification') }}
         </VBtn>
@@ -271,9 +305,9 @@ onMounted(() => {
         <VCard>
           <WpPageToolbar
             v-model:search="skillSearch"
-            :create-label="$can('create', 'PeopleSkills') ? $t('skills.add', 'New Skill') : ''"
+            :create-label="ability.can('manage', 'skills') ? $t('skills.add', 'New Skill') : ''"
             :loading="hrStore.isLoadingMeta"
-            @create="openSkill()"
+            @create="openSkill"
             @refresh="hrStore.fetchSkills(true)"
           />
 
@@ -346,9 +380,9 @@ onMounted(() => {
         <VCard>
           <WpPageToolbar
             v-model:search="certSearch"
-            :create-label="$can('create', 'PeopleSkills') ? $t('certifications.add', 'New Certification') : ''"
+            :create-label="ability.can('manage', 'certifications') ? $t('certifications.add', 'New Certification') : ''"
             :loading="hrStore.isLoadingMeta"
-            @create="openCert()"
+            @create="openCert"
             @refresh="hrStore.fetchCertifications(true)"
           />
 
@@ -413,6 +447,87 @@ onMounted(() => {
               >
                 <div class="text-caption text-medium-emphasis mt-2">
                   {{ item.validity_months ? `${item.validity_months} months validity` : 'Permanent / No expiry' }}
+                </div>
+              </WpMobileCard>
+            </template>
+          </WpResponsiveList>
+        </VCard>
+      </template>
+
+      <!-- ── Tab: Expiring Certifications ─────────────────────────────── -->
+      <template #tab-expiring>
+        <VCard>
+          <WpPageToolbar
+            v-model:search="expiringSearch"
+            :loading="hrStore.isLoadingMeta"
+            @refresh="hrStore.fetchExpiringCertifications(60)"
+          />
+
+          <WpResponsiveList
+            :headers="expiringHeaders"
+            :items="filteredExpiring"
+            :total-items="filteredExpiring.length"
+            :loading="hrStore.isLoadingMeta"
+            hide-pagination
+            @retry="hrStore.fetchExpiringCertifications(60)"
+          >
+            <template #item.employee="{ item }">
+              <div class="d-flex flex-column py-1">
+                <span class="text-body-2 font-weight-medium">{{ item.employee_name }}</span>
+                <span class="text-caption text-medium-emphasis">
+                  {{ item.employee_number }} · {{ item.department || $t('common.general', 'General') }}
+                </span>
+              </div>
+            </template>
+
+            <template #item.certification="{ item }">
+              <div class="d-flex flex-column py-1">
+                <span class="text-body-2 font-weight-medium">{{ localizedValue(item.certification_name) }}</span>
+                <span class="text-caption text-medium-emphasis font-family-monospace">
+                  {{ item.code }}
+                </span>
+              </div>
+            </template>
+
+            <template #item.certificate_number="{ item }">
+              <span class="font-monospace text-body-2">{{ item.certificate_number || '—' }}</span>
+            </template>
+
+            <template #item.expiry_date="{ item }">
+              <span class="font-weight-medium">{{ item.expiry_date || '—' }}</span>
+            </template>
+
+            <template #item.days_until_expiry="{ item }">
+              <VChip
+                size="small"
+                :color="item.days_until_expiry <= 30 ? 'error' : 'warning'"
+                variant="tonal"
+                prepend-icon="tabler-clock"
+              >
+                {{ item.days_until_expiry != null ? `${item.days_until_expiry} ${$t('common.days', 'days')}` : '—' }}
+              </VChip>
+            </template>
+
+            <template #item.status="{ item }">
+              <VChip
+                size="small"
+                :color="item.status === 'expired' ? 'error' : 'warning'"
+                class="text-uppercase font-weight-bold"
+              >
+                {{ item.status }}
+              </VChip>
+            </template>
+
+            <template #mobile-card="{ item }">
+              <WpMobileCard
+                :title="item.employee_name"
+                :subtitle="`${localizedValue(item.certification_name)} (${item.code || ''})`"
+                :badge="item.days_until_expiry != null ? `${item.days_until_expiry}d left` : item.status"
+                :badge-color="item.days_until_expiry <= 30 ? 'error' : 'warning'"
+              >
+                <div class="d-flex flex-column gap-1 text-caption text-medium-emphasis mt-2">
+                  <div>{{ $t('hr.employees.fields.certificateNumber', 'Cert No') }}: {{ item.certificate_number || '—' }}</div>
+                  <div>{{ $t('hr.employees.fields.expiryDate', 'Expires') }}: {{ item.expiry_date || '—' }}</div>
                 </div>
               </WpMobileCard>
             </template>

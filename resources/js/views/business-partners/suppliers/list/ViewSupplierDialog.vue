@@ -48,7 +48,6 @@ const props = defineProps({
 
 const emit = defineEmits([
   'update:isDialogVisible',
-  'openEmail',
   'retry',
 ])
 
@@ -232,7 +231,6 @@ const handleExportPdf = async () => {
 const handleOpenEmail = () => {
   if (activeSupplier.value) {
     isEmailDialogOpen.value = true
-    emit('openEmail', activeSupplier.value)
   }
 }
 </script>
@@ -307,7 +305,7 @@ const handleOpenEmail = () => {
     <template #actions>
       <div class="d-flex align-center gap-1 gap-sm-2">
         <VBtn
-          v-if="activeSupplier"
+          v-if="activeSupplier && $can('export', 'suppliers')"
           variant="tonal"
           size="small"
           color="secondary"
@@ -327,7 +325,7 @@ const handleOpenEmail = () => {
         </VBtn>
 
         <VBtn
-          v-if="activeSupplier"
+          v-if="activeSupplier && $can('create', 'email-messages')"
           variant="tonal"
           size="small"
           color="primary"
@@ -346,7 +344,7 @@ const handleOpenEmail = () => {
         </VBtn>
 
         <VBtn
-          v-if="activeSupplier?.id"
+          v-if="activeSupplier?.id && $can('update', 'suppliers')"
           variant="tonal"
           size="small"
           color="warning"

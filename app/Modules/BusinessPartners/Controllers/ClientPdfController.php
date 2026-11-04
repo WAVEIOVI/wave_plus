@@ -44,7 +44,7 @@ class ClientPdfController extends Controller
             'vatCertificates',
         ])->findOrFail($id);
 
-        $this->authorize('view', $client);
+        $this->authorize('export', $client);
 
         $html = view('pdf.clients.client-record', compact('client'))->render();
 

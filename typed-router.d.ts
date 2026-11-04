@@ -110,7 +110,7 @@ declare module 'vue-router/auto-routes' {
     'people-skills-employees-edit-id': RouteRecordInfo<'people-skills-employees-edit-id', '/people-skills/employees/edit/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'people-skills-employees-list': RouteRecordInfo<'people-skills-employees-list', '/people-skills/employees/list', Record<never, never>, Record<never, never>>,
     'people-skills-approved-drivers-list': RouteRecordInfo<'people-skills-approved-drivers-list', '/people-skills/fleet/drivers', Record<never, never>, Record<never, never>>,
-    'people-skills-fleet-vehicles-detail': RouteRecordInfo<'people-skills-fleet-vehicles-detail', '/people-skills/fleet/vehicles/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
+    'people-skills-fleet-vehicles-edit': RouteRecordInfo<'people-skills-fleet-vehicles-edit', '/people-skills/fleet/vehicles/edit/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'people-skills-vehicles-list': RouteRecordInfo<'people-skills-vehicles-list', '/people-skills/fleet/vehicles', Record<never, never>, Record<never, never>>,
     'people-skills-performance-appraisals': RouteRecordInfo<'people-skills-performance-appraisals', '/people-skills/performance/appraisals', Record<never, never>, Record<never, never>>,
     'people-skills-recruitment-list': RouteRecordInfo<'people-skills-recruitment-list', '/people-skills/recruitment/list', Record<never, never>, Record<never, never>>,

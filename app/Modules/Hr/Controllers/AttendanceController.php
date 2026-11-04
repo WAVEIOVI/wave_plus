@@ -29,6 +29,9 @@ class AttendanceController extends Controller
     {
         $this->authorize('viewAny', Attendance::class);
 
+        $user = $request->user();
+        $isGlobalViewer = $user && ($user->hasRole(['Super Admin', 'Admin']) || $user->can('hr.attendance.view') || $user->can('read-PeopleSkills'));
+
         $date = $request->input('date');
         $startDate = $request->input('start_date');
         $endDate = null;
@@ -41,14 +44,14 @@ class AttendanceController extends Controller
             'exceptions',
         ]);
 
-        if ($date) {
-            $query->whereDate('date', $date);
-        } elseif ($startDate) {
-            $endDate = $request->input('end_date', $startDate);
-            $query->whereBetween('date', [$startDate, $endDate]);
-        }
-
-        if ($empId = $request->input('employee_id')) {
+        if (! $isGlobalViewer) {
+            $linked = \App\Modules\Hr\Models\Employee::where('user_id', $user?->id)->first();
+            if ($linked) {
+                $query->where('employee_id', $linked->id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        } elseif ($empId = $request->input('employee_id')) {
             $query->where('employee_id', $empId);
         }
 
@@ -145,7 +148,7 @@ class AttendanceController extends Controller
     public function requestCorrection(AttendanceCorrectionRequest $request, string $id): JsonResponse
     {
         $attendance = Attendance::findOrFail($id);
-        $this->authorize('correct', $attendance);
+        $this->authorize('requestCorrection', $attendance);
 
         $correction = AttendanceCorrection::create([
             'attendance_id' => $attendance->id,
@@ -156,6 +159,23 @@ class AttendanceController extends Controller
             'requested_actual_out' => $request->input('requested_actual_out'),
             'reason' => $request->input('reason'),
             'status' => 'pending',
+        ]);
+
+        \App\Modules\Hr\Models\HrAuditLog::create([
+            'auditable_type' => Attendance::class,
+            'auditable_id' => $attendance->id,
+            'actor_id' => auth()->id(),
+            'action' => 'attendance_correction_requested',
+            'old_values' => [
+                'actual_in' => $attendance->actual_in,
+                'actual_out' => $attendance->actual_out,
+            ],
+            'new_values' => [
+                'requested_actual_in' => $request->input('requested_actual_in'),
+                'requested_actual_out' => $request->input('requested_actual_out'),
+            ],
+            'reason' => $request->input('reason'),
+            'ip_address' => $request->ip(),
         ]);
 
         return response()->json([
@@ -169,9 +189,15 @@ class AttendanceController extends Controller
         $correction = AttendanceCorrection::with('attendance')->findOrFail($correctionId);
         $this->authorize('correct', $correction->attendance);
 
+        abort_if(
+            $correction->requester_id === auth()->id() && ! auth()->user()->hasRole(['Super Admin', 'Admin']),
+            403,
+            'You cannot approve or reject your own attendance correction request.'
+        );
+
         $request->validate([
             'approved' => ['required', 'boolean'],
-            'decision_reason' => ['nullable', 'string'],
+            'decision_reason' => ['nullable', 'string', 'max:500'],
         ]);
 
         $this->attendanceService->applyCorrection(
@@ -180,6 +206,20 @@ class AttendanceController extends Controller
             $request->boolean('approved'),
             $request->input('decision_reason')
         );
+
+        \App\Modules\Hr\Models\HrAuditLog::create([
+            'auditable_type' => Attendance::class,
+            'auditable_id' => $correction->attendance_id,
+            'actor_id' => auth()->id(),
+            'action' => $request->boolean('approved') ? 'attendance_correction_approved' : 'attendance_correction_rejected',
+            'new_values' => [
+                'correction_id' => $correction->id,
+                'status' => $request->boolean('approved') ? 'approved' : 'rejected',
+                'decision_reason' => $request->input('decision_reason'),
+            ],
+            'reason' => $request->input('decision_reason') ?? ($request->boolean('approved') ? 'Attendance correction approved' : 'Attendance correction rejected'),
+            'ip_address' => $request->ip(),
+        ]);
 
         return response()->json([
             'message' => $request->boolean('approved') ? 'Correction approved and applied.' : 'Correction rejected.',
@@ -300,12 +340,22 @@ class AttendanceController extends Controller
 
         $date = $request->input('date', Carbon::today()->toDateString());
         $employeeId = $request->input('employee_id');
+        $user = $request->user();
+
+        $isGlobalViewer = $user && ($user->hasRole(['Super Admin', 'Admin']) || $user->can('hr.attendance.view') || $user->can('read-PeopleSkills'));
 
         $query = TimeClockEvent::with('employee.department')
             ->whereDate('event_time', $date)
             ->orderBy('event_time');
 
-        if ($employeeId) {
+        if (! $isGlobalViewer) {
+            $linked = \App\Modules\Hr\Models\Employee::where('user_id', $user?->id)->first();
+            if ($linked) {
+                $query->where('employee_id', $linked->id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        } elseif ($employeeId) {
             $query->where('employee_id', $employeeId);
         }
 

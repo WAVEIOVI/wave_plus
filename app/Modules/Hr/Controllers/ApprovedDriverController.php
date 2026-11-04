@@ -4,6 +4,7 @@ namespace App\Modules\Hr\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Hr\Models\ApprovedDriver;
+use App\Modules\Hr\Resources\ApprovedDriverResource;
 use App\Modules\Hr\Services\DriverAuthorizationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -80,11 +81,23 @@ class ApprovedDriverController extends Controller
         $allowedSorts = ['created_at', 'authorization_date', 'expiry_date', 'license_number', 'driver_score', 'authorization_status', 'driver_level'];
         $query->orderBy(in_array($sortBy, $allowedSorts, true) ? $sortBy : 'created_at', $request->input('sort_order') === 'asc' ? 'asc' : 'desc');
 
-        $drivers = $request->boolean('paginate', true)
-            ? $query->paginate($request->input('per_page', 15))
-            : $query->get();
+        if ($request->boolean('paginate', true)) {
+            $paginated = $query->paginate($request->input('per_page', 15));
 
-        return response()->json($drivers);
+            return response()->json([
+                'data' => ApprovedDriverResource::collection($paginated->items()),
+                'meta' => [
+                    'current_page' => $paginated->currentPage(),
+                    'per_page' => $paginated->perPage(),
+                    'total' => $paginated->total(),
+                    'last_page' => $paginated->lastPage(),
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'data' => ApprovedDriverResource::collection($query->get()),
+        ]);
     }
 
     /**
@@ -98,11 +111,11 @@ class ApprovedDriverController extends Controller
             'employee.user',
             'employee.department',
             'employee.position',
-            'incidents' => fn ($q) => $q->latest()->limit(10),
+            'incidents.vehicle',
             'activityLog' => fn ($q) => $q->latest()->limit(20),
         ])->findOrFail($id);
 
-        return response()->json($driver);
+        return response()->json(['data' => ApprovedDriverResource::make($driver)]);
     }
 
     /**
@@ -142,7 +155,7 @@ class ApprovedDriverController extends Controller
             Auth::id()
         );
 
-        return response()->json($driver->load('employee'), 201);
+        return response()->json(['data' => ApprovedDriverResource::make($driver->load(['employee.department', 'employee.position']))], 201);
     }
 
     /**
@@ -174,7 +187,7 @@ class ApprovedDriverController extends Controller
 
         $driver->update($validated);
 
-        return response()->json($driver->fresh());
+        return response()->json(['data' => ApprovedDriverResource::make($driver->fresh(['employee.department', 'employee.position']))]);
     }
 
     /**
@@ -196,7 +209,7 @@ class ApprovedDriverController extends Controller
             Auth::id()
         );
 
-        return response()->json($driver);
+        return response()->json(['data' => ApprovedDriverResource::make($driver->load(['employee.department', 'employee.position']))]);
     }
 
     /**
@@ -216,7 +229,7 @@ class ApprovedDriverController extends Controller
             Auth::id()
         );
 
-        return response()->json($driver);
+        return response()->json(['data' => ApprovedDriverResource::make($driver->load(['employee.department', 'employee.position']))]);
     }
 
     public function revoke(Request $request, string $id): JsonResponse
@@ -225,7 +238,9 @@ class ApprovedDriverController extends Controller
 
         $data = $request->validate(['reason' => ['required', 'string', 'max:1000']]);
 
-        return response()->json($this->driverService->revokeDriver($id, $data['reason'], Auth::id()));
+        $driver = $this->driverService->revokeDriver($id, $data['reason'], Auth::id());
+
+        return response()->json(['data' => ApprovedDriverResource::make($driver->load(['employee.department', 'employee.position']))]);
     }
 
     /**
@@ -247,7 +262,7 @@ class ApprovedDriverController extends Controller
             Auth::id()
         );
 
-        return response()->json($driver);
+        return response()->json(['data' => ApprovedDriverResource::make($driver->load(['employee.department', 'employee.position']))]);
     }
 
     /**
@@ -339,7 +354,7 @@ class ApprovedDriverController extends Controller
             Auth::id()
         );
 
-        return response()->json($driver);
+        return response()->json(['data' => ApprovedDriverResource::make($driver->load(['employee.department', 'employee.position']))]);
     }
 
     /**

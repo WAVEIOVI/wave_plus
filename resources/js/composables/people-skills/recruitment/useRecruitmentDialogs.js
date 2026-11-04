@@ -8,8 +8,13 @@ export function useRecruitmentDialogs() {
   const deleteDialog = useDialog()
   const filterDialog = useDialog()
   const openingDialog = useDialog()
+  const emailDialog = useDialog()
+  const hireDialog = useDialog()
 
   const selectedCandidate = ref(null)
+  const selectedInterview = ref(null)
+  const candidateToEmail = ref(null)
+  const candidateToHire = ref(null)
 
   const openDetail = candidate => {
     selectedCandidate.value = candidate
@@ -23,12 +28,39 @@ export function useRecruitmentDialogs() {
 
   const openInterview = candidate => {
     selectedCandidate.value = candidate
+    selectedInterview.value = null
+    interviewDialog.open(candidate?.id)
+  }
+
+  const openEvaluate = (candidate, interview) => {
+    selectedCandidate.value = candidate
+    selectedInterview.value = interview
     interviewDialog.open(candidate?.id)
   }
 
   const closeInterview = () => {
     interviewDialog.close()
-    selectedCandidate.value = null
+    selectedInterview.value = null
+  }
+
+  const openEmail = candidate => {
+    candidateToEmail.value = candidate
+    emailDialog.open(candidate?.id)
+  }
+
+  const closeEmail = () => {
+    emailDialog.close()
+    candidateToEmail.value = null
+  }
+
+  const openHire = candidate => {
+    candidateToHire.value = candidate
+    hireDialog.open(candidate?.id)
+  }
+
+  const closeHire = () => {
+    hireDialog.close()
+    candidateToHire.value = null
   }
 
   const openDelete = candidate => {
@@ -48,11 +80,21 @@ export function useRecruitmentDialogs() {
     deleteDialog,
     filterDialog,
     openingDialog,
+    emailDialog,
+    hireDialog,
     selectedCandidate,
+    selectedInterview,
+    candidateToEmail,
+    candidateToHire,
     openDetail,
     closeDetail,
     openInterview,
+    openEvaluate,
     closeInterview,
+    openEmail,
+    closeEmail,
+    openHire,
+    closeHire,
     openDelete,
     closeDelete,
   }

@@ -20,6 +20,7 @@ import EmployeeBadgeDialog from '@/components/people-skills/EmployeeBadgeDialog.
 import { useEmployeeForm } from '@/composables/people-skills/employees/useEmployeeForm'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { useHrStore } from '@/stores/hrStore'
 import { useEmployeeStore } from '@/stores/useEmployeeStore'
 import EmployeeAccountCard from '@/views/people-skills/employees/edit/EmployeeAccountCard.vue'
@@ -50,18 +51,20 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'update',
-    subject: 'PeopleSkills',
+    subject: 'employees',
   },
 })
 
 const route = useRoute()
 const router = useRouter()
+const ability = useAbility()
 const { t } = useI18n()
 const { smAndDown } = useDisplay()
 const { showMessage } = useAppSnackbar()
 
 const employeeStore = useEmployeeStore()
 const hrStore = useHrStore()
+const canDelete = computed(() => ability.can('delete', 'employees') || ability.can('delete', 'PeopleSkills'))
 
 // ────────────────────────────── State ──────────────────────────────
 const pageLoading = ref(true)
@@ -76,6 +79,9 @@ const isStatusDialogOpen = ref(false)
 const statusAction = ref('activate')
 const isBadgeDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
+const isAssignTeamDialogOpen = ref(false)
+const selectedTeamToAssign = ref(null)
+const isAssigningTeam = ref(false)
 const quickActionsOpen = ref(false)
 
 // Card refs (used by the mobile quick-actions sheet to open dialogs)
@@ -374,6 +380,22 @@ const handleStatusChanged = async ({ status, reason, effectiveDate }) => {
   }
 }
 
+const handleAssignTeam = async () => {
+  if (!selectedTeamToAssign.value) return
+  isAssigningTeam.value = true
+  try {
+    await employeeStore.assignTeam(route.params.id, selectedTeamToAssign.value)
+    showMessage(t('common.saveSuccess', 'Team assigned successfully'), 'success')
+    isAssignTeamDialogOpen.value = false
+    selectedTeamToAssign.value = null
+    await refreshEmployee()
+  } catch (err) {
+    showMessage(err?.data?.message || err?.message || t('common.error', 'Failed to assign team'), 'error')
+  } finally {
+    isAssigningTeam.value = false
+  }
+}
+
 // ── Mobile quick actions (FAB → bottom sheet) ───────────────────────────────
 const quickActions = computed(() => {
   const ready = !!employee.value
@@ -411,14 +433,16 @@ const quickActions = computed(() => {
       actions.push({ id: 'terminate', icon: 'tabler-user-x', title: t('employees.actions.terminate'), color: 'error', onClick: () => openStatusDialog('terminate') })
   }
 
-  actions.push({
-    id: 'delete',
-    icon: 'tabler-trash',
-    title: t('common.delete', 'Delete'),
-    color: 'error',
-    disabled: !ready,
-    onClick: () => { isDeleteDialogOpen.value = true },
-  })
+  if (canDelete.value) {
+    actions.push({
+      id: 'delete',
+      icon: 'tabler-trash',
+      title: t('common.delete', 'Delete'),
+      color: 'error',
+      disabled: !ready,
+      onClick: () => { isDeleteDialogOpen.value = true },
+    })
+  }
 
   return actions
 })
@@ -475,6 +499,7 @@ onMounted(async () => {
             :employee="employee"
             :saving="saving"
             :is-dirty="isDirty"
+            :can-delete="canDelete"
             @save="handleSave"
             @delete="isDeleteDialogOpen = true"
             @open-photo-dialog="isPhotoDialogOpen = true"
@@ -676,6 +701,17 @@ onMounted(async () => {
               icon="tabler-users-group"
               icon-color="info"
             >
+              <template #actions>
+                <VBtn
+                  variant="tonal"
+                  size="small"
+                  color="primary"
+                  prepend-icon="tabler-user-plus"
+                  @click="isAssignTeamDialogOpen = true"
+                >
+                  {{ $t('hr.employees.teams.assign', 'Assign Team') }}
+                </VBtn>
+              </template>
               <WpSimpleTable
                 :columns="teamColumns"
                 :items="employee.team_memberships || []"
@@ -753,7 +789,44 @@ onMounted(async () => {
       @saved="refreshEmployee"
     />
 
+    <VDialog
+      v-model="isAssignTeamDialogOpen"
+      max-width="500"
+    >
+      <VCard :title="$t('hr.employees.teams.assign', 'Assign Team')">
+        <DialogCloseBtn @click="isAssignTeamDialogOpen = false" />
+        <VCardText>
+          <AppSelect
+            v-model="selectedTeamToAssign"
+            :label="$t('hr.employees.fields.team', 'Team')"
+            :items="teamOptions"
+            variant="outlined"
+            item-title="title"
+            item-value="value"
+          />
+        </VCardText>
+        <VCardActions class="justify-end gap-2">
+          <VBtn
+            variant="tonal"
+            color="secondary"
+            @click="isAssignTeamDialogOpen = false"
+          >
+            {{ $t('Cancel') }}
+          </VBtn>
+          <VBtn
+            color="primary"
+            :loading="isAssigningTeam"
+            :disabled="!selectedTeamToAssign"
+            @click="handleAssignTeam"
+          >
+            {{ $t('Assign') }}
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+
     <WpDeleteDialog
+      v-if="canDelete"
       v-model="isDeleteDialogOpen"
       :title="$t('employees.delete.title', 'Delete Employee')"
       :description="$t('employees.delete.description', 'Are you sure you want to delete this employee? This action is permanent and cannot be undone.')"
@@ -794,6 +867,14 @@ onMounted(async () => {
   display: flex;
   align-items: flex-start;
   gap: 1.5rem;
+}
+
+.employee-journal-layout :deep(.wp-journal-nav) {
+  box-sizing: border-box;
+  flex: 0 0 220px;
+  inline-size: 220px;
+  max-inline-size: 220px;
+  min-inline-size: 0;
 }
 
 .employee-journal-feed {

@@ -121,4 +121,48 @@ class DepartmentPositionListTest extends TestCase
             ->assertJsonPath('data.employees.0.id', $employee->id)
             ->assertJsonPath('data.employees.0.full_name', 'Jordan Lee');
     }
+
+    public function test_cannot_delete_department_with_assigned_employees(): void
+    {
+        $department = Department::create(['name' => 'Operations', 'code' => 'OPS-DEL']);
+        Employee::create([
+            'first_name' => 'Alex',
+            'last_name' => 'Jones',
+            'hire_date' => '2026-01-01',
+            'department_id' => $department->id,
+        ]);
+
+        $this->deleteJson("/api/hr/departments/{$department->id}")
+            ->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Cannot delete department with assigned employees. Please reassign them first.']);
+    }
+
+    public function test_cannot_delete_department_with_sub_departments(): void
+    {
+        $parent = Department::create(['name' => 'Parent Dept', 'code' => 'PARENT']);
+        Department::create([
+            'name' => 'Sub Dept',
+            'code' => 'SUB',
+            'parent_department_id' => $parent->id,
+        ]);
+
+        $this->deleteJson("/api/hr/departments/{$parent->id}")
+            ->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Cannot delete department that has sub-departments. Please reassign or delete sub-departments first.']);
+    }
+
+    public function test_cannot_delete_position_with_assigned_employees(): void
+    {
+        $position = Position::create(['title' => 'Supervisor', 'code' => 'SUP']);
+        Employee::create([
+            'first_name' => 'Morgan',
+            'last_name' => 'Davis',
+            'hire_date' => '2026-01-01',
+            'position_id' => $position->id,
+        ]);
+
+        $this->deleteJson("/api/hr/positions/{$position->id}")
+            ->assertStatus(422)
+            ->assertJsonFragment(['message' => 'Cannot delete position with assigned employees. Please reassign them first.']);
+    }
 }

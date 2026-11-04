@@ -19,6 +19,8 @@ class PositionController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorizePositionRead();
+
         $filters = $request->validate([
             'department_id' => ['sometimes', 'nullable', 'ulid', 'exists:hr_departments,id'],
             'status' => ['sometimes', 'nullable', 'in:active,inactive'],
@@ -74,7 +76,7 @@ class PositionController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorizeHrMutation('hr.employees.edit');
+        $this->authorizePositionMutation();
         TranslatableFields::normalizeRequest($request, ['title', 'description', 'requirements']);
 
         $data = $request->validate(array_merge([
@@ -94,6 +96,7 @@ class PositionController extends Controller
 
     public function show(string $id): JsonResponse
     {
+        $this->authorizePositionRead();
         $position = Position::with(['department', 'employees'])->findOrFail($id);
 
         return response()->json([
@@ -103,7 +106,7 @@ class PositionController extends Controller
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $this->authorizeHrMutation('hr.employees.edit');
+        $this->authorizePositionMutation();
         $position = Position::findOrFail($id);
         TranslatableFields::normalizeRequest($request, ['title', 'description', 'requirements']);
 
@@ -124,12 +127,50 @@ class PositionController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        $this->authorizeHrMutation('hr.employees.archive');
-        $position = Position::findOrFail($id);
+        $this->authorizePositionMutation();
+        $position = Position::withCount('employees')->findOrFail($id);
+
+        if ($position->employees_count > 0) {
+            return response()->json([
+                'message' => 'Cannot delete position with assigned employees. Please reassign them first.',
+            ], 422);
+        }
+
         $position->delete();
 
         return response()->json([
             'message' => 'Position deleted successfully.',
         ]);
+    }
+
+    protected function authorizePositionRead(): void
+    {
+        $user = request()->user();
+        abort_unless($user, 403);
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager', 'HR Officer'])) {
+            return;
+        }
+        abort_unless(
+            $user->can('hr.positions.view')
+                || $user->can('hr.positions.manage')
+                || $user->can('hr.employees.view')
+                || $user->can('read-PeopleSkills'),
+            403,
+            'You do not have permission to view positions.'
+        );
+    }
+
+    protected function authorizePositionMutation(): void
+    {
+        $user = request()->user();
+        abort_unless($user, 403);
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager'])) {
+            return;
+        }
+        abort_unless(
+            $user->can('hr.positions.manage') || $user->can('hr.employees.edit'),
+            403,
+            'You do not have permission to manage positions.'
+        );
     }
 }

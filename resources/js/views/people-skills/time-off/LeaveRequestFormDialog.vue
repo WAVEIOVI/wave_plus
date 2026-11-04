@@ -6,6 +6,7 @@ import { useHrStore } from '@/stores/hrStore'
 import { useLeaveRequestStore } from '@/stores/useLeaveRequestStore'
 import { $api } from '@/utils/api'
 import { avatarText } from '@core/utils/formatters'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -23,11 +24,14 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'saved'])
 
 const { t } = useI18n()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const hrStore = useHrStore()
 const leaveStore = useLeaveRequestStore()
 
+const isManager = computed(() => ability.can('manage', 'leave') || ability.can('create', 'PeopleSkills'))
 const isSubmitting = ref(false)
+const serverError = ref('')
 const employees = ref([])
 const employeesLoading = ref(false)
 const balanceInfo = ref(null)
@@ -79,20 +83,24 @@ const employeeOptions = computed(() =>
 
 // Dynamic calculation of total days
 const calculationSummary = computed(() => {
-  if (form.value.duration_type === 'hourly') {
-    if (!form.value.start_date || !form.value.start_time || !form.value.end_time) {
-      return { days: 0, hours: 0, isValid: false }
-    }
-    const [sh, sm] = form.value.start_time.split(':').map(Number)
-    const [eh, em] = form.value.end_time.split(':').map(Number)
-    const startMin = (sh || 0) * 60 + (sm || 0)
-    const endMin = (eh || 0) * 60 + (em || 0)
-    if (endMin <= startMin) return { days: 0, hours: 0, isValid: false }
-    const totalMinutes = endMin - startMin
-    const hours = Math.round((totalMinutes / 60) * 100) / 100
-    const days = Math.max(0.05, Math.round((hours / 8.0) * 100) / 100)
+  if (['hourly', 'partial_day'].includes(form.value.duration_type)) {
+    if (form.value.start_time && form.value.end_time) {
+      const [sh, sm] = form.value.start_time.split(':').map(Number)
+      const [eh, em] = form.value.end_time.split(':').map(Number)
+      const startMin = (sh || 0) * 60 + (sm || 0)
+      const endMin = (eh || 0) * 60 + (em || 0)
+      if (endMin <= startMin) return { days: 0, hours: 0, isValid: false }
+      const totalMinutes = endMin - startMin
+      const hours = Math.round((totalMinutes / 60) * 100) / 100
+      const days = Math.max(0.05, Math.round((hours / 8.0) * 100) / 100)
 
-    return { days, hours, isValid: true }
+      return { days, hours, isValid: true }
+    }
+    if (form.value.duration_type === 'partial_day' && form.value.start_date) {
+      return { days: 0.5, hours: 4.0, isValid: true }
+    }
+
+    return { days: 0, hours: 0, isValid: false }
   }
 
   if (!form.value.start_date || !form.value.end_date) {
@@ -231,6 +239,7 @@ const handleSubmit = async (submitNow = true) => {
     return
   }
 
+  serverError.value = ''
   isSubmitting.value = true
   try {
     const payload = {
@@ -238,7 +247,7 @@ const handleSubmit = async (submitNow = true) => {
       leave_type_id: form.value.leave_type_id,
       duration_type: form.value.duration_type,
       start_date: form.value.start_date,
-      end_date: form.value.duration_type === 'hourly' ? form.value.start_date : form.value.end_date,
+      end_date: isHourlyLeave.value ? form.value.start_date : form.value.end_date,
       total_days: calculationSummary.value.days,
       reason: form.value.reason || null,
       submit: submitNow,
@@ -254,7 +263,14 @@ const handleSubmit = async (submitNow = true) => {
     isVisible.value = false
     emit('saved')
   } catch (err) {
-    showMessage(err?.data?.message || t('time_off.create_error'), 'error')
+    const msg = err?.data?.errors?.start_date?.[0]
+      || err?.data?.errors?.days_requested?.[0]
+      || err?.data?.errors?.duration_type?.[0]
+      || err?.data?.message
+      || t('time_off.create_error')
+
+    serverError.value = msg
+    showMessage(msg, 'error')
   } finally {
     isSubmitting.value = false
   }
@@ -294,6 +310,19 @@ const handleSubmit = async (submitNow = true) => {
       <VDivider />
 
       <VCardText class="pa-4">
+        <!-- Backend Conflict / Validation Alert -->
+        <VAlert
+          v-if="serverError"
+          type="error"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+          closable
+          @click:close="serverError = ''"
+        >
+          {{ serverError }}
+        </VAlert>
+
         <VRow>
           <!-- Employee Selector -->
           <VCol cols="12">
@@ -305,6 +334,7 @@ const handleSubmit = async (submitNow = true) => {
               :label="$t('time_off.form.employee')"
               :placeholder="$t('time_off.form.select_employee')"
               :loading="employeesLoading"
+              :disabled="!isManager && employeeOptions.length <= 1"
               clearable
             >
               <template #selection="{ item }">

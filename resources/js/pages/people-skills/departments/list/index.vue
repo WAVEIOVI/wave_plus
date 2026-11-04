@@ -28,7 +28,8 @@ import DepartmentFormDialog from '@/views/people-skills/departments/list/Departm
 import PositionFormDialog from '@/views/people-skills/departments/list/PositionFormDialog.vue'
 import ViewDepartmentDialog from '@/views/people-skills/departments/list/ViewDepartmentDialog.vue'
 import ViewPositionDialog from '@/views/people-skills/departments/list/ViewPositionDialog.vue'
-import { computed, getCurrentInstance, onMounted, reactive, ref, watch } from 'vue'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -40,7 +41,7 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'departments',
   },
 })
 
@@ -48,14 +49,21 @@ const { t, locale } = useI18n()
 const { smAndDown } = useDisplay()
 const route = useRoute()
 const router = useRouter()
-const { proxy } = getCurrentInstance()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const { format: formatCurrency } = useCurrency()
 const deptStore = useDepartmentStore()
 const posStore = usePositionStore()
 const hrStore = useHrStore()
 
-const can = action => !!proxy?.$can?.(action, 'PeopleSkills')
+const can = (action, subject = null) => {
+  if (subject) {
+    return ability.can(action, subject) || ability.can(action, 'PeopleSkills')
+  }
+  const defaultSubject = activeTab.value === 'departments' ? 'departments' : 'positions'
+
+  return ability.can(action, defaultSubject) || ability.can(action, 'PeopleSkills')
+}
 
 const sameId = (a, b) => a != null && b != null && String(a) === String(b)
 
@@ -147,16 +155,16 @@ const bottomNavItems = computed(() => hybridTabs.value.map(tab => ({
   badge: tab.badge,
 })))
 
-const orgViewMode = ref('table')
+const orgViewMode = ref('grid')
 try {
   const savedViewMode = localStorage.getItem('wp.people-skills.departments-positions.view')
     || localStorage.getItem('wp.people-skills.departments.view')
     || localStorage.getItem('wp.people-skills.positions.view')
 
-  orgViewMode.value = savedViewMode === 'grid' ? 'grid' : 'table'
+  orgViewMode.value = savedViewMode === 'table' ? 'table' : 'grid'
 }
 catch {
-  orgViewMode.value = 'table'
+  orgViewMode.value = 'grid'
 }
 
 watch(orgViewMode, value => {
@@ -716,6 +724,16 @@ const saveDept = async formData => {
 
 const askDeleteDept = item => {
   const name = localizedValue(item?.name, '')
+  if (Number(item?.employees_count) > 0) {
+    showMessage(`${name} has ${item.employees_count} assigned employees. Please reassign them before deleting.`, 'warning')
+
+    return
+  }
+  if (Number(item?.children_count) > 0) {
+    showMessage(`${name} has sub-departments. Please reassign or delete sub-departments first.`, 'warning')
+
+    return
+  }
 
   deptDeleteDescription.value = name
     ? `${name}. ${t('departments.delete_confirm')}`
@@ -859,6 +877,11 @@ const savePos = async formData => {
 
 const askDeletePos = item => {
   const name = localizedValue(item?.title, '')
+  if (Number(item?.employees_count) > 0) {
+    showMessage(`${name} has ${item.employees_count} assigned employees. Please reassign them before deleting.`, 'warning')
+
+    return
+  }
 
   posDeleteDescription.value = name
     ? `${name}. ${t('positions.delete_confirm')}`
@@ -957,6 +980,8 @@ onMounted(() => hrStore.fetchMeta())
               :icon="kpi.icon"
               :icon-color="kpi.color"
               :loading="activeTab === 'departments' ? deptStore.loading : posStore.loading"
+              :clickable="kpi.clickable"
+              :active="activeTab === 'departments' ? (kpi.key === 'active' && deptListPage.filters.status === 'active') : (kpi.key === 'active' && posListPage.filters.status === 'active')"
             />
           </div>
         </VCol>
@@ -966,7 +991,7 @@ onMounted(() => hrStore.fetchMeta())
     <WpPageToolbar
       v-model:search="activeListPage.search.value"
       class="departments-list__toolbar"
-      :create-label="$can('create', 'PeopleSkills') ? $t(activeTab === 'departments' ? 'departments.add' : 'positions.add') : ''"
+      :create-label="can('create') ? $t(activeTab === 'departments' ? 'departments.add' : 'positions.add') : ''"
       hide-create-on-mobile
       show-filter
       hide-filter-on-mobile
@@ -1017,7 +1042,7 @@ onMounted(() => hrStore.fetchMeta())
         >
           <template #empty-action>
             <VBtn
-              v-if="$can('create', 'PeopleSkills')"
+              v-if="can('create', 'departments')"
               color="primary"
               prepend-icon="tabler-plus"
               @click="openDeptDialog"
@@ -1288,7 +1313,7 @@ onMounted(() => hrStore.fetchMeta())
                   {{ $t('View') }}
                 </VBtn>
                 <VBtn
-                  v-if="$can('update', 'PeopleSkills')"
+                  v-if="can('update', 'departments')"
                   variant="text"
                   size="small"
                   prepend-icon="tabler-edit"
@@ -1324,7 +1349,7 @@ onMounted(() => hrStore.fetchMeta())
         >
           <template #empty-action>
             <VBtn
-              v-if="$can('create', 'PeopleSkills')"
+              v-if="can('create', 'positions')"
               color="primary"
               prepend-icon="tabler-plus"
               @click="openPosDialog"
@@ -1549,7 +1574,7 @@ onMounted(() => hrStore.fetchMeta())
                   {{ $t('View') }}
                 </VBtn>
                 <VBtn
-                  v-if="$can('update', 'PeopleSkills')"
+                  v-if="can('update', 'positions')"
                   variant="text"
                   size="small"
                   prepend-icon="tabler-edit"
@@ -1619,8 +1644,8 @@ onMounted(() => hrStore.fetchMeta())
       :loading="deptViewLoading"
       :error="deptViewError"
       :active="isActiveStatus(viewingDept)"
-      :can-edit="$can('update', 'PeopleSkills')"
-      :can-create="$can('create', 'PeopleSkills')"
+      :can-edit="can('update', 'departments')"
+      :can-create="can('create', 'positions')"
       @update:model-value="value => !value && deptViewDialog.close()"
       @retry="retryDeptView"
       @edit="editDeptFromView"
@@ -1637,7 +1662,7 @@ onMounted(() => hrStore.fetchMeta())
       :loading="posViewLoading"
       :error="posViewError"
       :active="isActiveStatus(viewingPos)"
-      :can-edit="$can('update', 'PeopleSkills')"
+      :can-edit="can('update', 'positions')"
       @update:model-value="value => !value && posViewDialog.close()"
       @retry="retryPosView"
       @edit="editPosFromView"

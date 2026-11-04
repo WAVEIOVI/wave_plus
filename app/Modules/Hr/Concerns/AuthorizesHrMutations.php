@@ -14,7 +14,7 @@ trait AuthorizesHrMutations
         $user = request()->user();
         abort_unless($user, 403);
 
-        if ($user->hasRole(['Super Admin', 'Admin'])) {
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager'])) {
             return;
         }
 
@@ -36,12 +36,11 @@ trait AuthorizesHrMutations
         $user = request()->user();
         abort_unless($user, 403);
 
-        if ($user->hasRole(['Super Admin', 'Admin'])) {
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager'])) {
             return;
         }
 
         abort_unless($permission && $user->can($permission), 403, 'You do not have permission to change HR records.');
-
     }
 
     protected function resolveClockEmployee(Request $request)
@@ -72,8 +71,7 @@ trait AuthorizesHrMutations
         if ($requestedId) {
             $canViewOthers = $user->hasRole(['Super Admin', 'Admin'])
                 || $user->can('hr.attendance.view')
-                || $user->can('hr.attendance.manage')
-                || $user->can('read-PeopleSkills');
+                || $user->can('hr.attendance.manage');
 
             abort_unless($canViewOthers, 403, 'You can only view your own time clock status.');
 

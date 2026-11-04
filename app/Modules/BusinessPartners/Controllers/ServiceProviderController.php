@@ -95,7 +95,7 @@ class ServiceProviderController extends Controller
 
     public function exportPdf(): Response
     {
-        $this->authorize('viewAny', ServiceProvider::class);
+        $this->authorize('export', ServiceProvider::class);
 
         $serviceProviders = ServiceProvider::with('accountManager')
             ->orderBy('created_at', 'desc')
@@ -123,7 +123,7 @@ class ServiceProviderController extends Controller
             'documents',
         ])->findOrFail($id);
 
-        $this->authorize('view', $serviceProvider);
+        $this->authorize('export', $serviceProvider);
 
         $html = view('pdf.service-providers.service-provider-record', compact('serviceProvider'))->render();
 

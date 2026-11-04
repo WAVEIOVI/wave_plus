@@ -117,7 +117,14 @@ class WorkforceAvailabilityController extends Controller
     public function destroyShift(string $id): JsonResponse
     {
         $this->authorizeHrMutation('hr.workforce.assign');
-        $shift = Shift::findOrFail($id);
+        $shift = Shift::withCount('schedules')->findOrFail($id);
+
+        if ($shift->schedules_count > 0) {
+            return response()->json([
+                'message' => 'Cannot delete shift that has associated schedules. Please reassign schedules first.',
+            ], 422);
+        }
+
         $shift->delete();
 
         return response()->json([
@@ -214,6 +221,13 @@ class WorkforceAvailabilityController extends Controller
     {
         $this->authorizeHrMutation('hr.workforce.assign');
         $schedule = Schedule::findOrFail($id);
+
+        if ($schedule->lifecycle_status === Schedule::STATUS_COMPLETED || $schedule->status === 'completed') {
+            return response()->json([
+                'message' => 'Cannot delete completed schedule.',
+            ], 422);
+        }
+
         $schedule->delete();
 
         return response()->json([

@@ -1,4 +1,6 @@
+/* eslint-disable camelcase */
 import { useAppraisalStore } from '@/stores/useAppraisalStore'
+import { useEmployeeStore } from '@/stores/useEmployeeStore'
 import { useHrStore } from '@/stores/hrStore'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -6,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 export function useAppraisalList() {
   const store = useAppraisalStore()
   const hrStore = useHrStore()
+  const employeeStore = useEmployeeStore()
   const { t, locale } = useI18n()
 
   const currentTab = ref('cycles')
@@ -19,6 +22,7 @@ export function useAppraisalList() {
 
   const formatDate = value => {
     if (!value) return '—'
+    
     return new Intl.DateTimeFormat(locale.value || undefined, {
       year: 'numeric',
       month: 'short',
@@ -59,10 +63,19 @@ export function useAppraisalList() {
   ])
 
   const kpis = computed(() => {
+    if (store.kpis) {
+      return [
+        { title: t('appraisals.kpi.total_cycles', 'Total Cycles'), value: store.kpis.total_cycles, icon: 'tabler-calendar', color: 'primary' },
+        { title: t('appraisals.kpi.active_cycles', 'Active Cycles'), value: store.kpis.active_cycles, icon: 'tabler-bolt', color: 'success' },
+        { title: t('appraisals.kpi.total_reviews', 'Evaluations'), value: store.kpis.total_appraisals, icon: 'tabler-file-analytics', color: 'info' },
+        { title: t('appraisals.kpi.completed_reviews', 'Completed'), value: store.kpis.completed_appraisals, icon: 'tabler-circle-check', color: 'warning' },
+      ]
+    }
+
     const totalCycles = store.cycles.length
     const activeCycles = store.cycles.filter(c => c.status === 'active').length
     const totalAppraisals = store.appraisals.length
-    const completedAppraisals = store.appraisals.filter(a => ['reviewed', 'acknowledged'].includes(a.status)).length
+    const completedAppraisals = store.appraisals.filter(a => a.status === 'acknowledged').length
 
     return [
       { title: t('appraisals.kpi.total_cycles', 'Total Cycles'), value: totalCycles, icon: 'tabler-calendar', color: 'primary' },
@@ -75,6 +88,7 @@ export function useAppraisalList() {
   const filteredCycles = computed(() => {
     if (!search.value) return store.cycles
     const q = search.value.toLowerCase()
+
     return store.cycles.filter(c =>
       c.name?.toLowerCase().includes(q) ||
       c.cycle_type?.toLowerCase().includes(q),
@@ -88,19 +102,23 @@ export function useAppraisalList() {
     }
     if (search.value) {
       const q = search.value.toLowerCase()
+
       list = list.filter(a =>
         a.employee?.full_name?.toLowerCase().includes(q) ||
         a.reviewer?.name?.toLowerCase().includes(q),
       )
     }
+
     return list
   })
 
   const loadData = async () => {
-    await Promise.all([
+    await Promise.allSettled([
       store.fetchCycles(),
       store.fetchAppraisals(),
+      store.fetchKpis(),
       hrStore.fetchEmployeesMeta(),
+      employeeStore.fetchList({ per_page: 100 }),
     ])
   }
 
@@ -111,6 +129,7 @@ export function useAppraisalList() {
   return {
     store,
     hrStore,
+    employeeStore,
     currentTab,
     tabs,
     search,

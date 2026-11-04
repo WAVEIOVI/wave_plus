@@ -27,9 +27,19 @@ class LeaveRequestController extends Controller
     {
         $this->authorize('viewAny', LeaveRequest::class);
 
+        $user = $request->user();
+        $isGlobalViewer = $user && ($user->hasRole(['Super Admin', 'Admin']) || $user->can('hr.leave.view') || $user->can('read-PeopleSkills'));
+
         $query = LeaveRequest::with(['employee.department', 'leaveType', 'approver']);
 
-        if ($empId = $request->input('employee_id')) {
+        if (! $isGlobalViewer) {
+            $linked = \App\Modules\Hr\Models\Employee::where('user_id', $user?->id)->first();
+            if ($linked) {
+                $query->where('employee_id', $linked->id);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        } elseif ($empId = $request->input('employee_id')) {
             $query->where('employee_id', $empId);
         }
 
@@ -182,8 +192,15 @@ class LeaveRequestController extends Controller
 
     public function approve(Request $request, string $id): JsonResponse
     {
-        $leaveRequest = LeaveRequest::findOrFail($id);
+        $leaveRequest = LeaveRequest::with('employee')->findOrFail($id);
         $this->authorize('approve', $leaveRequest);
+
+        abort_if(
+            ($leaveRequest->employee?->user_id === auth()->id() || $leaveRequest->requested_by_id === auth()->id())
+            && ! auth()->user()->hasRole(['Super Admin', 'Admin']),
+            403,
+            'You cannot approve your own leave request.'
+        );
 
         if ($leaveRequest->status !== 'submitted') {
             return response()->json(['message' => 'Only submitted requests can be approved.'], 422);
@@ -191,14 +208,16 @@ class LeaveRequestController extends Controller
 
         $this->balanceService->approveDays($leaveRequest);
 
+        $decisionNote = $request->input('decision_note', $request->input('notes'));
+
         $leaveRequest->update([
             'status' => 'approved',
             'approver_id' => auth()->id(),
             'approved_at' => now(),
-            'decision_note' => $request->input('decision_note'),
+            'decision_note' => $decisionNote,
         ]);
 
-        // Reconcile and synchronize schedule & attendance coverage
+        // Reconcile and synchronize schedule & attendance coverage without deleting schedules
         $coverageStatus = $leaveRequest->isHourlyLeave()
             ? \App\Modules\Hr\Models\Schedule::COVERAGE_PARTIAL_LEAVE
             : \App\Modules\Hr\Models\Schedule::COVERAGE_FULL_DAY_LEAVE;
@@ -216,7 +235,18 @@ class LeaveRequestController extends Controller
                 'covering_leave_id' => $leaveRequest->id,
             ]);
 
-        $this->auditService->log($leaveRequest, 'APPROVE_LEAVE_REQUEST', null, null, $request->input('decision_note'));
+        // Recalculate attendance records for dates within the leave period that already exist
+        $existingAttendances = \App\Modules\Hr\Models\Attendance::where('employee_id', $leaveRequest->employee_id)
+            ->whereDate('date', '>=', $leaveRequest->start_date->toDateString())
+            ->whereDate('date', '<=', $leaveRequest->end_date->toDateString())
+            ->get();
+
+        $calcService = app(\App\Modules\Hr\Services\AttendanceCalculationService::class);
+        foreach ($existingAttendances as $att) {
+            $calcService->recalculateAttendanceForDate($leaveRequest->employee_id, $att->date->toDateString());
+        }
+
+        $this->auditService->log($leaveRequest, 'APPROVE_LEAVE_REQUEST', null, null, $decisionNote);
 
         return response()->json([
             'message' => 'Leave request approved and schedules reconciled.',
@@ -229,9 +259,13 @@ class LeaveRequestController extends Controller
         $leaveRequest = LeaveRequest::findOrFail($id);
         $this->authorize('approve', $leaveRequest);
 
-        $request->validate([
-            'rejection_reason' => ['required', 'string', 'max:500'],
-        ]);
+        $reason = $request->input('rejection_reason', $request->input('reason'));
+        if (! $reason || ! trim((string) $reason)) {
+            return response()->json([
+                'message' => 'The rejection reason is required.',
+                'errors' => ['rejection_reason' => ['The rejection reason is required.']],
+            ], 422);
+        }
 
         if ($leaveRequest->status === 'submitted') {
             $this->balanceService->releaseReservedDays($leaveRequest);
@@ -240,11 +274,11 @@ class LeaveRequestController extends Controller
         $leaveRequest->update([
             'status' => 'rejected',
             'approver_id' => auth()->id(),
-            'rejection_reason' => $request->input('rejection_reason'),
-            'decision_note' => $request->input('rejection_reason'),
+            'rejection_reason' => $reason,
+            'decision_note' => $reason,
         ]);
 
-        $this->auditService->log($leaveRequest, 'REJECT_LEAVE_REQUEST', null, null, $request->input('rejection_reason'));
+        $this->auditService->log($leaveRequest, 'REJECT_LEAVE_REQUEST', null, null, $reason);
 
         return response()->json([
             'message' => 'Leave request rejected.',
@@ -261,9 +295,15 @@ class LeaveRequestController extends Controller
             return response()->json(['message' => 'Cannot cancel this request.'], 422);
         }
 
-        if ($leaveRequest->status === 'submitted') {
+        $wasApproved = $leaveRequest->status === 'approved';
+        $wasSubmitted = $leaveRequest->status === 'submitted';
+
+        $leaveRequest->update(['status' => 'cancelled']);
+        $this->auditService->log($leaveRequest, 'CANCEL_LEAVE_REQUEST');
+
+        if ($wasSubmitted) {
             $this->balanceService->releaseReservedDays($leaveRequest);
-        } elseif ($leaveRequest->status === 'approved') {
+        } elseif ($wasApproved) {
             // Restore approved used days
             $year = (int) $leaveRequest->start_date->format('Y');
             $balance = $this->balanceService->getOrCreateBalance($leaveRequest->employee_id, $leaveRequest->leave_type_id, $year);
@@ -282,14 +322,70 @@ class LeaveRequestController extends Controller
                     'coverage_status' => 'normal',
                     'covering_leave_id' => null,
                 ]);
-        }
 
-        $leaveRequest->update(['status' => 'cancelled']);
-        $this->auditService->log($leaveRequest, 'CANCEL_LEAVE_REQUEST');
+            // Recalculate attendance records to restore original working time baseline
+            $cancelledAttendances = \App\Modules\Hr\Models\Attendance::where('employee_id', $leaveRequest->employee_id)
+                ->whereDate('date', '>=', $leaveRequest->start_date->toDateString())
+                ->whereDate('date', '<=', $leaveRequest->end_date->toDateString())
+                ->get();
+
+            $calcService = app(\App\Modules\Hr\Services\AttendanceCalculationService::class);
+            foreach ($cancelledAttendances as $att) {
+                $calcService->recalculateAttendanceForDate($leaveRequest->employee_id, $att->date->toDateString());
+            }
+        }
 
         return response()->json([
             'message' => 'Leave request cancelled.',
             'status' => 'cancelled',
+        ]);
+    }
+
+    public function update(StoreLeaveRequestRequest $request, string $id): JsonResponse
+    {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+        $this->authorize('update', $leaveRequest);
+
+        if ($leaveRequest->status !== 'draft') {
+            return response()->json(['message' => 'Only draft requests can be edited.'], 422);
+        }
+
+        $data = $request->validated();
+        unset($data['submit']);
+        $leaveRequest->update($data);
+
+        if ($request->boolean('submit', false)) {
+            try {
+                $this->balanceService->reserveDays($leaveRequest);
+                $leaveRequest->update(['status' => 'submitted']);
+                $this->auditService->log($leaveRequest, 'SUBMIT_LEAVE_REQUEST');
+            } catch (\InvalidArgumentException $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'errors' => ['days_requested' => [$e->getMessage()]],
+                ], 422);
+            }
+        }
+
+        return response()->json([
+            'message' => 'Leave request updated.',
+            'data' => new LeaveRequestResource($leaveRequest->fresh(['employee.department', 'leaveType'])),
+        ]);
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+        $this->authorize('delete', $leaveRequest);
+
+        if (! in_array($leaveRequest->status, ['draft', 'cancelled'], true)) {
+            return response()->json(['message' => 'Only draft or cancelled requests can be deleted.'], 422);
+        }
+
+        $leaveRequest->delete();
+
+        return response()->json([
+            'message' => 'Leave request deleted.',
         ]);
     }
 

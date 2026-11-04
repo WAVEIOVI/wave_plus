@@ -81,13 +81,15 @@ export const useApprovedDriverStore = defineStore('approvedDriver', () => {
         method: 'GET',
       })
 
-      currentItem.value = response.data || null
+      const result = response.data ?? response
 
-      return response.data
+      currentItem.value = result
+
+      return result
     } catch (err) {
       if (is401(err)) {
         currentItem.value = null
-        
+
         return
       }
       const extracted = extractApiError(err)
@@ -111,9 +113,11 @@ export const useApprovedDriverStore = defineStore('approvedDriver', () => {
         body: deepClone(payload),
       })
 
-      currentItem.value = response.data || null
+      const result = response.data ?? response
 
-      return response.data
+      currentItem.value = result
+
+      return result
     } catch (err) {
       if (is401(err)) return
       const extracted = extractApiError(err)
@@ -137,9 +141,11 @@ export const useApprovedDriverStore = defineStore('approvedDriver', () => {
         body: deepClone(payload),
       })
 
-      currentItem.value = response.data || null
+      const result = response.data ?? response
 
-      return response.data
+      currentItem.value = result
+
+      return result
     } catch (err) {
       if (is401(err)) return
       const extracted = extractApiError(err)

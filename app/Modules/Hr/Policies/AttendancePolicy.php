@@ -22,7 +22,8 @@ class AttendancePolicy
     {
         return $user->can('hr.attendance.view')
             || $user->can('read-PeopleSkills')
-            || $user->hasRole(['operations_responsible', 'Staff', 'Responsable']);
+            || $user->hasRole(['operations_responsible', 'Staff', 'Responsable'])
+            || \App\Modules\Hr\Models\Employee::where('user_id', $user->id)->exists();
     }
 
     public function view(User $user, Attendance $attendance): bool
@@ -48,7 +49,12 @@ class AttendancePolicy
     public function correct(User $user): bool
     {
         return $user->can('hr.attendance.correct')
-            || $user->can('hr.attendance.manage')
-            || $user->can('read-PeopleSkills');
+            || $user->can('hr.attendance.manage');
+    }
+
+    public function requestCorrection(User $user, Attendance $attendance): bool
+    {
+        return $this->correct($user)
+            || $attendance->employee?->user_id === $user->id;
     }
 }

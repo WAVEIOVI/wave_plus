@@ -23,6 +23,9 @@ class EmployeeAppraisal extends Model
         'status',
         'manager_feedback',
         'employee_feedback',
+        'reviewed_at',
+        'acknowledged_at',
+        'acknowledged_by',
         'goals',
         'ratings',
     ];
@@ -33,6 +36,8 @@ class EmployeeAppraisal extends Model
             'overall_score' => 'float',
             'goals' => 'array',
             'ratings' => 'array',
+            'reviewed_at' => 'datetime',
+            'acknowledged_at' => 'datetime',
         ];
     }
 
@@ -49,5 +54,15 @@ class EmployeeAppraisal extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewer_id');
+    }
+
+    public function acknowledger(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'acknowledged_by');
+    }
+
+    public function getIsCompletedAttribute(): bool
+    {
+        return $this->status === 'acknowledged';
     }
 }

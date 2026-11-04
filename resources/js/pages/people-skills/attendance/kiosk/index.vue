@@ -16,7 +16,7 @@ definePage({
     layout: 'blank',
     module: 'people-skills',
     action: 'create',
-    subject: 'PeopleSkills',
+    subject: 'attendance',
   },
 })
 

@@ -11,6 +11,15 @@ class EmployeeResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $user = $request->user();
+        $isSelf = $user && $this->user_id === $user->id;
+        $canViewSensitive = $user && (
+            $user->hasRole(['Super Admin', 'Admin', 'HR Manager'])
+            || $user->can('hr.employees.view-sensitive')
+            || $user->can('hr.employees.edit')
+            || $isSelf
+        );
+
         return [
             'id' => $this->id,
             'employee_number' => $this->employee_number,
@@ -20,16 +29,16 @@ class EmployeeResource extends JsonResource
             'full_name' => $this->full_name,
             'preferred_name' => $this->getTranslations('preferred_name'),
             'gender' => $this->gender,
-            'date_of_birth' => $this->date_of_birth?->toDateString(),
+            'date_of_birth' => $canViewSensitive ? $this->date_of_birth?->toDateString() : null,
             'nationality' => $this->nationality,
             'work_email' => $this->work_email,
-            'personal_email' => $this->personal_email,
-            'email' => $this->work_email ?? $this->personal_email,
+            'personal_email' => $canViewSensitive ? $this->personal_email : null,
+            'email' => $this->work_email ?? ($canViewSensitive ? $this->personal_email : null),
             'work_phone' => $this->work_phone,
-            'personal_phone' => $this->personal_phone,
-            'phone' => $this->work_phone ?? $this->personal_phone,
-            'phone_number' => $this->work_phone ?? $this->personal_phone,
-            'address' => $this->address,
+            'personal_phone' => $canViewSensitive ? $this->personal_phone : null,
+            'phone' => $this->work_phone ?? ($canViewSensitive ? $this->personal_phone : null),
+            'phone_number' => $this->work_phone ?? ($canViewSensitive ? $this->personal_phone : null),
+            'address' => $canViewSensitive ? $this->address : null,
             'hire_date' => $this->hire_date?->toDateString(),
             'termination_date' => $this->termination_date?->toDateString(),
             'status' => $this->status,
@@ -71,7 +80,7 @@ class EmployeeResource extends JsonResource
                 'name' => $this->user->name,
                 'email' => $this->user->email,
             ] : null,
-            'notes' => $this->notes,
+            'notes' => $canViewSensitive ? $this->notes : null,
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

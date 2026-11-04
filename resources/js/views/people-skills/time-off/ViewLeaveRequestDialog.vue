@@ -125,7 +125,7 @@ const statusLabel = s => {
           <div class="d-flex flex-column gap-1">
             <span class="text-caption text-medium-emphasis">{{ $t('time_off.col.type') }}</span>
             <span class="font-weight-medium text-body-2 text-primary">
-              {{ leaveRequest.leave_type?.name || '—' }}
+              {{ localizedValue(leaveRequest.leave_type?.name) || '—' }}
             </span>
           </div>
         </VCol>
@@ -240,6 +240,10 @@ const statusLabel = s => {
           <div class="d-flex flex-wrap align-center justify-space-between text-caption text-medium-emphasis pt-2 border-t">
             <span>
               {{ $t('Created') }}: {{ formatDateTime(leaveRequest.created_at) }}
+              <span
+                v-if="leaveRequest.requested_by_name"
+                class="ms-1"
+              >({{ $t('By') }} {{ leaveRequest.requested_by_name }})</span>
             </span>
             <span v-if="leaveRequest.approver_name">
               {{ $t('time_off.view.approved_by') }} {{ leaveRequest.approver_name }} {{ $t('time_off.view.on_date') }} {{ formatDateTime(leaveRequest.approved_at) }}

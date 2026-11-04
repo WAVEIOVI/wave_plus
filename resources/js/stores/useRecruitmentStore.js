@@ -27,8 +27,8 @@ export const useRecruitmentStore = defineStore('recruitment', () => {
   const error       = ref(null)
   const validationErrors = ref(null)
 
-  const fetchOpenings = async () => {
-    const response = await $api('/hr/recruitment/openings', { method: 'GET' })
+  const fetchOpenings = async (params = {}) => {
+    const response = await $api('/hr/recruitment/openings', { method: 'GET', params })
 
     return response.data || []
   }
@@ -50,6 +50,11 @@ export const useRecruitmentStore = defineStore('recruitment', () => {
         apiParams.status = apiParams.stage
         delete apiParams.stage
       }
+
+      if (apiParams.opening_id && !apiParams.job_opening_id) {
+        apiParams.job_opening_id = apiParams.opening_id
+      }
+
       delete apiParams.position_id
 
       const response = await $api('/hr/recruitment/candidates', { method: 'GET', params: apiParams })
@@ -106,6 +111,35 @@ export const useRecruitmentStore = defineStore('recruitment', () => {
     })
 
     return response.data || response
+  }
+
+  const updateInterview = async (interviewId, payload) => {
+    const response = await $api(`/hr/recruitment/interviews/${interviewId}`, {
+      method: 'PUT',
+      body: payload,
+    })
+
+    return response.data || response
+  }
+
+  const uploadMedia = async (candidateId, file, collection = 'documents') => {
+    const formData = new FormData()
+
+    formData.append('file', file)
+    formData.append('collection', collection)
+
+    const response = await $api(`/hr/recruitment/candidates/${candidateId}/media`, {
+      method: 'POST',
+      body: formData,
+    })
+
+    return response.media || response.data || response
+  }
+
+  const deleteMedia = async (candidateId, mediaId) => {
+    return await $api(`/hr/recruitment/candidates/${candidateId}/media/${mediaId}`, {
+      method: 'DELETE',
+    })
   }
 
   const hire = async (id, payload) => {
@@ -185,7 +219,8 @@ export const useRecruitmentStore = defineStore('recruitment', () => {
 
   return {
     list, totalItems, loading, error, validationErrors,
-    fetchList, fetchOpenings, create, update, destroy, updateStage, scheduleInterview, hire,
+    fetchList, fetchOpenings, create, update, destroy, updateStage, scheduleInterview, updateInterview, hire,
+    uploadMedia, deleteMedia,
     createOpening, updateOpening, destroyOpening,
   }
 })

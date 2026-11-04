@@ -108,4 +108,17 @@ class WorkforcePlannerController extends Controller
             'deleted_count' => $count,
         ]);
     }
+
+    public function scheduleHistory(Request $request): JsonResponse
+    {
+        $this->authorizeHrRead('hr.workforce.view');
+
+        $limit = min(50, max(5, (int) $request->input('limit', 25)));
+        $history = $this->plannerService->getScheduleHistory($limit);
+
+        return response()->json([
+            'data' => $history,
+            'batches' => $history,
+        ]);
+    }
 }

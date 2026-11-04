@@ -4,7 +4,6 @@ import {
   WpActiveFilters,
   WpBulkActions,
   WpDeleteDialog,
-  WpEmailDialog,
   WpFilterDialog,
   WpKpiCard,
   WpKpiGroup,
@@ -34,7 +33,7 @@ definePage({
     layout: 'default',
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'service-providers',
   },
 })
 
@@ -140,38 +139,43 @@ const handleResetFilters = () => {
 }
 
 // ── Bulk Actions Configuration ───────────────────────────────────────────────
-const bulkActionButtons = computed(() => [
-  {
-    label: t('service_providers.list.actions.send_mail', 'Send Email'),
-    icon: 'tabler-mail',
-    emit: 'send-email',
-    color: 'primary',
-  },
-])
+const bulkActionButtons = computed(() => {
+  const actionsList = []
+
+  if (ability.can('create', 'email-messages')) {
+    actionsList.push({
+      label: t('service_providers.list.actions.send_mail', 'Send Email'),
+      icon: 'tabler-mail',
+      emit: 'send-email',
+      color: 'primary',
+      disabled: selectedServiceProviders.value.length === 0,
+    })
+  }
+
+  return actionsList
+})
 
 // ── Row Actions ──────────────────────────────────────────────────────────────
-const getRowActions = () => [
-  { label: t('View'), icon: 'tabler-eye', emit: 'view' },
-  { label: t('Edit'), icon: 'tabler-edit', emit: 'edit' },
-  {
-    label: t('Delete'),
-    icon: 'tabler-trash',
-    emit: 'delete',
-    color: 'error',
-    dividerBefore: true,
-  },
-]
+const getRowActions = () => {
+  const rowActions = [
+    { label: t('View'), icon: 'tabler-eye', emit: 'view' },
+  ]
 
-// ── Email send handler ───────────────────────────────────────────────────────
-const handleSendEmail = async emailData => {
-  const success = await actions.sendEmail({
-    serviceProviderId: dialogs.emailDialog.value.serviceProviderId,
-    emailData,
-  })
-
-  if (success) {
-    dialogs.closeEmail()
+  if (ability.can('update', 'service-providers')) {
+    rowActions.push({ label: t('Edit'), icon: 'tabler-edit', emit: 'edit' })
   }
+
+  if (ability.can('delete', 'service-providers')) {
+    rowActions.push({
+      label: t('Delete'),
+      icon: 'tabler-trash',
+      emit: 'delete',
+      color: 'error',
+      dividerBefore: true,
+    })
+  }
+
+  return rowActions
 }
 
 const isBulkEmailDialogOpen = ref(false)
@@ -188,7 +192,7 @@ const mobileFabActions = computed(() => [
     id: 'add-service-provider',
     icon: 'tabler-briefcase-2',
     title: t('service_providers.list.actions.add_new', 'Add Service Provider'),
-    disabled: !ability.can('create', 'BusinessPartners'),
+    disabled: !ability.can('create', 'service-providers'),
     onClick: () => dialogs.addDialog.open(),
   },
   {
@@ -202,7 +206,7 @@ const mobileFabActions = computed(() => [
     id: 'send-email',
     icon: 'tabler-mail',
     title: t('service_providers.list.actions.send_mail', 'Send Email'),
-    disabled: selectedServiceProviders.value.length === 0,
+    disabled: selectedServiceProviders.value.length === 0 || !ability.can('create', 'email-messages'),
     onClick: openBulkEmail,
   },
   {
@@ -253,7 +257,7 @@ const mobileFabActions = computed(() => [
       <!-- 👉 Page Toolbar inside VCard -->
       <WpPageToolbar
         v-model:search="search"
-        :create-label="$can('create', 'BusinessPartners') ? $t('service_providers.list.actions.add_new', 'Add Service Provider') : ''"
+        :create-label="$can('create', 'service-providers') ? $t('service_providers.list.actions.add_new', 'Add Service Provider') : ''"
         hide-create-on-mobile
         show-filter
         hide-filter-on-mobile
@@ -750,20 +754,7 @@ const mobileFabActions = computed(() => [
       :service-provider="dialogs.viewServiceProvider.value"
       :loading="dialogs.viewLoading.value"
       :error="dialogs.viewError.value"
-      @open-email="dialogs.openSingleEmail"
       @retry="dialogs.openView(dialogs.viewDialog.item.value)"
-    />
-
-    <!-- 👉 Email Dialog -->
-    <WpEmailDialog
-      v-model="dialogs.emailDialog.value.isOpen"
-      :title="dialogs.emailDialog.value.isSingle
-        ? `${$t('service_providers.list.actions.send_mail', 'Send Email')} — ${localizedValue(dialogs.viewServiceProvider.value?.legal_name) || ''}`
-        : $t('service_providers.list.actions.send_mail', 'Send Email')"
-      :recipients="dialogs.emailDialog.value.recipients"
-      :loading="actions.isSendingEmail.value"
-      @send="handleSendEmail"
-      @close="dialogs.closeEmail()"
     />
 
     <!-- 👉 Contextual Bulk Email Dialog -->

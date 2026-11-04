@@ -60,20 +60,30 @@ class RolesAndPermissionsSeeder extends Seeder
             'create-organisations',
             'edit-organisations',
             'delete-organisations',
+            'export-organisations',
 
             // Clients / Suppliers / Service Providers
             'read-clients',
             'create-clients',
             'edit-clients',
             'delete-clients',
+            'export-clients',
             'read-suppliers',
             'create-suppliers',
             'edit-suppliers',
             'delete-suppliers',
+            'export-suppliers',
             'read-service-providers',
             'create-service-providers',
             'edit-service-providers',
             'delete-service-providers',
+            'export-service-providers',
+
+            // Business Partners specialized permissions
+            'read-bp-dashboard',
+            'read-bp-bank-accounts',
+            'manage-bp-bank-accounts',
+            'view-all-bp-email-batches',
 
             // ── Module-view permissions (Applications page) ─────────
             // Commercial & Supply
@@ -337,6 +347,13 @@ class RolesAndPermissionsSeeder extends Seeder
         $salesRole->syncPermissions([
             'read-dashboard',
             'read-BusinessPartners',
+            'read-bp-dashboard',
+            'read-clients',
+            'create-clients',
+            'edit-clients',
+            'export-clients',
+            'read-organisations',
+            'read-bp-bank-accounts',
             'read-Catalog',
             'read-CrmSales',
             'read-crm-quotations',
@@ -457,6 +474,85 @@ class RolesAndPermissionsSeeder extends Seeder
             'read-FinancialCenter',
             'read-ReportingAnalytics',
         ]);
+
+        // ── 12. Business Partner Role Templates ───────────────────
+        $bpRoleTemplates = [
+            'BP Manager' => [
+                'read-BusinessPartners',
+                'read-bp-dashboard',
+                'read-clients',
+                'create-clients',
+                'edit-clients',
+                'delete-clients',
+                'export-clients',
+                'read-suppliers',
+                'create-suppliers',
+                'edit-suppliers',
+                'delete-suppliers',
+                'export-suppliers',
+                'read-service-providers',
+                'create-service-providers',
+                'edit-service-providers',
+                'delete-service-providers',
+                'export-service-providers',
+                'read-organisations',
+                'create-organisations',
+                'edit-organisations',
+                'delete-organisations',
+                'export-organisations',
+                'read-bp-bank-accounts',
+                'manage-bp-bank-accounts',
+                'create-email-messages',
+                'view-all-bp-email-batches',
+            ],
+            'Sales Responsible' => [
+                'read-BusinessPartners',
+                'read-bp-dashboard',
+                'read-clients',
+                'create-clients',
+                'edit-clients',
+                'delete-clients',
+                'export-clients',
+                'read-organisations',
+                'create-email-messages',
+            ],
+            'Procurement Responsible' => [
+                'read-BusinessPartners',
+                'read-bp-dashboard',
+                'read-suppliers',
+                'create-suppliers',
+                'edit-suppliers',
+                'delete-suppliers',
+                'export-suppliers',
+                'read-service-providers',
+                'create-email-messages',
+            ],
+            'Financial Responsible' => [
+                'read-BusinessPartners',
+                'read-bp-dashboard',
+                'read-clients',
+                'read-suppliers',
+                'read-organisations',
+                'read-bp-bank-accounts',
+            ],
+            'BP Viewer' => [
+                'read-BusinessPartners',
+                'read-bp-dashboard',
+                'read-clients',
+                'read-suppliers',
+                'read-service-providers',
+                'read-organisations',
+            ],
+        ];
+
+        foreach ($bpRoleTemplates as $roleName => $templatePermissions) {
+            $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+            $role->givePermissionTo($templatePermissions);
+        }
+
+        // Align legacy snake_case roles with BP template permissions without removing unrelated domain permissions
+        $salesRole->givePermissionTo($bpRoleTemplates['Sales Responsible']);
+        $finRole->givePermissionTo($bpRoleTemplates['Financial Responsible']);
 
         // ── Default Super Admin User ───────────────────────────────
         $admin = User::firstOrCreate(

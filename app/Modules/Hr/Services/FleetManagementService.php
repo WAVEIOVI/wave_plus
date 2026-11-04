@@ -425,4 +425,57 @@ class FleetManagementService
             'utilization_rate' => $totalDays > 0 ? round(($usedDays / $totalDays) * 100, 2) : 0,
         ];
     }
+
+    /**
+     * Update vehicle GPS telemetry and location history.
+     */
+    public function updateTelemetry(
+        string $vehicleId,
+        array $telemetryData,
+        ?string $updatedBy = null
+    ): Vehicle {
+        return DB::transaction(function () use ($vehicleId, $telemetryData, $updatedBy) {
+            $vehicle = Vehicle::findOrFail($vehicleId);
+
+            $updates = [
+                'last_gps_latitude' => $telemetryData['latitude'] ?? $telemetryData['last_gps_latitude'] ?? null,
+                'last_gps_longitude' => $telemetryData['longitude'] ?? $telemetryData['last_gps_longitude'] ?? null,
+                'last_gps_timestamp' => $telemetryData['timestamp'] ?? $telemetryData['last_gps_timestamp'] ?? now(),
+                'last_location_address' => $telemetryData['address'] ?? $telemetryData['last_location_address'] ?? null,
+                'last_speed_kmh' => $telemetryData['speed_kmh'] ?? $telemetryData['last_speed_kmh'] ?? null,
+                'updated_by' => $updatedBy,
+            ];
+
+            if (! empty($telemetryData['odometer_km']) && $telemetryData['odometer_km'] > ($vehicle->odometer_km ?? 0)) {
+                $updates['odometer_km'] = (int) $telemetryData['odometer_km'];
+                $updates['odometer_last_updated'] = now();
+            }
+
+            if (! empty($telemetryData['tracker_device_id'])) {
+                $updates['tracker_device_id'] = $telemetryData['tracker_device_id'];
+            }
+            if (! empty($telemetryData['tracker_provider'])) {
+                $updates['tracker_provider'] = $telemetryData['tracker_provider'];
+            }
+
+            $vehicle->update($updates);
+
+            $this->logVehicleActivity($vehicleId, [
+                'event_type' => 'location_change',
+                'event_title' => 'GPS Telemetry & Location Updated',
+                'event_description' => 'Location: '.($updates['last_location_address'] ?? "{$updates['last_gps_latitude']}, {$updates['last_gps_longitude']}"),
+                'event_date' => $updates['last_gps_timestamp'],
+                'actor_employee_id' => $updatedBy,
+                'location' => $updates['last_location_address'] ?? "{$updates['last_gps_latitude']}, {$updates['last_gps_longitude']}",
+                'odometer_km' => $vehicle->odometer_km,
+                'metadata' => [
+                    'latitude' => $updates['last_gps_latitude'],
+                    'longitude' => $updates['last_gps_longitude'],
+                    'speed_kmh' => $updates['last_speed_kmh'],
+                ],
+            ]);
+
+            return $vehicle->fresh();
+        });
+    }
 }

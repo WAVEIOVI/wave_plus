@@ -1,4 +1,5 @@
 <script setup>
+import { WpFormDialog } from '@/components/shared'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -37,69 +38,51 @@ const dialogTitle = computed(() => {
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     :model-value="modelValue"
+    :title="dialogTitle"
+    icon="tabler-refresh"
+    icon-color="primary"
     max-width="500"
-    persistent
+    :loading="loading"
+    :submit-label="$t('Save')"
+    submit-icon="tabler-refresh"
     @update:model-value="val => emit('update:modelValue', val)"
+    @submit="emit('save')"
   >
-    <DialogCloseBtn
-      :disabled="loading"
-      @click="emit('update:modelValue', false)"
-    />
-    <VCard :title="dialogTitle">
-      <VCardText class="pt-2">
-        <div
-          v-if="vehicle"
-          class="d-flex align-center gap-2 mb-4 pa-3 rounded bg-var-theme-background"
-        >
-          <span class="text-caption text-medium-emphasis">Current Status:</span>
-          <VChip
-            size="small"
-            label
-            class="text-capitalize"
-          >
-            {{ vehicle.status?.replaceAll('_', ' ') || 'Unknown' }}
-          </VChip>
-        </div>
+    <div
+      v-if="vehicle"
+      class="d-flex align-center gap-2 mb-4 pa-3 rounded bg-var-theme-background"
+    >
+      <span class="text-caption text-medium-emphasis">Current Status:</span>
+      <VChip
+        size="small"
+        label
+        class="text-capitalize"
+      >
+        {{ vehicle.status?.replaceAll('_', ' ') || 'Unknown' }}
+      </VChip>
+    </div>
 
-        <VRow>
-          <VCol cols="12">
-            <AppSelect
-              v-model="statusData.status"
-              :label="`${$t('fleet.status') || 'New Operational Status'} *`"
-              :items="statusOptions"
-              required
-            />
-          </VCol>
-          <VCol cols="12">
-            <AppTextarea
-              v-model="statusData.reason"
-              :label="$t('fleet.reason') || 'Reason for Status Change'"
-              rows="3"
-              placeholder="e.g. Scheduled quarterly maintenance, Repair completed, Withdrawn from service..."
-            />
-          </VCol>
-        </VRow>
-      </VCardText>
-
-      <VCardActions class="justify-end pa-4 gap-2 border-t">
-        <VBtn
-          variant="tonal"
-          :disabled="loading"
-          @click="emit('update:modelValue', false)"
-        >
-          {{ $t('Cancel') }}
-        </VBtn>
-        <VBtn
-          color="primary"
-          :loading="loading"
-          prepend-icon="tabler-refresh"
-          @click="emit('save')"
-        >
-          {{ $t('Save') }}
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
+    <VRow>
+      <VCol cols="12">
+        <AppSelect
+          v-model="statusData.status"
+          :label="`${$t('fleet.status') || 'New Operational Status'} *`"
+          :items="statusOptions"
+          required
+          variant="outlined"
+        />
+      </VCol>
+      <VCol cols="12">
+        <AppTextarea
+          v-model="statusData.reason"
+          :label="$t('fleet.reason') || 'Reason for Status Change'"
+          rows="3"
+          placeholder="e.g. Scheduled quarterly maintenance, Repair completed, Withdrawn from service..."
+          variant="outlined"
+        />
+      </VCol>
+    </VRow>
+  </WpFormDialog>
 </template>

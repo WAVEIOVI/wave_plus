@@ -21,6 +21,7 @@ export const useHrStore = defineStore('hrStore', {
     teams: [],
     skills: [],
     certifications: [],
+    expiringCertifications: [],
     leaveTypes: [],
     shifts: [],
     schedules: [],
@@ -257,6 +258,20 @@ export const useHrStore = defineStore('hrStore', {
     async deleteCertification(id) {
       await $api(`/hr/certifications/${id}`, { method: 'DELETE' })
       await this.fetchCertifications(true)
+    },
+
+    async fetchExpiringCertifications(days = 60) {
+      try {
+        const res = await $api(`/hr/certifications/expiring?days=${days}`, { method: 'GET' })
+
+        this.expiringCertifications = toList(res)
+
+        return this.expiringCertifications
+      } catch (error) {
+        console.error('Failed to load expiring certifications:', error)
+
+        return []
+      }
     },
 
     // ── Shifts ─────────────────────────────────────────────────

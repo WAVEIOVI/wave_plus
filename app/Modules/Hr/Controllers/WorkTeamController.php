@@ -21,6 +21,8 @@ class WorkTeamController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorizeTeamRead();
+
         $filters = $request->validate([
             'status' => ['sometimes', 'nullable', 'in:active,inactive'],
             'team_type' => ['sometimes', 'nullable', 'string', 'max:50'],
@@ -81,7 +83,7 @@ class WorkTeamController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorizeHrMutation('hr.workforce.assign');
+        $this->authorizeTeamMutation();
         TranslatableFields::normalizeRequest($request, ['name', 'description']);
 
         if ($request->filled('leader_id') && ! $request->filled('team_leader_id')) {
@@ -106,6 +108,7 @@ class WorkTeamController extends Controller
 
     public function show(string $id): JsonResponse
     {
+        $this->authorizeTeamRead();
         $team = WorkTeam::with(['department', 'teamLeader', 'activeMembers.employee.position'])->findOrFail($id);
 
         return response()->json([
@@ -115,7 +118,7 @@ class WorkTeamController extends Controller
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $this->authorizeHrMutation('hr.workforce.assign');
+        $this->authorizeTeamMutation();
         $team = WorkTeam::findOrFail($id);
         TranslatableFields::normalizeRequest($request, ['name', 'description']);
 
@@ -141,8 +144,15 @@ class WorkTeamController extends Controller
 
     public function destroy(string $id): JsonResponse
     {
-        $this->authorizeHrMutation('hr.workforce.assign');
-        $team = WorkTeam::findOrFail($id);
+        $this->authorizeTeamMutation();
+        $team = WorkTeam::withCount('activeMembers')->findOrFail($id);
+
+        if ($team->active_members_count > 0) {
+            return response()->json([
+                'message' => 'Cannot delete team with active members. Please reassign or remove members first.',
+            ], 422);
+        }
+
         $team->delete();
 
         return response()->json([
@@ -152,7 +162,7 @@ class WorkTeamController extends Controller
 
     public function addMember(Request $request, string $id): JsonResponse
     {
-        $this->authorizeHrMutation('hr.workforce.assign');
+        $this->authorizeTeamMutation();
         $team = WorkTeam::findOrFail($id);
 
         $request->validate([
@@ -191,7 +201,7 @@ class WorkTeamController extends Controller
 
     public function removeMember(string $id, string $memberId): JsonResponse
     {
-        $this->authorizeHrMutation('hr.workforce.assign');
+        $this->authorizeTeamMutation();
         $team = WorkTeam::findOrFail($id);
         $member = WorkTeamMember::where('team_id', $team->id)->findOrFail($memberId);
 
@@ -205,5 +215,37 @@ class WorkTeamController extends Controller
         return response()->json([
             'message' => 'Member removed from team.',
         ]);
+    }
+
+    protected function authorizeTeamRead(): void
+    {
+        $user = request()->user();
+        abort_unless($user, 403);
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager', 'HR Officer'])) {
+            return;
+        }
+        abort_unless(
+            $user->can('hr.teams.view')
+                || $user->can('hr.teams.manage')
+                || $user->can('hr.workforce.view')
+                || $user->can('hr.employees.view')
+                || $user->can('read-PeopleSkills'),
+            403,
+            'You do not have permission to view work teams.'
+        );
+    }
+
+    protected function authorizeTeamMutation(): void
+    {
+        $user = request()->user();
+        abort_unless($user, 403);
+        if ($user->hasRole(['Super Admin', 'Admin', 'HR Manager'])) {
+            return;
+        }
+        abort_unless(
+            $user->can('hr.teams.manage') || $user->can('hr.workforce.assign'),
+            403,
+            'You do not have permission to manage work teams.'
+        );
     }
 }

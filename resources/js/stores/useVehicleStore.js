@@ -5,6 +5,7 @@ import { ref, toRaw } from 'vue'
 const deepClone = data => {
   if (data instanceof FormData) return data
   if (data === null || data === undefined) return data
+
   return JSON.parse(JSON.stringify(toRaw(data)))
 }
 
@@ -248,6 +249,34 @@ export const useVehicleStore = defineStore('vehicle', () => {
         method: 'PATCH',
         body: deepClone(payload),
       })
+
+      return response.data
+    } catch (err) {
+      if (is401(err)) return
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      validationErrors.value = extracted.errors
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const updateTelemetry = async (id, payload) => {
+    loading.value = true
+    error.value = null
+    validationErrors.value = null
+
+    try {
+      const response = await $api(`/hr/fleet/vehicles/${id}/telemetry`, {
+        method: 'POST',
+        body: deepClone(payload),
+      })
+
+      if (currentItem.value && currentItem.value.id === id) {
+        currentItem.value = response.data || currentItem.value
+      }
 
       return response.data
     } catch (err) {
@@ -591,8 +620,9 @@ export const useVehicleStore = defineStore('vehicle', () => {
     }
   }
 
-  const downloadDocument = (documentId) => {
+  const downloadDocument = documentId => {
     const url = `/api/hr/fleet/documents/${documentId}/download`
+
     window.open(url, '_blank')
   }
 
@@ -1039,6 +1069,7 @@ export const useVehicleStore = defineStore('vehicle', () => {
     assignVehicle,
     returnVehicle,
     updateOdometer,
+    updateTelemetry,
     updateStatus,
     startRental,
     endRental,

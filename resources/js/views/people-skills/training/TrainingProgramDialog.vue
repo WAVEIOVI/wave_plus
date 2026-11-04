@@ -1,7 +1,9 @@
 <script setup>
+/* eslint-disable camelcase */
 import { WpFormDialog } from '@/components/shared'
-import { ensureTranslatable, useLocaleField } from '@/composables/useLocaleField'
-import { computed, ref, watch } from 'vue'
+import { ensureTranslatable, localizedValue, useLocaleField } from '@/composables/useLocaleField'
+import { useHrStore } from '@/stores/hrStore'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -22,6 +24,7 @@ const props = defineProps({
 const emit = defineEmits(['update:isDialogVisible', 'submit'])
 
 const { t } = useI18n()
+const hrStore = useHrStore()
 
 const form = ref({
   name: ensureTranslatable(),
@@ -30,6 +33,8 @@ const form = ref({
   category: '',
   provider: ensureTranslatable(),
   duration_hours: 1,
+  target_skill_id: null,
+  target_certification_id: null,
   is_active: true,
 })
 
@@ -37,6 +42,25 @@ const formRef = ref(form.value)
 const nameField = useLocaleField(formRef, 'name')
 const descField = useLocaleField(formRef, 'description')
 const providerField = useLocaleField(formRef, 'provider')
+
+onMounted(async () => {
+  if (!hrStore.skills.length) await hrStore.fetchSkills()
+  if (!hrStore.certifications.length) await hrStore.fetchCertifications()
+})
+
+const skillOptions = computed(() =>
+  hrStore.skills.map(s => ({
+    title: `${localizedValue(s.name)} (${s.code || ''})`,
+    value: s.id,
+  })),
+)
+
+const certOptions = computed(() =>
+  hrStore.certifications.map(c => ({
+    title: `${localizedValue(c.name)} (${c.code || ''})`,
+    value: c.id,
+  })),
+)
 
 watch(() => props.isDialogVisible, val => {
   if (val) {
@@ -48,6 +72,8 @@ watch(() => props.isDialogVisible, val => {
         category: props.program.category || '',
         provider: ensureTranslatable(props.program.provider),
         duration_hours: props.program.duration_hours || 1,
+        target_skill_id: props.program.target_skill_id || null,
+        target_certification_id: props.program.target_certification_id || null,
         is_active: props.program.is_active ?? true,
       }
     } else {
@@ -58,6 +84,8 @@ watch(() => props.isDialogVisible, val => {
         category: '',
         provider: ensureTranslatable(),
         duration_hours: 1,
+        target_skill_id: null,
+        target_certification_id: null,
         is_active: true,
       }
     }
@@ -136,6 +164,30 @@ const dialogTitle = computed(() => {
           type="number"
           min="1"
           required
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <AppSelect
+          v-model="form.target_skill_id"
+          :label="t('training.target_skill', 'Awarded Skill (Optional)')"
+          :items="skillOptions"
+          clearable
+          :placeholder="t('common.none', 'None')"
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <AppSelect
+          v-model="form.target_certification_id"
+          :label="t('training.target_certification', 'Awarded Certification (Optional)')"
+          :items="certOptions"
+          clearable
+          :placeholder="t('common.none', 'None')"
         />
       </VCol>
       <VCol cols="12">

@@ -1,4 +1,5 @@
 <script setup>
+/* eslint-disable vue/no-mutating-props */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -133,6 +134,14 @@ const onSubmit = () => {
               size="18"
             />
             {{ $t('fleet.operational_section') || 'Operational' }}
+          </VTab>
+          <VTab value="telemetry">
+            <VIcon
+              start
+              icon="tabler-gps"
+              size="18"
+            />
+            {{ $t('fleet.telemetry') || 'Tracker & GPS' }}
           </VTab>
           <VTab value="notes">
             <VIcon
@@ -498,6 +507,91 @@ const onSubmit = () => {
                 >
                   Tip: To log routine mileage increases with audit activity, use the dedicated <strong>Update Odometer</strong> action from the vehicle 360 view or list menu.
                 </VAlert>
+              </VCol>
+            </VRow>
+          </VWindowItem>
+
+          <!-- 6. GPS Tracker & Telemetry -->
+          <VWindowItem value="telemetry">
+            <VRow>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <AppTextField
+                  v-model="form.tracker_device_id"
+                  :label="$t('fleet.tracker_device_id') || 'GPS Device ID / Identifier'"
+                  placeholder="e.g. TEL-FMB920-10982"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <AppTextField
+                  v-model="form.tracker_imei"
+                  :label="$t('fleet.tracker_imei') || 'Tracker IMEI'"
+                  placeholder="e.g. 864201048291029"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <AppSelect
+                  v-model="form.tracker_provider"
+                  :label="$t('fleet.tracker_provider') || 'Telematics Provider'"
+                  :items="[
+                    { title: 'Teltonika', value: 'Teltonika' },
+                    { title: 'GeoTab', value: 'GeoTab' },
+                    { title: 'Cartrack', value: 'Cartrack' },
+                    { title: 'Tramigo', value: 'Tramigo' },
+                    { title: 'Queclink', value: 'Queclink' },
+                    { title: 'Other / Custom', value: 'Other' },
+                  ]"
+                  clearable
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <AppTextField
+                  v-model="form.tracker_installed_at"
+                  :label="$t('fleet.tracker_installed_at') || 'Installation Date'"
+                  type="date"
+                />
+              </VCol>
+              <VCol cols="12">
+                <AppTextField
+                  v-model="form.last_location_address"
+                  :label="$t('fleet.last_location') || 'Current / Last Known Address'"
+                  placeholder="e.g. Zone Industrielle Charguia II, Tunis"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <AppTextField
+                  v-model.number="form.last_gps_latitude"
+                  :label="$t('fleet.latitude') || 'GPS Latitude'"
+                  type="number"
+                  step="0.000001"
+                  placeholder="e.g. 36.8065"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <AppTextField
+                  v-model.number="form.last_gps_longitude"
+                  :label="$t('fleet.longitude') || 'GPS Longitude'"
+                  type="number"
+                  step="0.000001"
+                  placeholder="e.g. 10.1815"
+                />
               </VCol>
             </VRow>
           </VWindowItem>

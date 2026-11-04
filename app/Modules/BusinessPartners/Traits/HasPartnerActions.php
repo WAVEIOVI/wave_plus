@@ -21,6 +21,11 @@ trait HasPartnerActions
     {
         $this->authorize('viewAny', $this->modelClass);
 
+        $user = $request->user();
+        if (! $user->hasRole('Super Admin') && ! $user->can('create-email-messages')) {
+            abort(403, 'You are not authorized to compose or send emails.');
+        }
+
         $validated = $request->validate([
             'emailTo' => 'required|array',
             'emailTo.*' => 'email',
@@ -42,6 +47,14 @@ trait HasPartnerActions
      */
     public function sendEmailSingle(Request $request, string $id): JsonResponse
     {
+        $record = $this->modelClass::findOrFail($id);
+        $this->authorize('view', $record);
+
+        $user = $request->user();
+        if (! $user->hasRole('Super Admin') && ! $user->can('create-email-messages')) {
+            abort(403, 'You are not authorized to compose or send emails.');
+        }
+
         $validated = $request->validate([
             'emailTo' => 'required|array',
             'emailTo.*' => 'email',
@@ -50,9 +63,6 @@ trait HasPartnerActions
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
         ]);
-
-        $record = $this->modelClass::findOrFail($id);
-        $this->authorize('view', $record);
 
         SendPdfEmailJob::dispatch($this->partnerType, 'single', $id, $validated);
 

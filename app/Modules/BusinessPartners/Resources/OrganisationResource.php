@@ -47,7 +47,9 @@ class OrganisationResource extends JsonResource
             'logo_external_url' => $this->logo_external_url,
             'addresses' => BpAddressResource::collection($this->whenLoaded('addresses')),
             'contacts' => BpContactResource::collection($this->whenLoaded('contacts')),
-            'bank_accounts' => BpBankAccountResource::collection($this->whenLoaded('bankAccounts')),
+            'bank_accounts' => ($request->user()?->can('read-bp-bank-accounts') || $request->user()?->can('manage-bp-bank-accounts'))
+                ? BpBankAccountResource::collection($this->whenLoaded('bankAccounts'))
+                : [],
             'vat_certificates' => BpVatCertificateResource::collection($this->whenLoaded('vatCertificates')),
             'documents' => BpDocumentResource::collection($this->whenLoaded('documents')),
             'created_at' => $this->created_at?->toISOString(),

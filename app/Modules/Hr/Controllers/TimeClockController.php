@@ -81,6 +81,12 @@ class TimeClockController extends Controller
             ], 404);
         }
 
+        if ($employee->status !== 'active') {
+            return response()->json([
+                'message' => "Employee {$employee->full_name} is {$employee->status} and cannot record attendance.",
+            ], 422);
+        }
+
         $user = $request->user();
 
         // Kiosk authorization: never trust client-supplied device_id or kiosk flag as proof.
@@ -192,6 +198,17 @@ class TimeClockController extends Controller
 
         foreach (array_unique($data['employee_ids']) as $employeeId) {
             $employee = Employee::find($employeeId);
+
+            if (! $employee || $employee->status !== 'active') {
+                $failed++;
+                $results[] = [
+                    'employee_id' => $employeeId,
+                    'full_name' => $employee?->full_name,
+                    'status' => 'skipped',
+                    'message' => $employee ? "Employee is {$employee->status}." : 'Employee not found.',
+                ];
+                continue;
+            }
 
             try {
                 $this->attendanceService->recordClockEvent(
@@ -528,6 +545,13 @@ class TimeClockController extends Controller
     private function storeClockEvent(ClockEventRequest $request, string $eventType, string $message): JsonResponse
     {
         $employee = $this->resolveClockEmployee($request);
+
+        if ($employee->status !== 'active') {
+            return response()->json([
+                'message' => "Employee {$employee->full_name} is {$employee->status} and cannot record attendance.",
+            ], 422);
+        }
+
         $user = $request->user();
         $isAuthorizedManager = $user->hasRole(['Super Admin', 'Admin']) || $user->can('hr.attendance.manage');
 

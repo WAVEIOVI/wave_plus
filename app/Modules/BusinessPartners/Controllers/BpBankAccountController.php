@@ -16,7 +16,8 @@ class BpBankAccountController extends Controller
 
     public function index(string $ownerType, string $ownerId): JsonResponse
     {
-        $this->authorizePartnerView($ownerType, $ownerId);
+        $owner = $this->authorizePartnerView($ownerType, $ownerId);
+        $this->authorize('viewAny', [BpBankAccount::class, $owner]);
 
         $accounts = BpBankAccount::where('bankable_type', $this->morphClass($ownerType))
             ->where('bankable_id', $ownerId)
@@ -32,6 +33,7 @@ class BpBankAccountController extends Controller
     public function store(StoreBpBankAccountRequest $request, string $ownerType, string $ownerId): JsonResponse
     {
         $owner = $this->authorizePartnerUpdate($ownerType, $ownerId);
+        $this->authorize('create', [BpBankAccount::class, $owner]);
 
         $data = $request->validated();
         $data['bankable_type'] = $owner::class;
@@ -48,7 +50,7 @@ class BpBankAccountController extends Controller
     public function show(string $bankAccount): JsonResponse
     {
         $record = BpBankAccount::findOrFail($bankAccount);
-        $this->authorizeAddressable($record, 'view');
+        $this->authorize('view', $record);
 
         return response()->json([
             'data' => new BpBankAccountResource($record),
@@ -58,7 +60,7 @@ class BpBankAccountController extends Controller
     public function update(UpdateBpBankAccountRequest $request, string $bankAccount): JsonResponse
     {
         $record = BpBankAccount::findOrFail($bankAccount);
-        $this->authorizeAddressable($record, 'update');
+        $this->authorize('update', $record);
         $record->update($request->validated());
 
         return response()->json([
@@ -70,7 +72,7 @@ class BpBankAccountController extends Controller
     public function destroy(string $bankAccount): JsonResponse
     {
         $record = BpBankAccount::findOrFail($bankAccount);
-        $this->authorizeAddressable($record, 'update');
+        $this->authorize('delete', $record);
         $record->delete();
 
         return response()->json([

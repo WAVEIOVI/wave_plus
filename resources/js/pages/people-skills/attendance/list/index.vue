@@ -21,6 +21,8 @@ import { useDialog } from '@/composables/dialog/useDialog'
 import { useListPage } from '@/composables/list'
 import { useEmployeeAttendanceScanner } from '@/composables/people-skills/attendance/useEmployeeAttendanceScanner'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
+import { localizedValue } from '@/composables/useLocaleField'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { useHrStore } from '@/stores/hrStore'
 import { useAttendanceStore } from '@/stores/useAttendanceStore'
 import { $api } from '@/utils/api'
@@ -43,12 +45,13 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'attendance',
   },
 })
 
 const { t } = useI18n()
 const { smAndDown } = useDisplay()
+const ability = useAbility()
 const { showMessage } = useAppSnackbar()
 const attendanceStore = useAttendanceStore()
 const hrStore = useHrStore()
@@ -331,14 +334,21 @@ const statusOptions = computed(() => [
 ])
 
 const deptOptions = computed(() =>
-  hrStore.departments.map(d => ({ title: d.name, value: d.id })),
+  hrStore.departments.map(d => ({ title: localizedValue(d.name), value: d.id })),
 )
 
-const getRowActions = () => [
-  { label: t('View'),                    icon: 'tabler-eye',   emit: 'view' },
-  { label: t('attendance.view_badge', 'View Badge'),      icon: 'tabler-id-badge',   emit: 'badge' },
-  { label: t('attendance.correct'),      icon: 'tabler-pencil-check', emit: 'correct' },
-]
+const getRowActions = () => {
+  const actions = [
+    { label: t('View'), icon: 'tabler-eye', emit: 'view' },
+    { label: t('attendance.view_badge', 'View Badge'), icon: 'tabler-id-badge', emit: 'badge' },
+  ]
+
+  if (ability.can('correct', 'attendance') || ability.can('update', 'PeopleSkills')) {
+    actions.push({ label: t('attendance.correct'), icon: 'tabler-pencil-check', emit: 'correct' })
+  }
+
+  return actions
+}
 
 const formatHours = hours => {
   if (hours == null) return '—'

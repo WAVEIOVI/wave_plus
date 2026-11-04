@@ -4,7 +4,6 @@ import {
   WpActiveFilters,
   WpBulkActions,
   WpDeleteDialog,
-  WpEmailDialog,
   WpExportDialog,
   WpFilterDialog,
   WpKpiCard,
@@ -35,7 +34,7 @@ definePage({
     layout: 'default',
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'clients',
   },
 })
 
@@ -185,51 +184,54 @@ const handleResetFilters = () => {
 }
 
 // ── Bulk Actions Configuration ───────────────────────────────────────────────
-const bulkActionButtons = computed(() => [
-  {
-    label: te('clients.list.actions.export') ? t('clients.list.actions.export') : t('Export'),
-    icon: 'tabler-file-export',
-    emit: 'export',
-    color: 'secondary',
-    loading: actions.isExportingList.value,
-    disabled: selectedClients.value.length === 0 || actions.isExportingList.value,
-  },
-  {
-    label: t('clients.list.actions.send_mail'),
-    icon: 'tabler-mail',
-    emit: 'send-email',
-    color: 'primary',
-    disabled: selectedClients.value.length === 0,
-  },
-])
+const bulkActionButtons = computed(() => {
+  const actionsList = []
+
+  if (ability.can('export', 'clients')) {
+    actionsList.push({
+      label: te('clients.list.actions.export') ? t('clients.list.actions.export') : t('Export'),
+      icon: 'tabler-file-export',
+      emit: 'export',
+      color: 'secondary',
+      loading: actions.isExportingList.value,
+      disabled: selectedClients.value.length === 0 || actions.isExportingList.value,
+    })
+  }
+
+  if (ability.can('create', 'email-messages')) {
+    actionsList.push({
+      label: t('clients.list.actions.send_mail'),
+      icon: 'tabler-mail',
+      emit: 'send-email',
+      color: 'primary',
+      disabled: selectedClients.value.length === 0,
+    })
+  }
+
+  return actionsList
+})
 
 // ── Row Actions ──────────────────────────────────────────────────────────────
-const getRowActions = () => [
-  { label: t('View'), icon: 'tabler-eye', emit: 'view' },
-  { label: t('Edit'), icon: 'tabler-edit', emit: 'edit' },
-  {
-    label: t('Delete'),
-    icon: 'tabler-trash',
-    emit: 'delete',
-    color: 'error',
-    dividerBefore: true,
-  },
-]
+const getRowActions = () => {
+  const rowActions = [
+    { label: t('View'), icon: 'tabler-eye', emit: 'view' },
+  ]
 
-// ── Email send handler ───────────────────────────────────────────────────────
-// Called from both bulk email and single-client email.
-// Dialog stacking: the email dialog is mounted at page level so it is
-// always at the top of the Vuetify dialog stack — it never appears behind
-// the View dialog.
-const handleSendEmail = async emailData => {
-  const success = await actions.sendEmail({
-    clientId: dialogs.emailDialog.value.clientId,
-    emailData,
-  })
-
-  if (success) {
-    dialogs.closeEmail()
+  if (ability.can('update', 'clients')) {
+    rowActions.push({ label: t('Edit'), icon: 'tabler-edit', emit: 'edit' })
   }
+
+  if (ability.can('delete', 'clients')) {
+    rowActions.push({
+      label: t('Delete'),
+      icon: 'tabler-trash',
+      emit: 'delete',
+      color: 'error',
+      dividerBefore: true,
+    })
+  }
+
+  return rowActions
 }
 
 const isBulkEmailDialogOpen = ref(false)
@@ -246,7 +248,7 @@ const mobileFabActions = computed(() => [
     id: 'add-client',
     icon: 'tabler-user-plus',
     title: t('clients.list.actions.add_new'),
-    disabled: !ability.can('create', 'BusinessPartners'),
+    disabled: !ability.can('create', 'clients'),
     onClick: () => dialogs.addDialog.open(),
   },
   {
@@ -260,14 +262,14 @@ const mobileFabActions = computed(() => [
     id: 'export',
     icon: 'tabler-file-export',
     title: te('clients.list.actions.export') ? t('clients.list.actions.export') : t('Export'),
-    disabled: selectedClients.value.length === 0 || actions.isExportingList.value,
+    disabled: selectedClients.value.length === 0 || actions.isExportingList.value || !ability.can('export', 'clients'),
     onClick: openExportDialog,
   },
   {
     id: 'send-email',
     icon: 'tabler-mail',
     title: t('clients.list.actions.send_mail'),
-    disabled: selectedClients.value.length === 0,
+    disabled: selectedClients.value.length === 0 || !ability.can('create', 'email-messages'),
     onClick: openSelectedClientsEmail,
   },
   {
@@ -318,7 +320,7 @@ const mobileFabActions = computed(() => [
       <!-- 👉 Page Toolbar -->
       <WpPageToolbar
         v-model:search="search"
-        :create-label="$can('create', 'BusinessPartners') ? $t('clients.list.actions.add_new') : ''"
+        :create-label="$can('create', 'clients') ? $t('clients.list.actions.add_new') : ''"
         hide-create-on-mobile
         show-filter
         hide-filter-on-mobile
@@ -780,20 +782,7 @@ const mobileFabActions = computed(() => [
       :client="dialogs.viewClient.value"
       :loading="dialogs.viewLoading.value"
       :error="dialogs.viewError.value"
-      @open-email="dialogs.openSingleEmail"
       @retry="dialogs.openView(dialogs.viewDialog.item.value)"
-    />
-
-    <!-- 👉 Email Dialog — at page level (sibling of View Dialog, always on top) -->
-    <WpEmailDialog
-      v-model="dialogs.emailDialog.value.isOpen"
-      :title="dialogs.emailDialog.value.isSingle
-        ? `${$t('clients.list.actions.send_mail')} — ${localizedValue(dialogs.viewClient.value?.legal_name) || ''}`
-        : $t('clients.list.actions.send_mail')"
-      :recipients="dialogs.emailDialog.value.recipients"
-      :loading="actions.isSendingEmail.value"
-      @send="handleSendEmail"
-      @close="dialogs.closeEmail()"
     />
 
     <!-- 👉 Contextual Bulk Email Dialog -->

@@ -1,5 +1,6 @@
 <script setup>
-import { MultiLangField } from '@/components/shared'
+/* eslint-disable camelcase */
+import { MultiLangField, WpFormDialog } from '@/components/shared'
 import {
   getAvailabilityStatuses,
   getBpIndustries,
@@ -25,8 +26,7 @@ const emit = defineEmits([
   'addServiceProvider',
 ])
 
-const isFormValid = ref(false)
-const refForm = ref()
+const dialogRef = ref()
 
 const providerData = ref({
   legalName: { en: '', fr: '', ar: '' },
@@ -52,165 +52,128 @@ const resetForm = () => {
     status: 'prospect',
   }
   nextTick(() => {
-    refForm.value?.resetValidation()
+    dialogRef.value?.resetValidation()
   })
 }
 
 const onSubmit = () => {
-  refForm.value?.validate().then(({ valid }) => {
-    if (valid) {
-      const payload = {
-        legal_name: providerData.value.legalName,
-        commercial_name: providerData.value.commercialName,
-        industry: providerData.value.industry,
-        provider_tier: providerData.value.providerTier,
-        availability_status: providerData.value.availabilityStatus,
-        status: providerData.value.status,
-      }
+  const payload = {
+    legal_name: providerData.value.legalName,
+    commercial_name: providerData.value.commercialName,
+    industry: providerData.value.industry,
+    provider_tier: providerData.value.providerTier,
+    availability_status: providerData.value.availabilityStatus,
+    status: providerData.value.status,
+  }
 
-      emit('addServiceProvider', payload)
-      emit('update:isDialogVisible', false)
-      resetForm()
-    }
-  })
+  emit('addServiceProvider', payload)
+  emit('update:isDialogVisible', false)
+  resetForm()
 }
 
-const onReset = () => {
-  emit('update:isDialogVisible', false)
+const onCancel = () => {
   resetForm()
 }
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
+    ref="dialogRef"
     :model-value="props.isDialogVisible"
+    :title="$t('Add New Service Provider')"
+    :subtitle="$t('Create a new service provider profile')"
+    icon="tabler-user-cog"
     max-width="800"
-    @update:model-value="onReset"
+    :loading="props.loading"
+    :submit-label="$t('Create Service Provider')"
+    @update:model-value="val => emit('update:isDialogVisible', val)"
+    @submit="onSubmit"
+    @cancel="onCancel"
   >
-    <VCard class="pa-sm-8 pa-5">
-      <!-- Title -->
-      <VCardItem class="text-center">
-        <VCardTitle class="text-h4 mb-2">
-          {{ $t('Add New Service Provider') }}
-        </VCardTitle>
-        <VCardSubtitle>
-          {{ $t('Create a new service provider profile') }}
-        </VCardSubtitle>
-      </VCardItem>
+    <VRow>
+      <!-- Legal Name -->
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <MultiLangField
+          v-model="providerData.legalName"
+          :label="$t('Legal Name')"
+          :rules="[requiredValidator]"
+          variant="outlined"
+        />
+      </VCol>
 
-      <VCardText class="pt-6">
-        <VForm
-          ref="refForm"
-          v-model="isFormValid"
-          @submit.prevent="onSubmit"
-        >
-          <VRow>
-            <!-- Legal Name -->
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <MultiLangField
-                v-model="providerData.legalName"
-                :label="$t('Legal Name')"
-                :rules="[requiredValidator]"
-                variant="outlined"
-              />
-            </VCol>
+      <!-- Commercial Name (Multilingual) -->
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <MultiLangField
+          v-model="providerData.commercialName"
+          :label="$t('Commercial Name')"
+          variant="outlined"
+        />
+      </VCol>
 
-            <!-- Commercial Name (Multilingual) -->
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <MultiLangField
-                v-model="providerData.commercialName"
-                :label="$t('Commercial Name')"
-                variant="outlined"
-              />
-            </VCol>
+      <!-- Industry -->
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <AppSelect
+          v-model="providerData.industry"
+          :label="$t('Industry')"
+          :items="industryOptions"
+          variant="outlined"
+          clearable
+          clear-icon="tabler-x"
+        />
+      </VCol>
 
-            <!-- Industry -->
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppSelect
-                v-model="providerData.industry"
-                :label="$t('Industry')"
-                :items="industryOptions"
-                variant="outlined"
-                clearable
-                clear-icon="tabler-x"
-              />
-            </VCol>
+      <!-- Provider Tier -->
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <AppSelect
+          v-model="providerData.providerTier"
+          :label="$t('Provider Tier')"
+          :items="tierOptions"
+          variant="outlined"
+          clearable
+          clear-icon="tabler-x"
+        />
+      </VCol>
 
-            <!-- Provider Tier -->
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppSelect
-                v-model="providerData.providerTier"
-                :label="$t('Provider Tier')"
-                :items="tierOptions"
-                variant="outlined"
-                clearable
-                clear-icon="tabler-x"
-              />
-            </VCol>
+      <!-- Availability Status -->
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <AppSelect
+          v-model="providerData.availabilityStatus"
+          :label="$t('Availability')"
+          :items="availabilityOptions"
+          variant="outlined"
+          clearable
+          clear-icon="tabler-x"
+        />
+      </VCol>
 
-            <!-- Availability Status -->
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppSelect
-                v-model="providerData.availabilityStatus"
-                :label="$t('Availability')"
-                :items="availabilityOptions"
-                variant="outlined"
-                clearable
-                clear-icon="tabler-x"
-              />
-            </VCol>
-
-            <!-- Status -->
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppSelect
-                v-model="providerData.status"
-                :label="$t('Status')"
-                :items="statusOptions"
-                variant="outlined"
-                :rules="[requiredValidator]"
-              />
-            </VCol>
-
-            <!-- Actions -->
-            <VCol
-              cols="12"
-              class="d-flex justify-end gap-3 mt-4"
-            >
-              <VBtn
-                variant="tonal"
-                color="secondary"
-                @click="onReset"
-              >
-                {{ $t('Cancel') }}
-              </VBtn>
-              <VBtn
-                type="submit"
-                :loading="props.loading"
-              >
-                {{ $t('Create Service Provider') }}
-              </VBtn>
-            </VCol>
-          </VRow>
-        </VForm>
-      </VCardText>
-    </VCard>
-  </VDialog>
+      <!-- Status -->
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <AppSelect
+          v-model="providerData.status"
+          :label="$t('Status')"
+          :items="statusOptions"
+          variant="outlined"
+          :rules="[requiredValidator]"
+        />
+      </VCol>
+    </VRow>
+  </WpFormDialog>
 </template>

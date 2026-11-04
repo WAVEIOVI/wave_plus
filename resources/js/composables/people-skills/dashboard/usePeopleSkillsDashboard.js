@@ -1,5 +1,4 @@
 import { useHrStore } from '@/stores/hrStore'
-import { $api } from '@/utils/api'
 import { computed, onMounted, ref } from 'vue'
 
 /**
@@ -14,8 +13,6 @@ export function usePeopleSkillsDashboard() {
   const loading = ref(false)
   const error = ref(null)
   const updatedAt = ref(null)
-  const recentEmployees = ref([])
-  const upcomingSession = ref(null)
   let requestId = 0
 
   const fetchDashboard = async () => {
@@ -25,24 +22,10 @@ export function usePeopleSkillsDashboard() {
     error.value = null
 
     try {
-      const [, employeesResponse, sessionsResponse] = await Promise.all([
-        hrStore.fetchDashboardStats(),
-        $api('/hr/employees', {
-          method: 'GET',
-          // eslint-disable-next-line camelcase
-          params: { per_page: 6, status: 'active' },
-        }),
-        $api('/hr/training/sessions', {
-          method: 'GET',
-          // eslint-disable-next-line camelcase
-          params: { status: 'scheduled', per_page: 1 },
-        }),
-      ])
+      await hrStore.fetchDashboardStats()
 
       if (currentRequest !== requestId) return
 
-      recentEmployees.value = employeesResponse?.data?.data || employeesResponse?.data || []
-      upcomingSession.value = sessionsResponse?.data?.data?.[0] || sessionsResponse?.data?.[0] || null
       updatedAt.value = new Date()
     }
     catch (err) {
@@ -61,26 +44,34 @@ export function usePeopleSkillsDashboard() {
 
   // ─── Stats Selectors ──────────────────────────────────────────
   const stats = computed(() => hrStore.dashboardStats || {})
+  const kpis = computed(() => stats.value.kpis || {})
   const headcount = computed(() => stats.value.headcount || {})
   const attendance = computed(() => stats.value.today_attendance || {})
   const leave = computed(() => stats.value.leave || stats.value.leaves || {})
+  const workforce = computed(() => stats.value.workforce || {})
   const recruitment = computed(() => stats.value.recruitment || {})
   const training = computed(() => stats.value.training || {})
   const certifications = computed(() => stats.value.certifications || {})
+  const fleet = computed(() => stats.value.fleet || {})
+  const appraisals = computed(() => stats.value.appraisals || {})
+  const recentActivity = computed(() => stats.value.recent_activity || [])
 
   return {
     loading,
     error,
     updatedAt,
-    recentEmployees,
-    upcomingSession,
     stats,
+    kpis,
     headcount,
     attendance,
     leave,
+    workforce,
     recruitment,
     training,
     certifications,
+    fleet,
+    appraisals,
+    recentActivity,
     fetchDashboard,
   }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\BusinessPartners\Services;
 
+use App\Models\User;
 use App\Modules\BusinessPartners\Models\Client;
 use App\Modules\BusinessPartners\Models\Organisation;
 use App\Modules\BusinessPartners\Models\ServiceProvider;
@@ -20,23 +21,58 @@ class PartnerDashboardService
 
     /**
      * Build the complete, presentation-ready dashboard payload in one place.
+     * Restricts aggregated statistics strictly to entity types the user is authorized to read.
      */
-    public function statistics(): array
+    public function statistics(?User $user = null): array
     {
-        $kpis = $this->kpis();
+        $user = $user ?? auth()->user();
+        $allowedTypes = $this->getAllowedPartnerTypes($user);
+
+        $kpis = $this->kpis($allowedTypes);
 
         return [
             'kpis' => $kpis,
             'distribution_ratio' => $this->distributionRatio($kpis),
-            'time_series' => $this->timeSeries(),
-            'status_breakdown' => $this->statusBreakdown(),
-            'recent_partners' => $this->recentPartners(),
+            'time_series' => $this->timeSeries($allowedTypes),
+            'status_breakdown' => $this->statusBreakdown($allowedTypes),
+            'recent_partners' => $this->recentPartners($allowedTypes),
         ];
     }
 
-    private function kpis(): array
+    private function getAllowedPartnerTypes(?User $user): array
     {
-        return collect(self::PARTNER_TYPES)
+        if (! $user) {
+            return [];
+        }
+
+        if ($user->hasRole(['Super Admin', 'Admin'])) {
+            return self::PARTNER_TYPES;
+        }
+
+        $allowed = [];
+
+        if ($user->can('read-clients')) {
+            $allowed['client'] = self::PARTNER_TYPES['client'];
+        }
+
+        if ($user->can('read-suppliers')) {
+            $allowed['supplier'] = self::PARTNER_TYPES['supplier'];
+        }
+
+        if ($user->can('read-service-providers')) {
+            $allowed['service_provider'] = self::PARTNER_TYPES['service_provider'];
+        }
+
+        if ($user->can('read-organisations')) {
+            $allowed['organisation'] = self::PARTNER_TYPES['organisation'];
+        }
+
+        return $allowed;
+    }
+
+    private function kpis(array $allowedTypes): array
+    {
+        return collect($allowedTypes)
             ->mapWithKeys(fn (array $definition, string $type) => [
                 $this->pluralType($type) => $this->kpiFor($definition['table']),
             ])
@@ -84,7 +120,7 @@ class PartnerDashboardService
             ->all();
     }
 
-    private function timeSeries(): array
+    private function timeSeries(array $allowedTypes): array
     {
         $months = collect(range(5, 0))
             ->mapWithKeys(function (int $offset) {
@@ -96,7 +132,7 @@ class PartnerDashboardService
                 ]];
             });
 
-        foreach (self::PARTNER_TYPES as $definition) {
+        foreach ($allowedTypes as $definition) {
             DB::table($definition['table'])
                 ->select('created_at')
                 ->whereNull('deleted_at')
@@ -122,11 +158,11 @@ class PartnerDashboardService
         ];
     }
 
-    private function statusBreakdown(): array
+    private function statusBreakdown(array $allowedTypes): array
     {
         $totals = [];
 
-        foreach (self::PARTNER_TYPES as $definition) {
+        foreach ($allowedTypes as $definition) {
             DB::table($definition['table'])
                 ->select('status', DB::raw('COUNT(*) as count'))
                 ->whereNull('deleted_at')
@@ -150,9 +186,13 @@ class PartnerDashboardService
      * resolved once on the server from uploaded media, then the stored external
      * logo, with null deliberately leaving the UI to render initials.
      */
-    private function recentPartners(): array
+    private function recentPartners(array $allowedTypes): array
     {
-        $queries = collect(self::PARTNER_TYPES)
+        if (empty($allowedTypes)) {
+            return [];
+        }
+
+        $queries = collect($allowedTypes)
             ->map(fn (array $definition, string $type) => DB::table($definition['table'])
                 ->selectRaw('? as type, id, legal_name as name, primary_email as email, status, updated_at', [$type])
                 ->whereNull('deleted_at'))

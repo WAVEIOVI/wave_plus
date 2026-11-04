@@ -14,7 +14,6 @@ use App\Modules\Communications\Email\Jobs\SendEmailMessageJob;
 use App\Modules\Communications\Email\Models\EmailConversation;
 use App\Modules\Communications\Email\Models\EmailMessage;
 use App\Modules\Communications\Email\Models\EmailRecipient;
-use App\Modules\Communications\Email\Models\EmailSenderProfile;
 use App\Modules\Communications\Email\Models\EmailTemplate;
 use App\Modules\Communications\Email\Services\EmailAttachmentService;
 use App\Modules\Communications\Email\Services\EmailBusinessContextService;
@@ -95,16 +94,13 @@ class BusinessPartnerContextualEmailService
      */
     public function authorizeUser(User $user, Model $record): void
     {
-        if (Gate::forUser($user)->has('view')) {
-            Gate::forUser($user)->authorize('view', $record);
-        }
+        Gate::forUser($user)->authorize('view', $record);
 
         if ($user->hasRole('Super Admin')) {
             return;
         }
 
-        $canEmail = $user->hasPermissionTo('create-email-messages')
-            || $user->hasPermissionTo('read-Communications')
+        $canEmail = $user->can('create-email-messages')
             || $user->can('create', EmailMessage::class);
 
         if (! $canEmail) {
@@ -519,6 +515,14 @@ class BusinessPartnerContextualEmailService
         ?int $senderProfileId = null
     ): array {
         $normalizedType = $this->normalizePartnerType($partnerType);
+
+        if (! $user->hasRole('Super Admin') && ! $user->can('create-email-messages')) {
+            abort(403, 'You are not authorized to compose or send emails.');
+        }
+
+        $modelClass = $this->resolveModelClass($normalizedType);
+        Gate::forUser($user)->authorize('viewAny', $modelClass);
+
         $authorizedProfiles = $this->senderProfileService->getAuthorizedProfiles($user);
         $selectedProfile = $senderProfileId
             ? $this->senderProfileService->resolveAuthorizedProfile($user, $senderProfileId)
@@ -540,10 +544,10 @@ class BusinessPartnerContextualEmailService
             ->where('language', $lang)
             ->where('is_active', true)
             ->first() ?? EmailTemplate::query()
-                ->where('category', EmailTemplate::CATEGORY_GENERAL_COMMUNICATION)
-                ->where('language', $lang)
-                ->where('is_active', true)
-                ->first();
+            ->where('category', EmailTemplate::CATEGORY_GENERAL_COMMUNICATION)
+            ->where('language', $lang)
+            ->where('is_active', true)
+            ->first();
 
         $items = [];
         $readyCount = 0;
@@ -566,6 +570,7 @@ class BusinessPartnerContextualEmailService
                     'email_source' => null,
                 ];
                 $skippedCount++;
+
                 continue;
             }
 
@@ -586,6 +591,7 @@ class BusinessPartnerContextualEmailService
                     'email_source' => null,
                 ];
                 $skippedCount++;
+
                 continue;
             }
 
@@ -607,6 +613,7 @@ class BusinessPartnerContextualEmailService
                     'email_source' => null,
                 ];
                 $skippedCount++;
+
                 continue;
             }
 
@@ -689,6 +696,13 @@ class BusinessPartnerContextualEmailService
     ): \App\Modules\BusinessPartners\Models\BpBulkEmailBatch {
         $normalizedType = $this->normalizePartnerType($partnerType);
 
+        if (! $user->hasRole('Super Admin') && ! $user->can('create-email-messages')) {
+            abort(403, 'You are not authorized to compose or send emails.');
+        }
+
+        $modelClass = $this->resolveModelClass($normalizedType);
+        Gate::forUser($user)->authorize('viewAny', $modelClass);
+
         if (count($partnerIds) > 250) {
             throw ValidationException::withMessages([
                 'partner_ids' => ['Bulk email limit is maximum 250 records per batch.'],
@@ -757,6 +771,7 @@ class BusinessPartnerContextualEmailService
                     'skip_reason' => 'not_found',
                     'error_message' => 'Record not found',
                 ]);
+
                 continue;
             }
 
@@ -772,6 +787,7 @@ class BusinessPartnerContextualEmailService
                     'skip_reason' => \App\Modules\BusinessPartners\Models\BpBulkEmailBatchItem::SKIP_REASON_UNAUTHORIZED,
                     'error_message' => 'Unauthorized access to record',
                 ]);
+
                 continue;
             }
 
@@ -789,6 +805,7 @@ class BusinessPartnerContextualEmailService
                     'skip_reason' => \App\Modules\BusinessPartners\Models\BpBulkEmailBatchItem::SKIP_REASON_NO_EMAIL,
                     'error_message' => 'No valid email found',
                 ]);
+
                 continue;
             }
 

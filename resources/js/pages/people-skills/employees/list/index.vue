@@ -2,7 +2,9 @@
 import {
   AppFabSpeedDial,
   WpActiveFilters,
+  WpBulkActions,
   WpDeleteDialog,
+  WpExportDialog,
   WpFilterDialog,
   WpKpiCard,
   WpKpiGroup,
@@ -35,7 +37,7 @@ definePage({
     layout: 'default',
     module: 'people-skills',
     action: 'read',
-    subject: 'PeopleSkills',
+    subject: 'employees',
   },
 })
 
@@ -90,6 +92,13 @@ const actions = useEmployeeActions({
   onRefresh: refresh,
   onMetaRefresh: fetchStatistics,
 })
+
+const handleAddEmployee = async employeeData => {
+  const result = await actions.createEmployee(employeeData)
+  if (result) {
+    dialogs.addDialog.close()
+  }
+}
 
 const confirmDeleteEmployee = () => actions.deleteEmployee(dialogs.deleteDialog.item.value)
 
@@ -156,13 +165,93 @@ const emailSelectedEmployees = () => {
     window.location.href = `mailto:${recipients.map(encodeURIComponent).join(',')}`
 }
 
+// ── Selection Mode State & Handlers ─────────────────────────────────────────
+const isSelectionMode = ref(false)
+
+const toggleSelectionMode = () => {
+  isSelectionMode.value = !isSelectionMode.value
+  if (!isSelectionMode.value) {
+    clearSelection()
+  }
+}
+
+const isAllOnPageSelected = computed(() =>
+  employees.value.length > 0 && employees.value.every(e => selectedEmployees.value.includes(e.id)),
+)
+
+const toggleSelectPage = () => {
+  if (isAllOnPageSelected.value) {
+    selectedEmployees.value = selectedEmployees.value.filter(id => !employees.value.some(e => e.id === id))
+  } else {
+    const pageIds = employees.value.map(e => e.id)
+
+    selectedEmployees.value = [...new Set([...selectedEmployees.value, ...pageIds])]
+  }
+}
+
+// ── Export Handling ─────────────────────────────────────────────────────────
+const isExportDialogOpen = ref(false)
+
+const openExportDialog = () => {
+  isExportDialogOpen.value = true
+}
+
+const handleExport = async ({ format }) => {
+  const itemsToExport = selectedEmployees.value.length > 0
+    ? employees.value.filter(e => selectedEmployees.value.includes(e.id))
+    : employees.value
+
+  const success = await actions.exportEmployees(itemsToExport, format)
+  if (success) {
+    isExportDialogOpen.value = false
+    clearSelection()
+  }
+}
+
+// ── Bulk Actions Configuration ───────────────────────────────────────────────
+const bulkActionButtons = computed(() => {
+  const list = []
+
+  list.push({
+    label: t('Export', 'Export'),
+    icon: 'tabler-file-export',
+    emit: 'export',
+    color: 'secondary',
+    loading: actions.isExportingList.value,
+    disabled: actions.isExportingList.value,
+  })
+
+  list.push({
+    label: t('employees.list.actions.email', 'Send Email'),
+    icon: 'tabler-mail',
+    emit: 'send-email',
+    color: 'primary',
+    disabled: selectedEmployeeEmails.value.length === 0,
+  })
+
+  return list
+})
+
 const mobileFabActions = computed(() => [
   {
     id: 'add-employee',
     icon: 'tabler-user-plus',
     title: t('employees.list.add_employee'),
-    disabled: !ability.can('create', 'PeopleSkills'),
+    disabled: !ability.can('create', 'employees') && !ability.can('create', 'PeopleSkills'),
     onClick: () => dialogs.addDialog.open(),
+  },
+  {
+    id: 'toggle-selection',
+    icon: isSelectionMode.value ? 'tabler-checkbox' : 'tabler-square-check',
+    title: isSelectionMode.value ? t('Exit Selection Mode', 'Exit Selection') : t('Selection Mode', 'Selection Mode'),
+    color: isSelectionMode.value ? 'primary' : undefined,
+    onClick: toggleSelectionMode,
+  },
+  {
+    id: 'export-employees',
+    icon: 'tabler-file-export',
+    title: t('Export', 'Export'),
+    onClick: openExportDialog,
   },
   {
     id: 'print-employees',
@@ -189,35 +278,47 @@ const mobileFabActions = computed(() => [
 const getRowActions = item => {
   const status = item?.status
   const statusActions = []
+  const canUpdate = ability.can('update', 'employees') || ability.can('update', 'PeopleSkills')
+  const canDelete = ability.can('delete', 'employees') || ability.can('delete', 'PeopleSkills')
 
-  if (status === 'active') {
-    statusActions.push(
-      { label: t('employees.actions.suspend'), icon: 'tabler-user-pause', emit: 'suspend', color: 'warning' },
-      { label: t('employees.actions.terminate'), icon: 'tabler-user-x', emit: 'terminate', color: 'error', dividerBefore: true },
-    )
-  } else if (status === 'suspended') {
-    statusActions.push(
-      { label: t('employees.actions.activate'), icon: 'tabler-user-check', emit: 'activate', color: 'success' },
-      { label: t('employees.actions.terminate'), icon: 'tabler-user-x', emit: 'terminate', color: 'error', dividerBefore: true },
-    )
-  } else if (status === 'on_leave') {
-    statusActions.push(
-      { label: t('employees.actions.activate'), icon: 'tabler-user-check', emit: 'activate', color: 'success' },
-      { label: t('employees.actions.suspend'), icon: 'tabler-user-pause', emit: 'suspend', color: 'warning' },
-      { label: t('employees.actions.terminate'), icon: 'tabler-user-x', emit: 'terminate', color: 'error', dividerBefore: true },
-    )
-  } else {
-    statusActions.push(
-      { label: t('employees.actions.activate'), icon: 'tabler-user-check', emit: 'activate', color: 'success' },
-    )
+  if (canUpdate) {
+    if (status === 'active') {
+      statusActions.push(
+        { label: t('employees.actions.suspend'), icon: 'tabler-user-pause', emit: 'suspend', color: 'warning' },
+        { label: t('employees.actions.terminate'), icon: 'tabler-user-x', emit: 'terminate', color: 'error', dividerBefore: true },
+      )
+    } else if (status === 'suspended') {
+      statusActions.push(
+        { label: t('employees.actions.activate'), icon: 'tabler-user-check', emit: 'activate', color: 'success' },
+        { label: t('employees.actions.terminate'), icon: 'tabler-user-x', emit: 'terminate', color: 'error', dividerBefore: true },
+      )
+    } else if (status === 'on_leave') {
+      statusActions.push(
+        { label: t('employees.actions.activate'), icon: 'tabler-user-check', emit: 'activate', color: 'success' },
+        { label: t('employees.actions.suspend'), icon: 'tabler-user-pause', emit: 'suspend', color: 'warning' },
+        { label: t('employees.actions.terminate'), icon: 'tabler-user-x', emit: 'terminate', color: 'error', dividerBefore: true },
+      )
+    } else {
+      statusActions.push(
+        { label: t('employees.actions.activate'), icon: 'tabler-user-check', emit: 'activate', color: 'success' },
+      )
+    }
   }
 
-  return [
+  const actions = [
     { label: t('View'), icon: 'tabler-eye', emit: 'view' },
-    { label: t('Edit'), icon: 'tabler-edit', emit: 'edit' },
-    ...statusActions,
-    { label: t('Delete'), icon: 'tabler-trash', emit: 'delete', color: 'error', dividerBefore: true },
   ]
+
+  if (canUpdate) {
+    actions.push({ label: t('Edit'), icon: 'tabler-edit', emit: 'edit' })
+    actions.push(...statusActions)
+  }
+
+  if (canDelete) {
+    actions.push({ label: t('Delete'), icon: 'tabler-trash', emit: 'delete', color: 'error', dividerBefore: true })
+  }
+
+  return actions
 }
 
 // ── Status handler from dialogs ───────────────────────────────────────────────
@@ -272,7 +373,7 @@ onMounted(() => hrStore.fetchMeta())
       <WpPageToolbar
         v-model:search="search"
         class="employees-list-toolbar"
-        :create-label="$can('create', 'PeopleSkills') ? $t('employees.list.add_employee') : ''"
+        :create-label="(ability.can('create', 'employees') || ability.can('create', 'PeopleSkills')) ? $t('employees.list.add_employee') : ''"
         hide-create-on-mobile
         show-filter
         hide-filter-on-mobile
@@ -282,6 +383,29 @@ onMounted(() => hrStore.fetchMeta())
         @refresh="() => { refresh(); fetchStatistics() }"
         @open-filters="openFilterDialog"
       >
+        <template #extra-actions>
+          <VBtn
+            icon
+            size="small"
+            :variant="isSelectionMode ? 'elevated' : 'text'"
+            :color="isSelectionMode ? 'primary' : 'default'"
+            class="d-none d-md-inline-flex"
+            :aria-label="isSelectionMode ? $t('Exit Selection Mode', 'Exit Selection') : $t('Selection Mode', 'Selection Mode')"
+            @click="toggleSelectionMode"
+          >
+            <VIcon
+              :icon="isSelectionMode ? 'tabler-checkbox' : 'tabler-square-check'"
+              size="20"
+            />
+            <VTooltip
+              activator="parent"
+              location="top"
+            >
+              {{ isSelectionMode ? $t('Exit Selection Mode', 'Exit Selection Mode') : $t('Selection Mode', 'Selection Mode') }}
+            </VTooltip>
+          </VBtn>
+        </template>
+
         <template #filter-chips>
           <WpActiveFilters
             v-if="activeFilterCount > 0"
@@ -304,6 +428,77 @@ onMounted(() => hrStore.fetchMeta())
         </template>
       </WpPageToolbar>
 
+      <!-- 👉 Selection Mode Quick Controls Bar -->
+      <VExpandTransition>
+        <div
+          v-if="isSelectionMode"
+          class="selection-mode-bar px-4 py-2 border-b d-flex align-center justify-space-between flex-wrap gap-2"
+        >
+          <div class="d-flex align-center gap-2 flex-wrap">
+            <VChip
+              size="small"
+              color="primary"
+              variant="elevated"
+              prepend-icon="tabler-checkbox"
+              class="font-weight-medium"
+            >
+              {{ $t('Selection Mode', 'Selection Mode') }}
+            </VChip>
+            <VBtn
+              size="x-small"
+              variant="tonal"
+              :color="isAllOnPageSelected ? 'secondary' : 'primary'"
+              :prepend-icon="isAllOnPageSelected ? 'tabler-square-minus' : 'tabler-list-check'"
+              :disabled="employees.length === 0"
+              @click="toggleSelectPage"
+            >
+              {{ isAllOnPageSelected ? $t('Deselect Page', 'Deselect Page') : $t('Select Page', 'Select Page') }} ({{ employees.length }})
+            </VBtn>
+            <VBtn
+              v-if="selectedEmployees.length > 0"
+              size="x-small"
+              variant="text"
+              color="error"
+              prepend-icon="tabler-x"
+              @click="clearSelection"
+            >
+              {{ $t('Deselect', 'Deselect') }} ({{ selectedEmployees.length }})
+            </VBtn>
+          </div>
+
+          <div class="d-flex align-center gap-2">
+            <span
+              v-if="selectedEmployees.length > 0"
+              class="text-caption font-weight-bold text-primary"
+            >
+              {{ selectedEmployees.length }} {{ $t('Selected', 'Selected') }}
+            </span>
+            <VBtn
+              size="x-small"
+              variant="text"
+              color="secondary"
+              @click="toggleSelectionMode"
+            >
+              {{ $t('Exit Selection Mode', 'Exit Selection Mode') }}
+            </VBtn>
+          </div>
+        </div>
+      </VExpandTransition>
+
+      <!-- 👉 Bulk Actions Bar -->
+      <div
+        v-if="selectedEmployees.length > 0"
+        class="px-4 py-2"
+      >
+        <WpBulkActions
+          :count="selectedEmployees.length"
+          :actions="bulkActionButtons"
+          @export="openExportDialog"
+          @send-email="emailSelectedEmployees"
+          @clear="clearSelection"
+        />
+      </div>
+
       <!-- Responsive List -->
       <WpResponsiveList
         v-model:page="page"
@@ -315,7 +510,7 @@ onMounted(() => hrStore.fetchMeta())
         :total-items="totalItems"
         :loading="loading"
         :error="error"
-        show-select
+        :show-select="isSelectionMode"
         item-value="id"
         @retry="refresh"
       >
@@ -452,11 +647,11 @@ onMounted(() => hrStore.fetchMeta())
             :subtitle="`#${item.employee_number || '—'}`"
             :status="resolveStatusLabel(item.status)"
             :status-color="resolveStatusColor(item.status)"
-            show-select
+            :show-select="isSelectionMode"
             :selected="selected"
             clickable
             @update:selected="updateSelected"
-            @click="dialogs.openView(item.id)"
+            @click="isSelectionMode ? updateSelected(!selected) : dialogs.openView(item.id)"
           >
             <template #avatar>
               <VAvatar
@@ -609,6 +804,7 @@ onMounted(() => hrStore.fetchMeta())
       :employee="dialogs.viewEmployee.value"
       :loading="dialogs.viewLoading.value"
       :error="dialogs.viewError.value"
+      @update:is-dialog-visible="visible => !visible && dialogs.closeView()"
       @edit="router.push({ name: 'people-skills-employees-edit-id', params: { id: $event.id } })"
       @retry="dialogs.openView(dialogs.viewDialog.item.value)"
     />
@@ -617,7 +813,7 @@ onMounted(() => hrStore.fetchMeta())
     <AddNewEmployeeDialog
       v-model:is-dialog-visible="dialogs.addDialog.isOpen.value"
       :loading="actions.isCreating.value"
-      @add-employee="actions.createEmployee"
+      @add-employee="handleAddEmployee"
     />
 
     <!-- 👉 Delete Confirmation -->
@@ -637,6 +833,16 @@ onMounted(() => hrStore.fetchMeta())
       :loading="actions.isChangingStatus.value"
       @change-status="handleStatusChange"
     />
+    <!-- 👉 Export Dialog -->
+    <WpExportDialog
+      v-model="isExportDialogOpen"
+      :selected-count="selectedEmployees.length"
+      :formats="['pdf', 'csv']"
+      :loading="actions.isExportingList.value"
+      entity-name="Employees"
+      @export="handleExport"
+    />
+
     <AppFabSpeedDial
       v-model="isMobileFabOpen"
       class="d-md-none employees-list-quick-actions"

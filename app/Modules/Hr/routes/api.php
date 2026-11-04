@@ -70,6 +70,7 @@ Route::prefix('hr')
         Route::post('fleet/vehicles/{vehicle}/return', [FleetVehicleController::class, 'returnVehicle']);
         Route::patch('fleet/vehicles/{vehicle}/status', [FleetVehicleController::class, 'updateStatus']);
         Route::patch('fleet/vehicles/{vehicle}/odometer', [FleetVehicleController::class, 'updateOdometer']);
+        Route::post('fleet/vehicles/{vehicle}/telemetry', [FleetVehicleController::class, 'updateTelemetry']);
         Route::post('fleet/vehicles/{vehicle}/rental/start', [FleetVehicleController::class, 'startRental']);
         Route::post('fleet/vehicles/{vehicle}/rental/end', [FleetVehicleController::class, 'endRental']);
         Route::post('fleet/vehicles/{vehicle}/client-usage/start', [FleetVehicleController::class, 'startClientUsage']);
@@ -138,13 +139,19 @@ Route::prefix('hr')
         Route::put('skills/{id}', [SkillController::class, 'update']);
         Route::delete('skills/{id}', [SkillController::class, 'destroy']);
         Route::post('employees/{employeeId}/skills', [SkillController::class, 'assignToEmployee']);
+        Route::put('employee-skills/{id}', [SkillController::class, 'updateEmployeeSkill']);
+        Route::delete('employee-skills/{id}', [SkillController::class, 'destroyEmployeeSkill']);
         Route::put('employee-skills/{id}/verify', [SkillController::class, 'verifyEmployeeSkill']);
+        Route::get('employees/{employeeId}/development-summary', [SkillController::class, 'employeeDevelopmentSummary']);
 
+        Route::get('certifications/expiring', [CertificationController::class, 'expiringCertifications']);
         Route::get('certifications', [CertificationController::class, 'index']);
         Route::post('certifications', [CertificationController::class, 'store']);
         Route::put('certifications/{id}', [CertificationController::class, 'update']);
         Route::delete('certifications/{id}', [CertificationController::class, 'destroy']);
         Route::post('employees/{employeeId}/certifications', [CertificationController::class, 'assignToEmployee']);
+        Route::put('employee-certifications/{id}', [CertificationController::class, 'updateEmployeeCertification']);
+        Route::delete('employee-certifications/{id}', [CertificationController::class, 'destroyEmployeeCertification']);
         Route::put('employee-certifications/{id}/verify', [CertificationController::class, 'verifyEmployeeCertification']);
         Route::get('employee-certifications/{id}/download', [CertificationController::class, 'downloadCertificationFile']);
         Route::get('employee-certifications/{id}/media/{mediaId}/download', [CertificationController::class, 'downloadCertificationFile']);
@@ -166,6 +173,7 @@ Route::prefix('hr')
         Route::post('workforce/bulk-schedule', [WorkforcePlannerController::class, 'bulkSchedule']);
         Route::post('workforce/publish-schedules', [WorkforcePlannerController::class, 'publishSchedules']);
         Route::post('workforce/clear-schedules', [WorkforcePlannerController::class, 'clearSchedules']);
+        Route::get('workforce/schedule-history', [WorkforcePlannerController::class, 'scheduleHistory']);
 
         // Public Holidays (Integrated with Workforce & Time Off)
         Route::get('public-holidays', [PublicHolidayController::class, 'index']);
@@ -221,6 +229,8 @@ Route::prefix('hr')
         Route::get('leave-requests', [LeaveRequestController::class, 'index']);
         Route::post('leave-requests', [LeaveRequestController::class, 'store']);
         Route::get('leave-requests/{id}', [LeaveRequestController::class, 'show']);
+        Route::put('leave-requests/{id}', [LeaveRequestController::class, 'update']);
+        Route::delete('leave-requests/{id}', [LeaveRequestController::class, 'destroy']);
         Route::post('leave-requests/{id}/submit', [LeaveRequestController::class, 'submit']);
         Route::post('leave-requests/{id}/approve', [LeaveRequestController::class, 'approve']);
         Route::post('leave-requests/{id}/reject', [LeaveRequestController::class, 'reject']);
@@ -237,9 +247,12 @@ Route::prefix('hr')
         Route::get('recruitment/candidates/{id}', [RecruitmentController::class, 'showCandidate']);
         Route::get('recruitment/candidates/{id}/resume/download', [RecruitmentController::class, 'downloadResume']);
         Route::get('recruitment/candidates/{id}/media/{mediaId}/download', [RecruitmentController::class, 'downloadResume']);
+        Route::post('recruitment/candidates/{id}/media', [RecruitmentController::class, 'storeMedia']);
+        Route::delete('recruitment/candidates/{id}/media/{mediaId}', [RecruitmentController::class, 'destroyMedia']);
         Route::put('recruitment/candidates/{id}', [RecruitmentController::class, 'updateCandidate']);
         Route::delete('recruitment/candidates/{id}', [RecruitmentController::class, 'destroyCandidate']);
         Route::post('recruitment/candidates/{candidateId}/interviews', [RecruitmentController::class, 'scheduleInterview']);
+        Route::put('recruitment/interviews/{id}', [RecruitmentController::class, 'updateInterview']);
         Route::patch('recruitment/candidates/{candidateId}/stage', [RecruitmentController::class, 'updateStage']);
         Route::post('recruitment/candidates/{candidateId}/hire', [RecruitmentController::class, 'hireCandidate']);
 
@@ -255,10 +268,12 @@ Route::prefix('hr')
         Route::put('training/sessions/{id}', [TrainingController::class, 'updateSession']);
         Route::delete('training/sessions/{id}', [TrainingController::class, 'destroySession']);
         Route::post('training/sessions/{sessionId}/enroll', [TrainingController::class, 'enrollEmployee']);
+        Route::post('training/sessions/{sessionId}/batch-attendance', [TrainingController::class, 'batchAttendance']);
         Route::delete('training/participants/{participantId}', [TrainingController::class, 'destroyParticipant']);
         Route::post('training/participants/{participantId}/complete', [TrainingController::class, 'completeTraining']);
 
         // ── Performance Appraisals ──────────────────────────────────
+        Route::get('appraisals/kpis', [AppraisalController::class, 'kpis']);
         Route::get('appraisals/cycles', [AppraisalController::class, 'cycles']);
         Route::post('appraisals/cycles', [AppraisalController::class, 'storeCycle']);
         Route::get('appraisals/cycles/{id}', [AppraisalController::class, 'showCycle']);
@@ -266,6 +281,7 @@ Route::prefix('hr')
         Route::delete('appraisals/cycles/{id}', [AppraisalController::class, 'destroyCycle']);
         Route::get('appraisals', [AppraisalController::class, 'appraisals']);
         Route::post('appraisals', [AppraisalController::class, 'storeAppraisal']);
+        Route::post('appraisals/{id}/acknowledge', [AppraisalController::class, 'acknowledge']);
         Route::get('appraisals/{id}', [AppraisalController::class, 'showAppraisal']);
         Route::put('appraisals/{id}', [AppraisalController::class, 'updateAppraisal']);
         Route::delete('appraisals/{id}', [AppraisalController::class, 'destroyAppraisal']);
@@ -278,7 +294,7 @@ Route::prefix('hr')
         Route::get('approved-drivers/{driver}', [ApprovedDriverController::class, 'show']);
         Route::put('approved-drivers/{driver}', [ApprovedDriverController::class, 'update']);
         Route::delete('approved-drivers/{driver}', [ApprovedDriverController::class, 'destroy']);
-        
+
         // Driver operations
         Route::post('approved-drivers/{driver}/suspend', [ApprovedDriverController::class, 'suspend']);
         Route::post('approved-drivers/{driver}/reinstate', [ApprovedDriverController::class, 'reinstate']);

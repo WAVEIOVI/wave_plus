@@ -1,5 +1,7 @@
+/* eslint-disable camelcase */
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useRecruitmentStore } from '@/stores/useRecruitmentStore'
+import { $api } from '@/utils/api'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -11,6 +13,7 @@ export function useRecruitmentActions({ listPage, dialogs }) {
   const stageUpdatingId = ref(null)
   const isSubmitting = ref(false)
   const isDeleting = ref(false)
+  const isSendingEmail = ref(false)
 
   const handleStageChange = async (id, stage) => {
     stageUpdatingId.value = id
@@ -40,18 +43,46 @@ export function useRecruitmentActions({ listPage, dialogs }) {
     }
   }
 
-  const handleScheduleInterview = async (candidateId, payload) => {
+  const handleInterviewSubmit = async payload => {
     isSubmitting.value = true
     try {
-      await recruitmentStore.scheduleInterview(candidateId, payload)
-      showMessage(t('recruitment.interview_scheduled', 'Interview scheduled and candidate advanced.'), 'success')
+      if (dialogs.selectedInterview?.value?.id) {
+        await recruitmentStore.updateInterview(dialogs.selectedInterview.value.id, payload)
+        showMessage(t('recruitment.interview_evaluated', 'Interview evaluation saved.'), 'success')
+      } else if (dialogs.selectedCandidate?.value?.id) {
+        await recruitmentStore.scheduleInterview(dialogs.selectedCandidate.value.id, payload)
+        showMessage(t('recruitment.interview_scheduled', 'Interview scheduled and candidate advanced.'), 'success')
+      }
       dialogs.closeInterview()
       listPage.refresh()
     } catch (err) {
-      showMessage(err?.data?.message || t('recruitment.interview_schedule_error', 'Failed to schedule interview.'), 'error')
+      showMessage(err?.data?.message || t('recruitment.interview_schedule_error', 'Failed to record interview.'), 'error')
       throw err
     } finally {
       isSubmitting.value = false
+    }
+  }
+
+  const handleSendCandidateEmail = async ({ to, cc, subject, message }) => {
+    isSendingEmail.value = true
+    try {
+      await $api('/communications/email/messages', {
+        method: 'POST',
+        body: {
+          to: Array.isArray(to) ? to : [to],
+          cc: Array.isArray(cc) ? cc : (cc ? [cc] : []),
+          subject,
+          body: message,
+          business_record_type: 'hr_candidate',
+          business_record_id: dialogs.candidateToEmail.value?.id,
+        },
+      })
+      showMessage(t('recruitment.email_sent', 'Email dispatched successfully.'), 'success')
+      dialogs.closeEmail()
+    } catch (err) {
+      showMessage(err?.data?.message || t('recruitment.email_failed', 'Failed to send email.'), 'error')
+    } finally {
+      isSendingEmail.value = false
     }
   }
 
@@ -76,9 +107,11 @@ export function useRecruitmentActions({ listPage, dialogs }) {
     stageUpdatingId,
     isSubmitting,
     isDeleting,
+    isSendingEmail,
     handleStageChange,
     handleCreateCandidate,
-    handleScheduleInterview,
+    handleInterviewSubmit,
+    handleSendCandidateEmail,
     handleDeleteCandidate,
   }
 }

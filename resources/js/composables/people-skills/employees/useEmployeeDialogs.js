@@ -28,26 +28,35 @@ export function useEmployeeDialogs() {
   const viewLoading = ref(false)
   const viewError   = ref(null)
   const viewEmployee = ref(null)
+  let viewRequestId = 0
 
   const openView = async employeeId => {
+    const requestId = ++viewRequestId
+
     viewEmployee.value = null
     viewError.value    = null
     viewLoading.value  = true
     viewDialog.open(employeeId)
 
     try {
-      viewEmployee.value = await employeeStore.fetchOne(employeeId)
+      const employee = await employeeStore.fetchOne(employeeId)
+
+      if (requestId === viewRequestId) viewEmployee.value = employee
     }
     catch (err) {
-      viewError.value = err?.data?.message || err?.message || 'Failed to load employee details'
+      if (requestId === viewRequestId) {
+        viewError.value = err?.data?.message || err?.message || 'Failed to load employee details'
+      }
     }
     finally {
-      viewLoading.value = false
+      if (requestId === viewRequestId) viewLoading.value = false
     }
   }
 
   const closeView = () => {
+    viewRequestId += 1
     viewDialog.close()
+    viewLoading.value  = false
     viewEmployee.value = null
     viewError.value    = null
   }

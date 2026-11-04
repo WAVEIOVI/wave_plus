@@ -54,6 +54,17 @@ export const useTrainingStore = defineStore('training', () => {
     return response.data
   }
 
+  const batchAttendance = async (sessionId, participants) => {
+    const response = await $api(`/hr/training/sessions/${sessionId}/batch-attendance`, {
+      method: 'POST',
+      body: { participants },
+    })
+
+    await load()
+
+    return response.data
+  }
+
   const updateProgram = async (id, payload) => {
     const response = await $api(`/hr/training/programs/${id}`, { method: 'PUT', body: payload })
 
@@ -89,6 +100,6 @@ export const useTrainingStore = defineStore('training', () => {
     programs, sessions, loading, error, load,
     createProgram, updateProgram, destroyProgram,
     createSession, updateSession, destroySession,
-    enroll, complete, removeParticipant,
+    enroll, complete, batchAttendance, removeParticipant,
   }
 })

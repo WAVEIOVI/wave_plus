@@ -18,7 +18,7 @@ export default [
     icon: { icon: 'tabler-layout-dashboard' },
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'bp-dashboard',
   },
   {
     title: 'Clients',
@@ -27,7 +27,7 @@ export default [
     icon: { icon: 'tabler-building-skyscraper' },
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'clients',
   },
   {
     title: 'Suppliers',
@@ -36,7 +36,7 @@ export default [
     icon: { icon: 'tabler-forklift' },
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'suppliers',
   },
   {
     title: 'Service Providers',
@@ -45,7 +45,7 @@ export default [
     icon: { icon: 'tabler-briefcase' },
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'service-providers',
   },
   {
     title: 'Organisations',
@@ -54,6 +54,6 @@ export default [
     icon: { icon: 'tabler-building' },
     module: 'business-partners',
     action: 'read',
-    subject: 'BusinessPartners',
+    subject: 'organisations',
   },
 ]

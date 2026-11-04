@@ -150,6 +150,25 @@ class BusinessPartnerEmailController extends Controller
         $batch = \App\Modules\BusinessPartners\Models\BpBulkEmailBatch::with(['items', 'senderProfile', 'template'])
             ->findOrFail($batchId);
 
+        $user = $request->user();
+
+        $canViewAnyBatch = $user->hasRole(['Super Admin', 'Admin']) || $user->can('view-all-bp-email-batches');
+        if (! $canViewAnyBatch && (string) $batch->created_by_user_id !== (string) $user->id) {
+            abort(403, 'You do not have permission to view this email batch.');
+        }
+
+        $canAccessPartnerType = match ($batch->partner_type) {
+            'client' => $user->can('read-clients'),
+            'supplier' => $user->can('read-suppliers'),
+            'service_provider' => $user->can('read-service-providers'),
+            'organisation' => $user->can('read-organisations'),
+            default => false,
+        };
+
+        if (! $canAccessPartnerType && ! $user->hasRole(['Super Admin', 'Admin'])) {
+            abort(403, 'You do not have permission to view batches for this partner type.');
+        }
+
         return response()->json([
             'data' => $batch,
         ]);
@@ -160,11 +179,44 @@ class BusinessPartnerEmailController extends Controller
      */
     public function listBatches(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        $allowedPartnerTypes = [];
+        if ($user->hasRole(['Super Admin', 'Admin'])) {
+            $allowedPartnerTypes = ['client', 'supplier', 'service_provider', 'organisation'];
+        } else {
+            if ($user->can('read-clients')) {
+                $allowedPartnerTypes[] = 'client';
+            }
+            if ($user->can('read-suppliers')) {
+                $allowedPartnerTypes[] = 'supplier';
+            }
+            if ($user->can('read-service-providers')) {
+                $allowedPartnerTypes[] = 'service_provider';
+            }
+            if ($user->can('read-organisations')) {
+                $allowedPartnerTypes[] = 'organisation';
+            }
+        }
+
+        if (empty($allowedPartnerTypes)) {
+            abort(403, 'You do not have permission to view any partner records.');
+        }
+
         $query = \App\Modules\BusinessPartners\Models\BpBulkEmailBatch::with(['senderProfile'])
+            ->whereIn('partner_type', $allowedPartnerTypes)
             ->latest('id');
 
+        if (! $user->hasRole(['Super Admin', 'Admin']) && ! $user->can('view-all-bp-email-batches')) {
+            $query->where('created_by_user_id', $user->id);
+        }
+
         if ($request->filled('partner_type')) {
-            $query->where('partner_type', $request->query('partner_type'));
+            $requestedType = $request->query('partner_type');
+            if (! in_array($requestedType, $allowedPartnerTypes, true)) {
+                abort(403, 'You do not have permission to view batches for this partner type.');
+            }
+            $query->where('partner_type', $requestedType);
         }
 
         $batches = $query->paginate($request->integer('per_page', 15));
