@@ -55,8 +55,10 @@ return new class extends Migration
             $table->enum('overall_status', [
                 'passed',
                 'passed_with_notes',
+                'passed_with_issues',
                 'failed',
                 'requires_attention',
+                'pending',
                 'incomplete',
             ])->index();
             $table->unsignedSmallInteger('items_passed')->default(0);

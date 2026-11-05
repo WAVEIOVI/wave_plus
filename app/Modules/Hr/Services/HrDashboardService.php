@@ -345,38 +345,45 @@ class HrDashboardService
 
     private function fleetStatistics(string $in30Days): array
     {
-        $total = Vehicle::count();
-        $available = Vehicle::where('status', 'available')->count();
-        $inUse = Vehicle::where('status', 'in_use')->count();
-        $maintenance = Vehicle::where('status', 'maintenance')->count();
-        $rentalActive = Vehicle::where('status', 'rental_active')->count();
-        $clientUse = Vehicle::where('status', 'client_use')->count();
+        $fleetAlertsService = app(FleetAlertsService::class);
+        $fleetKpiService = app(FleetKpiService::class);
 
-        $approvedDrivers = ApprovedDriver::where('authorization_status', 'approved')->count();
+        $today = Carbon::today();
+        $futureDate = Carbon::parse($in30Days);
 
-        $serviceDue = Vehicle::where(function ($q) use ($in30Days) {
-            $q->whereNotNull('next_service_date')->where('next_service_date', '<=', $in30Days)
-                ->orWhere(function ($inner) use ($in30Days) {
-                    $inner->whereNotNull('next_inspection_date')->where('next_inspection_date', '<=', $in30Days);
-                });
-        })->count();
+        // Get alerts summary
+        $alerts = $fleetAlertsService->getAllAlerts(30);
 
-        $driverRenewalsDue = ApprovedDriver::where('authorization_status', 'approved')
-            ->whereNotNull('license_expiry_date')
-            ->where('license_expiry_date', '<=', $in30Days)
-            ->count();
+        // Get vehicle KPIs
+        $vehicleKpis = $fleetKpiService->getVehicleKpis();
+
+        // Get driver KPIs
+        $driverKpis = $fleetKpiService->getDriverKpis();
 
         return [
-            'total_vehicles' => $total,
-            'available' => $available,
-            'in_use' => $inUse,
-            'maintenance' => $maintenance,
-            'rental_active' => $rentalActive,
-            'client_use' => $clientUse,
-            'approved_drivers' => $approvedDrivers,
-            'service_due_count' => $serviceDue,
-            'driver_renewals_due' => $driverRenewalsDue,
-            'total_alerts' => $serviceDue + $driverRenewalsDue,
+            // Counts
+            'total_vehicles' => $vehicleKpis['total_vehicles'],
+            'operational_vehicles' => $vehicleKpis['operational_vehicles'],
+            'vehicles_under_maintenance' => $vehicleKpis['vehicles_under_maintenance'],
+            'vehicles_unavailable' => $vehicleKpis['vehicles_unavailable'],
+
+            // Driver counts
+            'total_drivers' => $driverKpis['total_drivers'],
+            'approved_drivers' => $driverKpis['active_drivers'],
+
+            // Alerts
+            'total_alerts' => $alerts['summary']['total_alerts'],
+            'critical_alerts' => $alerts['summary']['critical'],
+            'overdue_alerts' => $alerts['summary']['overdue'],
+            'upcoming_alerts' => $alerts['summary']['upcoming'],
+
+            // Specific alerts
+            'service_due_count' => $alerts['vehicle_alerts']['maintenance']['total'],
+            'driver_renewals_due' => $driverKpis['drivers_requiring_renewal'],
+
+            // Status breakdown
+            'vehicle_status' => $vehicleKpis['status_breakdown'],
+            'driver_status' => $driverKpis['status_breakdown'],
         ];
     }
 

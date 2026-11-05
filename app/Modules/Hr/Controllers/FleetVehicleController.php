@@ -100,10 +100,85 @@ class FleetVehicleController extends Controller
     {
         $this->authorizeHrMutation('hr.fleet.archive');
         $record = Vehicle::findOrFail($vehicle);
-        abort_if($record->assignments()->exists(), 422, 'A vehicle with assignment history cannot be deleted. Retire it instead.');
-        $record->delete();
+
+        // Check if vehicle can be safely deleted
+        $safetyCheck = $this->fleet->canDeleteVehicle($vehicle);
+
+        if (! $safetyCheck['can_delete']) {
+            return response()->json([
+                'message' => 'Vehicle cannot be deleted',
+                'blockers' => $safetyCheck['blockers'],
+                'recommendation' => $safetyCheck['recommendation'],
+            ], 422);
+        }
+
+        $this->fleet->deleteVehicle($vehicle);
 
         return response()->json(['message' => 'Vehicle deleted']);
+    }
+
+    public function archive(Request $request, string $vehicle): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.fleet.manage');
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $archivedVehicle = $this->fleet->archiveVehicle(
+            $vehicle,
+            $data['reason'],
+            $request->user()?->id
+        );
+
+        return response()->json([
+            'message' => 'Vehicle archived successfully',
+            'data' => VehicleResource::make($archivedVehicle),
+        ]);
+    }
+
+    public function checkDeletable(string $vehicle): JsonResponse
+    {
+        $this->authorizeHrRead('hr.fleet.view');
+
+        $safetyCheck = $this->fleet->canDeleteVehicle($vehicle);
+
+        return response()->json(['data' => $safetyCheck]);
+    }
+
+    public function correctOdometer(Request $request, string $vehicle): JsonResponse
+    {
+        $this->authorizeHrMutation('hr.fleet.manage');
+
+        $data = $request->validate([
+            'corrected_odometer' => ['required', 'integer', 'min:0'],
+            'correction_reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $updatedVehicle = $this->fleet->correctOdometer(
+            $vehicle,
+            $data['corrected_odometer'],
+            $data['correction_reason'],
+            $request->user()?->id
+        );
+
+        return response()->json([
+            'message' => 'Odometer corrected successfully',
+            'data' => VehicleResource::make($updatedVehicle),
+        ]);
+    }
+
+    public function checkDriverAuthorization(Request $request, string $vehicle): JsonResponse
+    {
+        $this->authorizeHrRead('hr.fleet.view');
+
+        $data = $request->validate([
+            'employee_id' => ['required', 'ulid', 'exists:users,id'],
+        ]);
+
+        $authorization = $this->fleet->isAuthorizedDriver($data['employee_id'], $vehicle);
+
+        return response()->json(['data' => $authorization]);
     }
 
     public function assign(Request $request, string $vehicle): JsonResponse
@@ -127,7 +202,14 @@ class FleetVehicleController extends Controller
         $record = Vehicle::findOrFail($vehicle);
         $currentAssignment = $record->currentAssignment;
         abort_unless($currentAssignment instanceof \App\Modules\Hr\Models\VehicleAssignment, 422, 'Vehicle has no active assignment.');
-        $data = $request->validate(['end_date' => ['nullable', 'date'], 'odometer_at_end' => ['nullable', 'integer', 'min:0'], 'vehicle_status' => ['nullable', 'in:available,maintenance,out_of_service']]);
+        $data = $request->validate([
+            'end_date' => ['nullable', 'date'],
+            'odometer_at_end' => ['nullable', 'integer', 'min:0'],
+            'vehicle_status' => ['nullable', 'in:available,maintenance,out_of_service'],
+            'return_to_site_id' => ['nullable', 'ulid', 'exists:warehouse_sites,id'],
+            'return_custody_type' => ['nullable', 'in:company_site,storage,maintenance,other'],
+            'location_notes' => ['nullable', 'string'],
+        ]);
 
         return response()->json(['data' => $this->fleet->endAssignment($currentAssignment->id, $request->user()?->id, $data)]);
     }

@@ -43,9 +43,7 @@ return new class extends Migration
             $table->enum('status', [
                 'active',
                 'expired',
-                'expiring_soon',
-                'renewed',
-                'cancelled',
+                'pending_renewal',
                 'archived',
             ])->default('active')->index();
 

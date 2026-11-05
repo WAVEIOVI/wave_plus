@@ -22,6 +22,7 @@ return new class extends Migration
                 'created',
                 'status_change',
                 'assignment',
+                'assignment_end',
                 'reassignment',
                 'fuel',
                 'maintenance',
@@ -37,6 +38,9 @@ return new class extends Migration
                 'mission_end',
                 'location_change',
                 'odometer_update',
+                'odometer_correction',
+                'archived',
+                'deleted',
                 'other',
             ])->index();
             $table->string('event_title', 200);

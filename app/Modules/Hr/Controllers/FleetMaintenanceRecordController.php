@@ -67,8 +67,8 @@ class FleetMaintenanceRecordController extends Controller
         $vehicleModel = Vehicle::findOrFail($vehicleId);
 
         $data = $request->validate([
-            'maintenance_type' => ['required', 'in:preventive,corrective,inspection,recall,other'],
-            'priority' => ['nullable', 'in:low,medium,high,urgent'],
+            'maintenance_type' => ['required', 'in:preventive,corrective,inspection,repair,overhaul,warranty,recall,other'],
+            'priority' => ['nullable', 'in:low,normal,medium,high,urgent,critical'],
             'scheduled_date' => ['required', 'date'],
             'completed_date' => ['nullable', 'date'],
             'odometer_km' => ['nullable', 'integer', 'min:0'],
@@ -96,7 +96,7 @@ class FleetMaintenanceRecordController extends Controller
 
         $data['vehicle_id'] = $vehicleModel->id;
         $data['status'] ??= 'scheduled';
-        $data['currency'] ??= 'SAR';
+        $data['currency'] ??= 'TND';
         $data['created_by'] = $request->user()?->id;
 
         $record = VehicleMaintenanceRecord::create($data);
@@ -110,8 +110,8 @@ class FleetMaintenanceRecordController extends Controller
         $record = VehicleMaintenanceRecord::findOrFail($maintenanceRecord);
 
         $data = $request->validate([
-            'maintenance_type' => ['sometimes', 'in:preventive,corrective,inspection,recall,other'],
-            'priority' => ['nullable', 'in:low,medium,high,urgent'],
+            'maintenance_type' => ['sometimes', 'in:preventive,corrective,inspection,repair,overhaul,warranty,recall,other'],
+            'priority' => ['nullable', 'in:low,normal,medium,high,urgent,critical'],
             'scheduled_date' => ['sometimes', 'date'],
             'completed_date' => ['nullable', 'date'],
             'odometer_km' => ['nullable', 'integer', 'min:0'],

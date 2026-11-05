@@ -27,9 +27,10 @@ return new class extends Migration
                 'overhaul',
                 'warranty',
                 'recall',
+                'other',
             ]);
             $table->enum('priority', [
-                'routine', 'normal', 'high', 'urgent', 'critical',
+                'low', 'normal', 'medium', 'high', 'urgent', 'critical',
             ])->default('normal');
 
             // Schedule
@@ -74,7 +75,6 @@ return new class extends Migration
                 'in_progress',
                 'completed',
                 'cancelled',
-                'on_hold',
             ])->default('scheduled')->index();
 
             // Additional info

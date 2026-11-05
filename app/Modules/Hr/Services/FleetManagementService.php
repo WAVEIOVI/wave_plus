@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
 class FleetManagementService
 {
     /**
-     * Assign vehicle to employee / location.
+     * Assign vehicle to employee / location with proper locking and validation.
      */
     public function assignVehicle(
         string $vehicleId,
@@ -30,12 +30,22 @@ class FleetManagementService
         ?string $assignedBy = null
     ): VehicleAssignment {
         return DB::transaction(function () use ($vehicleId, $assignmentData, $assignedBy) {
-            $vehicle = Vehicle::findOrFail($vehicleId);
+            // Pessimistic locking to prevent race conditions
+            $vehicle = Vehicle::lockForUpdate()->findOrFail($vehicleId);
 
-            // End current assignment if exists
-            $currentAssignment = $vehicle->currentAssignment;
+            // Validate vehicle is not in a non-assignable state
+            if (in_array($vehicle->status, ['retired', 'sold'])) {
+                throw new \InvalidArgumentException("Vehicle {$vehicle->fleet_code} cannot be assigned (status: {$vehicle->status})");
+            }
+
+            // End current assignment if exists (with lock)
+            $currentAssignment = VehicleAssignment::lockForUpdate()
+                ->where('vehicle_id', $vehicleId)
+                ->where('is_current', true)
+                ->first();
+
             if ($currentAssignment instanceof VehicleAssignment) {
-                $this->endAssignment($currentAssignment->id, $assignedBy);
+                $this->endAssignmentInternal($currentAssignment, $assignedBy);
             }
 
             // Create new assignment
@@ -54,6 +64,23 @@ class FleetManagementService
                 'created_by' => $assignedBy,
             ]);
 
+            // Update helper column for MySQL unique constraint
+            $driver = DB::connection()->getDriverName();
+            if ($driver === 'mysql') {
+                $assignment->update(['unique_current_key' => "current_{$vehicleId}"]);
+            }
+
+            // Validate and update odometer if provided
+            $odometerAtStart = $assignmentData['odometer_at_start'] ?? $vehicle->odometer_km;
+            if ($odometerAtStart !== null && $odometerAtStart < ($vehicle->odometer_km ?? 0)) {
+                if (! $vehicle->allow_odometer_decrease) {
+                    throw new \InvalidArgumentException(
+                        "Odometer cannot decrease from {$vehicle->odometer_km} km to {$odometerAtStart} km. ".
+                        'Use authorized correction mechanism if this is intentional.'
+                    );
+                }
+            }
+
             // Update vehicle current assignment fields
             $vehicle->update([
                 'current_responsible_employee_id' => $assignmentData['responsible_employee_id'] ?? null,
@@ -61,6 +88,7 @@ class FleetManagementService
                 'current_site_id' => $assignmentData['site_id'] ?? null,
                 'current_location_notes' => $assignmentData['location_notes'] ?? null,
                 'status' => 'in_use',
+                'has_operational_history' => true,
             ]);
 
             // Log activity
@@ -80,7 +108,7 @@ class FleetManagementService
     }
 
     /**
-     * End vehicle assignment / return.
+     * End vehicle assignment / return with complete cleanup.
      */
     public function endAssignment(
         string $assignmentId,
@@ -88,81 +116,230 @@ class FleetManagementService
         ?array $returnData = null
     ): VehicleAssignment {
         return DB::transaction(function () use ($assignmentId, $returnedBy, $returnData) {
-            $assignment = VehicleAssignment::findOrFail($assignmentId);
-            $vehicle = $assignment->vehicle;
-            $vehicleOdometer = $vehicle instanceof Vehicle ? $vehicle->odometer_km : null;
-            $vehicleId = $vehicle instanceof Vehicle ? (string) $vehicle->id : (string) $assignment->vehicle_id;
-
-            $assignment->update([
-                'end_date' => $returnData['end_date'] ?? now(),
-                'is_current' => false,
-                'odometer_at_end' => $returnData['odometer_at_end'] ?? $vehicleOdometer,
-                'returned_by' => $returnedBy,
-                'updated_by' => $returnedBy,
-            ]);
-
-            $vehicleUpdates = [
-                'status' => $returnData['vehicle_status'] ?? 'available',
-                'current_responsible_employee_id' => null,
-                'custody_type' => null,
-            ];
-
-            $currentKm = $vehicle instanceof Vehicle ? ($vehicle->odometer_km ?? 0) : 0;
-            if (! empty($returnData['odometer_at_end']) && $returnData['odometer_at_end'] > $currentKm) {
-                $vehicleUpdates['odometer_km'] = $returnData['odometer_at_end'];
-                $vehicleUpdates['odometer_last_updated'] = now();
-            }
-
-            if ($vehicle instanceof Vehicle) {
-                $vehicle->update($vehicleUpdates);
-            }
-
-            // Log activity
-            $this->logVehicleActivity($vehicleId, [
-                'event_type' => 'reassignment',
-                'event_title' => 'Vehicle Returned',
-                'event_description' => "Vehicle returned from {$assignment->custody_type}",
-                'event_date' => $assignment->end_date,
-                'actor_employee_id' => $returnedBy,
-                'related_id' => $assignment->id,
-                'related_type' => VehicleAssignment::class,
-                'odometer_km' => $assignment->odometer_at_end,
-            ]);
-
-            return $assignment->fresh();
+            $assignment = VehicleAssignment::lockForUpdate()->findOrFail($assignmentId);
+            
+            return $this->endAssignmentInternal($assignment, $returnedBy, $returnData);
         });
     }
 
     /**
-     * Update vehicle odometer reading.
+     * Internal method to end assignment (can be called within existing transaction).
+     */
+    private function endAssignmentInternal(
+        VehicleAssignment $assignment,
+        ?string $returnedBy = null,
+        ?array $returnData = null
+    ): VehicleAssignment {
+        $vehicle = Vehicle::lockForUpdate()->findOrFail($assignment->vehicle_id);
+        $vehicleOdometer = $vehicle->odometer_km ?? 0;
+        $vehicleId = (string) $vehicle->id;
+
+        $endDate = Carbon::parse($returnData['end_date'] ?? now());
+        $odometerAtEnd = $returnData['odometer_at_end'] ?? $vehicleOdometer;
+
+        // Validate end date is not before start date (same day is allowed)
+        $startDate = Carbon::parse($assignment->start_date);
+        if ($endDate->isBefore($startDate->startOfDay())) {
+            throw new \InvalidArgumentException(
+                'Assignment end date cannot be before start date. '.
+                "Start: {$startDate->toDateString()}, End: {$endDate->toDateString()}"
+            );
+        }
+
+        // Validate odometer at end >= odometer at start
+        if ($odometerAtEnd !== null && $assignment->odometer_at_start !== null) {
+            if ($odometerAtEnd < $assignment->odometer_at_start && ! $vehicle->allow_odometer_decrease) {
+                throw new \InvalidArgumentException(
+                    "Odometer at return ({$odometerAtEnd} km) cannot be less than odometer at assignment ({$assignment->odometer_at_start} km)"
+                );
+            }
+        }
+
+        // Update assignment
+        $assignment->update([
+            'end_date' => $endDate,
+            'is_current' => false,
+            'odometer_at_end' => $odometerAtEnd,
+            'returned_by' => $returnedBy,
+            'updated_by' => $returnedBy,
+        ]);
+
+        // Clear MySQL helper column if it exists
+        if (DB::connection()->getDriverName() === 'mysql') {
+            $assignment->update(['unique_current_key' => null]);
+        }
+
+        // Determine return destination custody
+        $returnDestinationSite = $returnData['return_to_site_id'] ?? null;
+        $returnCustodyType = $returnData['return_custody_type'] ?? null;
+
+        $vehicleUpdates = [
+            'status' => $returnData['vehicle_status'] ?? 'available',
+            'current_responsible_employee_id' => null,
+            'custody_type' => $returnCustodyType,
+            'current_site_id' => $returnDestinationSite,
+            'current_location_notes' => $returnData['location_notes'] ?? null,
+        ];
+
+        // Update odometer if increased
+        if ($odometerAtEnd !== null && $odometerAtEnd > $vehicleOdometer) {
+            $vehicleUpdates['odometer_km'] = (int) $odometerAtEnd;
+            $vehicleUpdates['odometer_last_updated'] = $endDate;
+
+            // Append to odometer history
+            $this->recordOdometerHistory($vehicle, $vehicleOdometer, (int) $odometerAtEnd, 'assignment_return', $returnedBy);
+        }
+
+        $vehicle->update($vehicleUpdates);
+
+        // Log activity
+        $this->logVehicleActivity($vehicleId, [
+            'event_type' => 'assignment_end',
+            'event_title' => 'Vehicle Returned',
+            'event_description' => "Vehicle returned from {$assignment->custody_type}".
+                ($returnDestinationSite ? " to site" : ''),
+            'event_date' => $assignment->end_date,
+            'actor_employee_id' => $returnedBy,
+            'related_id' => $assignment->id,
+            'related_type' => VehicleAssignment::class,
+            'odometer_km' => $assignment->odometer_at_end,
+        ]);
+
+        return $assignment->fresh();
+    }
+
+    /**
+     * Update vehicle odometer reading with decrease protection.
      */
     public function updateOdometer(
         string $vehicleId,
         int $odometerKm,
-        ?string $updatedBy = null
+        ?string $updatedBy = null,
+        bool $allowDecrease = false
     ): Vehicle {
-        $vehicle = Vehicle::findOrFail($vehicleId);
-        $oldOdometer = $vehicle->odometer_km;
+        return DB::transaction(function () use ($vehicleId, $odometerKm, $updatedBy, $allowDecrease) {
+            $vehicle = Vehicle::lockForUpdate()->findOrFail($vehicleId);
+            $oldOdometer = $vehicle->odometer_km ?? 0;
 
-        $vehicle->update([
-            'odometer_km' => $odometerKm,
-            'odometer_last_updated' => now(),
-            'updated_by' => $updatedBy,
-        ]);
+            // Validate odometer cannot decrease unless explicitly allowed
+            if ($odometerKm < $oldOdometer) {
+                if (! $allowDecrease && ! $vehicle->allow_odometer_decrease) {
+                    throw new \InvalidArgumentException(
+                        "Odometer reading cannot decrease from {$oldOdometer} km to {$odometerKm} km. ".
+                        'Contact fleet administrator for authorized correction.'
+                    );
+                }
 
-        // Log activity
-        $this->logVehicleActivity($vehicleId, [
-            'event_type' => 'odometer_update',
-            'event_title' => 'Odometer Updated',
-            'event_description' => "Odometer updated from {$oldOdometer} km to {$odometerKm} km",
-            'event_date' => now(),
-            'old_value' => (string) $oldOdometer,
-            'new_value' => (string) $odometerKm,
-            'actor_employee_id' => $updatedBy,
-            'odometer_km' => $odometerKm,
-        ]);
+                // Log authorized decrease
+                $this->logVehicleActivity($vehicleId, [
+                    'event_type' => 'odometer_correction',
+                    'event_title' => '⚠️ Authorized Odometer Correction (Decrease)',
+                    'event_description' => "Odometer corrected from {$oldOdometer} km to {$odometerKm} km (authorized decrease)",
+                    'event_date' => now(),
+                    'old_value' => (string) $oldOdometer,
+                    'new_value' => (string) $odometerKm,
+                    'actor_employee_id' => $updatedBy,
+                    'odometer_km' => $odometerKm,
+                    'metadata' => ['authorized_decrease' => true, 'reason' => 'Manual correction'],
+                ]);
+            }
 
-        return $vehicle->fresh();
+            $vehicle->update([
+                'odometer_km' => $odometerKm,
+                'odometer_last_updated' => now(),
+                'updated_by' => $updatedBy,
+            ]);
+
+            // Record in history
+            $this->recordOdometerHistory($vehicle, $oldOdometer, $odometerKm, 'manual_update', $updatedBy);
+
+            // Log regular update
+            if ($odometerKm >= $oldOdometer) {
+                $this->logVehicleActivity($vehicleId, [
+                    'event_type' => 'odometer_update',
+                    'event_title' => 'Odometer Updated',
+                    'event_description' => "Odometer updated from {$oldOdometer} km to {$odometerKm} km",
+                    'event_date' => now(),
+                    'old_value' => (string) $oldOdometer,
+                    'new_value' => (string) $odometerKm,
+                    'actor_employee_id' => $updatedBy,
+                    'odometer_km' => $odometerKm,
+                ]);
+            }
+
+            return $vehicle->fresh();
+        });
+    }
+
+    /**
+     * Record odometer change in audit history.
+     */
+    private function recordOdometerHistory(
+        Vehicle $vehicle,
+        int $oldValue,
+        int $newValue,
+        string $changeType,
+        ?string $changedBy
+    ): void {
+        $history = $vehicle->odometer_history ?? [];
+        $history[] = [
+            'timestamp' => now()->toIso8601String(),
+            'old_value' => $oldValue,
+            'new_value' => $newValue,
+            'change_type' => $changeType,
+            'changed_by' => $changedBy,
+        ];
+
+        // Keep last 100 entries
+        if (count($history) > 100) {
+            $history = array_slice($history, -100);
+        }
+
+        $vehicle->update(['odometer_history' => $history]);
+    }
+
+    /**
+     * Authorized odometer correction for data quality fixes.
+     * Requires explicit authorization and audits the correction.
+     */
+    public function correctOdometer(
+        string $vehicleId,
+        int $correctedOdometer,
+        string $correctionReason,
+        ?string $authorizedBy = null
+    ): Vehicle {
+        return DB::transaction(function () use ($vehicleId, $correctedOdometer, $correctionReason, $authorizedBy) {
+            $vehicle = Vehicle::lockForUpdate()->findOrFail($vehicleId);
+            $oldOdometer = $vehicle->odometer_km ?? 0;
+
+            $vehicle->update([
+                'odometer_km' => $correctedOdometer,
+                'odometer_last_updated' => now(),
+                'updated_by' => $authorizedBy,
+            ]);
+
+            // Record in history with correction flag
+            $this->recordOdometerHistory($vehicle, $oldOdometer, $correctedOdometer, 'authorized_correction', $authorizedBy);
+
+            // Log the correction with full details
+            $this->logVehicleActivity($vehicleId, [
+                'event_type' => 'odometer_correction',
+                'event_title' => '✓ Authorized Odometer Correction',
+                'event_description' => "Odometer corrected: {$oldOdometer} km → {$correctedOdometer} km. Reason: {$correctionReason}",
+                'event_date' => now(),
+                'old_value' => (string) $oldOdometer,
+                'new_value' => (string) $correctedOdometer,
+                'actor_employee_id' => $authorizedBy,
+                'odometer_km' => $correctedOdometer,
+                'metadata' => [
+                    'correction_reason' => $correctionReason,
+                    'authorized_by' => $authorizedBy,
+                    'is_decrease' => $correctedOdometer < $oldOdometer,
+                ],
+            ]);
+
+            return $vehicle->fresh();
+        });
     }
 
     /**
@@ -477,5 +654,205 @@ class FleetManagementService
 
             return $vehicle->fresh();
         });
+    }
+
+    /**
+     * Archive a vehicle (soft delete with explicit archival tracking).
+     */
+    public function archiveVehicle(
+        string $vehicleId,
+        string $archivalReason,
+        ?string $archivedBy = null
+    ): Vehicle {
+        return DB::transaction(function () use ($vehicleId, $archivalReason, $archivedBy) {
+            $vehicle = Vehicle::lockForUpdate()->findOrFail($vehicleId);
+
+            // End any current assignment
+            $currentAssignment = VehicleAssignment::lockForUpdate()
+                ->where('vehicle_id', $vehicleId)
+                ->where('is_current', true)
+                ->first();
+
+            if ($currentAssignment instanceof VehicleAssignment) {
+                $this->endAssignmentInternal($currentAssignment, $archivedBy, [
+                    'vehicle_status' => 'retired',
+                ]);
+            }
+
+            $vehicle->update([
+                'status' => 'retired',
+                'archived_at' => now(),
+                'archived_by' => $archivedBy,
+            ]);
+
+            $this->logVehicleActivity($vehicleId, [
+                'event_type' => 'archived',
+                'event_title' => 'Vehicle Archived',
+                'event_description' => "Vehicle archived: {$archivalReason}",
+                'event_date' => now(),
+                'actor_employee_id' => $archivedBy,
+                'metadata' => ['reason' => $archivalReason],
+            ]);
+
+            return $vehicle->fresh();
+        });
+    }
+
+    /**
+     * Check if vehicle can be safely deleted.
+     */
+    public function canDeleteVehicle(string $vehicleId): array
+    {
+        $vehicle = Vehicle::findOrFail($vehicleId);
+
+        $blockers = [];
+
+        // Check operational history
+        if ($vehicle->has_operational_history) {
+            $blockers[] = 'Vehicle has operational history (assignments, maintenance, fuel records, etc.)';
+        }
+
+        // Check active assignments
+        $activeAssignments = VehicleAssignment::where('vehicle_id', $vehicleId)
+            ->where('is_current', true)
+            ->count();
+        if ($activeAssignments > 0) {
+            $blockers[] = 'Vehicle has active assignment';
+        }
+
+        // Check maintenance records
+        $maintenanceCount = $vehicle->maintenanceRecords()->count();
+        if ($maintenanceCount > 0) {
+            $blockers[] = "Vehicle has {$maintenanceCount} maintenance record(s)";
+        }
+
+        // Check fuel records
+        $fuelCount = $vehicle->fuelRecords()->count();
+        if ($fuelCount > 0) {
+            $blockers[] = "Vehicle has {$fuelCount} fuel record(s)";
+        }
+
+        // Check checklists
+        $checklistCount = $vehicle->checklists()->count();
+        if ($checklistCount > 0) {
+            $blockers[] = "Vehicle has {$checklistCount} inspection checklist(s)";
+        }
+
+        // Check documents
+        $documentCount = $vehicle->documents()->count();
+        if ($documentCount > 0) {
+            $blockers[] = "Vehicle has {$documentCount} document(s)";
+        }
+
+        return [
+            'can_delete' => empty($blockers),
+            'blockers' => $blockers,
+            'recommendation' => empty($blockers)
+                ? 'Vehicle can be safely deleted'
+                : 'Consider archiving instead of deleting to preserve historical records',
+        ];
+    }
+
+    /**
+     * Safe vehicle deletion with dependency check.
+     * Throws exception if vehicle has operational dependencies.
+     */
+    public function deleteVehicle(string $vehicleId, bool $force = false): bool
+    {
+        return DB::transaction(function () use ($vehicleId, $force) {
+            $vehicle = Vehicle::lockForUpdate()->findOrFail($vehicleId);
+
+            if (! $force) {
+                $safetyCheck = $this->canDeleteVehicle($vehicleId);
+                if (! $safetyCheck['can_delete']) {
+                    throw new \RuntimeException(
+                        'Vehicle cannot be deleted: '.implode('; ', $safetyCheck['blockers']).'. '.
+                        $safetyCheck['recommendation']
+                    );
+                }
+            }
+
+            // Log deletion before removing
+            $this->logVehicleActivity($vehicleId, [
+                'event_type' => 'deleted',
+                'event_title' => '⚠️ Vehicle Deleted',
+                'event_description' => "Vehicle {$vehicle->fleet_code} permanently deleted".($force ? ' (forced)' : ''),
+                'event_date' => now(),
+                'metadata' => [
+                    'force' => $force,
+                    'fleet_code' => $vehicle->fleet_code,
+                    'plate_number' => $vehicle->plate_number,
+                ],
+            ]);
+
+            $vehicle->delete();
+
+            return true;
+        });
+    }
+
+    /**
+     * Check if employee is authorized to drive a specific vehicle.
+     * Default driver designation does NOT grant driving authorization.
+     */
+    public function isAuthorizedDriver(string $employeeId, string $vehicleId): array
+    {
+        $vehicle = Vehicle::findOrFail($vehicleId);
+
+        // Check if employee has approved driver authorization
+        $approvedDriver = ApprovedDriver::active()
+            ->where('employee_id', $employeeId)
+            ->first();
+
+        if (! $approvedDriver) {
+            return [
+                'authorized' => false,
+                'reason' => 'Employee does not have an active Approved Driver authorization',
+            ];
+        }
+
+        // Check vehicle type permission
+        if (! empty($approvedDriver->permitted_vehicle_types)) {
+            if (! in_array($vehicle->type, $approvedDriver->permitted_vehicle_types)) {
+                return [
+                    'authorized' => false,
+                    'reason' => "Driver not authorized for vehicle type: {$vehicle->type}",
+                    'permitted_types' => $approvedDriver->permitted_vehicle_types,
+                ];
+            }
+        }
+
+        // Check vehicle class permission
+        if (! empty($approvedDriver->permitted_vehicle_classes) && ! empty($vehicle->vehicle_class)) {
+            if (! in_array($vehicle->vehicle_class, $approvedDriver->permitted_vehicle_classes)) {
+                return [
+                    'authorized' => false,
+                    'reason' => "Driver not authorized for vehicle class: {$vehicle->vehicle_class}",
+                    'permitted_classes' => $approvedDriver->permitted_vehicle_classes,
+                ];
+            }
+        }
+
+        // Check ownership-specific permissions
+        if ($vehicle->ownership_type === 'rental' && ! $approvedDriver->can_drive_rental) {
+            return [
+                'authorized' => false,
+                'reason' => 'Driver not authorized to drive rental vehicles',
+            ];
+        }
+
+        if ($vehicle->ownership_type === 'client' && ! $approvedDriver->can_drive_client_vehicles) {
+            return [
+                'authorized' => false,
+                'reason' => 'Driver not authorized to drive client-supplied vehicles',
+            ];
+        }
+
+        return [
+            'authorized' => true,
+            'driver_authorization' => $approvedDriver->driver_authorization_number,
+            'driver_level' => $approvedDriver->driver_level,
+            'license_expiry' => $approvedDriver->license_expiry_date?->format('Y-m-d'),
+        ];
     }
 }

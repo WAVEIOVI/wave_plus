@@ -59,12 +59,12 @@ class FleetFuelRecordController extends Controller
         $data = $request->validate([
             'fill_date' => ['required', 'date'],
             'fill_time' => ['nullable', 'date_format:H:i,H:i:s'],
-            'fuel_type' => ['nullable', 'in:petrol,diesel,electric,hybrid,lpg,cng,hydrogen'],
+            'fuel_type' => ['nullable', 'in:petrol,diesel,electric,hybrid,lpg,cng,hydrogen,other'],
             'quantity' => ['required', 'numeric', 'min:0.001'],
             'unit' => ['nullable', 'string', 'max:20'],
             'odometer_km' => ['nullable', 'integer', 'min:0'],
             'unit_price' => ['nullable', 'numeric', 'min:0'],
-            'total_cost' => ['required', 'numeric', 'min:0'],
+            'total_cost' => ['nullable', 'numeric', 'min:0'],
             'currency' => ['nullable', 'string', 'size:3'],
             'supplier' => ['nullable', 'string', 'max:255'],
             'station' => ['nullable', 'string', 'max:255'],
@@ -81,7 +81,7 @@ class FleetFuelRecordController extends Controller
         $data['vehicle_id'] = $vehicleModel->id;
         $data['fuel_type'] ??= $vehicleModel->fuel_type ?? 'diesel';
         $data['unit'] ??= 'L';
-        $data['currency'] ??= 'SAR';
+        $data['currency'] ??= 'TND';
         $data['created_by'] = $request->user()?->id;
 
         $record = VehicleFuelRecord::create($data);
@@ -105,7 +105,7 @@ class FleetFuelRecordController extends Controller
         $data = $request->validate([
             'fill_date' => ['sometimes', 'date'],
             'fill_time' => ['nullable', 'date_format:H:i,H:i:s'],
-            'fuel_type' => ['nullable', 'in:petrol,diesel,electric,hybrid,lpg,cng,hydrogen'],
+            'fuel_type' => ['nullable', 'in:petrol,diesel,electric,hybrid,lpg,cng,hydrogen,other'],
             'quantity' => ['sometimes', 'numeric', 'min:0.001'],
             'unit' => ['nullable', 'string', 'max:20'],
             'odometer_km' => ['nullable', 'integer', 'min:0'],

@@ -26,7 +26,7 @@ const isSubmitting = ref(false)
 
 const blankForm = () => ({
   maintenance_type: 'preventive',
-  priority: 'medium',
+  priority: 'normal',
   scheduled_date: new Date().toISOString().split('T')[0],
   completed_date: null,
   odometer_km: props.vehicle.odometer_km || null,
@@ -50,15 +50,20 @@ const maintenanceTypeOptions = [
   { title: 'Preventive / Regular Service', value: 'preventive' },
   { title: 'Corrective / Repair', value: 'corrective' },
   { title: 'Inspection / Certification', value: 'inspection' },
+  { title: 'Repair / Fix', value: 'repair' },
+  { title: 'Overhaul / Major Rebuild', value: 'overhaul' },
+  { title: 'Warranty Work', value: 'warranty' },
   { title: 'Manufacturer Recall', value: 'recall' },
   { title: 'Other Maintenance', value: 'other' },
 ]
 
 const priorityOptions = [
   { title: 'Low', value: 'low' },
+  { title: 'Normal', value: 'normal' },
   { title: 'Medium', value: 'medium' },
   { title: 'High', value: 'high' },
   { title: 'Urgent', value: 'urgent' },
+  { title: 'Critical', value: 'critical' },
 ]
 
 const statusOptions = [
@@ -102,9 +107,11 @@ const statusColor = val => ({
 
 const priorityColor = val => ({
   low: 'secondary',
+  normal: 'default',
   medium: 'info',
   high: 'warning',
   urgent: 'error',
+  critical: 'error',
 }[val] || 'default')
 
 const onLaborOrPartsChange = () => {
@@ -169,7 +176,7 @@ const deleteRecord = async id => {
                 {{ $t('fleet.total_maintenance_cost') || 'Total Maintenance Spend' }}
               </div>
               <div class="text-h5 font-weight-bold">
-                {{ totalMaintenanceCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} <span class="text-caption">SAR</span>
+                {{ totalMaintenanceCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} <span class="text-caption">TND</span>
               </div>
             </div>
             <VAvatar color="primary" variant="tonal" size="44">
@@ -298,7 +305,7 @@ const deleteRecord = async id => {
             </td>
             <td>
               <span class="font-weight-bold">
-                {{ item.total_cost != null ? `${Number(item.total_cost).toLocaleString()} ${item.currency || 'SAR'}` : '—' }}
+                {{ item.total_cost != null ? `${Number(item.total_cost).toLocaleString()} ${item.currency || 'TND'}` : '—' }}
               </span>
             </td>
             <td>
@@ -468,7 +475,7 @@ const deleteRecord = async id => {
                 type="number"
                 step="0.01"
                 min="0"
-                suffix="SAR"
+                suffix="TND"
               />
             </VCol>
             <VCol

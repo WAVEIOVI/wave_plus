@@ -26,14 +26,14 @@ return new class extends Migration
             $table->decimal('capacity_m3', 8, 2)->nullable();
             $table->unsignedSmallInteger('seats')->nullable();
             $table->enum('fuel_type', [
-                'petrol', 'diesel', 'electric', 'hybrid', 'lpg', 'cng', 'hydrogen',
+                'petrol', 'diesel', 'electric', 'hybrid', 'lpg', 'cng', 'hydrogen', 'other',
             ])->nullable();
             $table->decimal('fuel_tank_capacity', 8, 2)->nullable();
             $table->decimal('battery_capacity_kwh', 8, 2)->nullable();
             $table->enum('ownership_type', ['company', 'rental', 'client'])->default('company');
             $table->foreignUlid('current_responsible_employee_id')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('custody_type', [
-                'company_site', 'employee_home', 'mission', 'maintenance', 'rental', 'client',
+                'company_site', 'employee_home', 'mission', 'maintenance', 'rental', 'client', 'storage', 'other',
             ])->nullable();
             $table->foreignUlid('current_site_id')->nullable()->constrained('warehouse_sites')->nullOnDelete();
             $table->text('current_location_notes')->nullable();

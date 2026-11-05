@@ -192,6 +192,7 @@ export const useVehicleWorkflow = (onSuccess = () => {}) => {
     { title: 'LPG', value: 'lpg' },
     { title: 'CNG', value: 'cng' },
     { title: 'Hydrogen', value: 'hydrogen' },
+    { title: 'Other', value: 'other' },
   ]
 
   const returnStatusOptions = [

@@ -66,11 +66,15 @@ Route::prefix('hr')
         Route::get('fleet/vehicles/{vehicle}', [FleetVehicleController::class, 'show']);
         Route::put('fleet/vehicles/{vehicle}', [FleetVehicleController::class, 'update']);
         Route::delete('fleet/vehicles/{vehicle}', [FleetVehicleController::class, 'destroy']);
+        Route::get('fleet/vehicles/{vehicle}/check-deletable', [FleetVehicleController::class, 'checkDeletable']);
+        Route::post('fleet/vehicles/{vehicle}/archive', [FleetVehicleController::class, 'archive']);
         Route::post('fleet/vehicles/{vehicle}/assign', [FleetVehicleController::class, 'assign']);
         Route::post('fleet/vehicles/{vehicle}/return', [FleetVehicleController::class, 'returnVehicle']);
         Route::patch('fleet/vehicles/{vehicle}/status', [FleetVehicleController::class, 'updateStatus']);
         Route::patch('fleet/vehicles/{vehicle}/odometer', [FleetVehicleController::class, 'updateOdometer']);
+        Route::post('fleet/vehicles/{vehicle}/odometer/correct', [FleetVehicleController::class, 'correctOdometer']);
         Route::post('fleet/vehicles/{vehicle}/telemetry', [FleetVehicleController::class, 'updateTelemetry']);
+        Route::post('fleet/vehicles/{vehicle}/check-driver-authorization', [FleetVehicleController::class, 'checkDriverAuthorization']);
         Route::post('fleet/vehicles/{vehicle}/rental/start', [FleetVehicleController::class, 'startRental']);
         Route::post('fleet/vehicles/{vehicle}/rental/end', [FleetVehicleController::class, 'endRental']);
         Route::post('fleet/vehicles/{vehicle}/client-usage/start', [FleetVehicleController::class, 'startClientUsage']);

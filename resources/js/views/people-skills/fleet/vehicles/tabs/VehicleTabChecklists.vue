@@ -59,9 +59,12 @@ const checklistTypeOptions = [
 
 const statusOptions = [
   { title: 'Passed', value: 'passed' },
+  { title: 'Passed with Notes', value: 'passed_with_notes' },
   { title: 'Passed with Issues', value: 'passed_with_issues' },
   { title: 'Failed', value: 'failed' },
+  { title: 'Requires Attention', value: 'requires_attention' },
   { title: 'Pending Review', value: 'pending' },
+  { title: 'Incomplete', value: 'incomplete' },
 ]
 
 const list = computed(() => {
@@ -79,9 +82,12 @@ const formatDate = val => {
 
 const statusColor = val => ({
   passed: 'success',
+  passed_with_notes: 'success',
   passed_with_issues: 'warning',
   failed: 'error',
+  requires_attention: 'warning',
   pending: 'info',
+  incomplete: 'secondary',
 }[val] || 'default')
 
 const openAdd = () => {

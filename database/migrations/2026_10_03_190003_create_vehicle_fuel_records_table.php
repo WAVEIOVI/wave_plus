@@ -24,6 +24,7 @@ return new class extends Migration
                 'petrol',
                 'diesel',
                 'electric',
+                'hybrid',
                 'lpg',
                 'cng',
                 'hydrogen',
