@@ -6,8 +6,6 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -82,48 +80,6 @@ class AuthController extends Controller
         }
 
         return response()->json($response);
-    }
-
-    /**
-     * Register a new user.
-     *
-     * Assigns the default "User" role and returns the same
-     * response shape as login for immediate authentication.
-     */
-    public function register(Request $request): JsonResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', 'string', 'confirmed', Password::defaults()],
-        ]);
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'is_active' => true,
-            'can_login' => true,
-            'account_status' => 'active',
-        ]);
-
-        // Assign default role
-        $user->assignRole('User');
-
-        if ($request->hasSession()) {
-            $request->session()->regenerate();
-            Auth::login($user);
-        }
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        return response()->json([
-            'accessToken' => $token,
-            'userData' => $this->formatUserData($user),
-            'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
-            'roles' => $user->getRoleNames()->values()->all(),
-            'userAbilityRules' => $this->mapPermissionsToCasl($user),
-        ], 201);
     }
 
     /**

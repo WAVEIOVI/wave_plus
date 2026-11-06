@@ -18,6 +18,8 @@ class FinancialAccountController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', FinancialAccount::class);
+
         $accounts = $this->accountService->list($request->all());
 
         return response()->json([
@@ -29,6 +31,7 @@ class FinancialAccountController extends Controller
     public function show(string $id): JsonResponse
     {
         $account = $this->accountService->find($id);
+        $this->authorize('view', $account);
 
         return response()->json([
             'success' => true,
@@ -38,6 +41,8 @@ class FinancialAccountController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', FinancialAccount::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'type' => 'required|in:cash,bank,petty_cash,other',
@@ -62,6 +67,8 @@ class FinancialAccountController extends Controller
 
     public function update(FinancialAccount $financialAccount, Request $request): JsonResponse
     {
+        $this->authorize('update', $financialAccount);
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:100',
             'account_number' => 'nullable|string|max:50',
@@ -83,6 +90,8 @@ class FinancialAccountController extends Controller
 
     public function transactions(string $id, Request $request): JsonResponse
     {
+        $this->authorize('viewAny', FinancialAccount::class);
+
         $transactions = $this->accountService->getTransactions($id, $request->all());
 
         return response()->json([
@@ -93,6 +102,8 @@ class FinancialAccountController extends Controller
 
     public function reconcile(FinancialAccount $financialAccount, Request $request): JsonResponse
     {
+        $this->authorize('update', $financialAccount);
+
         $validated = $request->validate([
             'transaction_ids' => 'required|array|min:1',
             'transaction_ids.*' => 'required|ulid',

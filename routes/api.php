@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Route;
 
 // ── Public Auth & Registration Request Routes ───────────────────────────
 Route::prefix('auth')->group(function () {
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
     // NOTE: Direct user registration is disabled. Visitors submit registration requests.
     Route::middleware('auth:sanctum')->group(function () {
@@ -33,7 +33,7 @@ Route::prefix('auth')->group(function () {
 
 // ── Public Registration Requests (Visitors submit request to register) ──
 Route::prefix('public/registration-requests')
-    ->middleware(['throttle:10,1'])
+    ->middleware(['throttle:5,1'])
     ->group(function () {
         Route::post('/', [RegistrationRequestController::class, 'publicStore']);
     });

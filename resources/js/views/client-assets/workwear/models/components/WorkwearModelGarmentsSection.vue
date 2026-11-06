@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable camelcase, vue/no-mutating-props */
-import { WpFormDialog } from '@/components/shared'
+import { WpFormDialog, WpSectionCard } from '@/components/shared'
 import {
   WORKWEAR_CERTIFICATIONS_PRESETS,
   WORKWEAR_CUSTOM_CONSTRUCTION_PRESETS,
@@ -8,7 +8,6 @@ import {
   WORKWEAR_STANDARDS_CATALOG,
   WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS,
 } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
-import WorkwearSectionCard from '@/views/client-assets/workwear/models/components/WorkwearSectionCard.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -139,508 +138,509 @@ const activeTechnicalSpecsList = computed(() => {
 </script>
 
 <template>
-  <WorkwearSectionCard
-    id="garments"
-    icon="tabler-certificate"
-    :title="$t('Standards & Specs')"
-    :subtitle="$t('Applicable European & international PPE norms, workwear technical specifications, and custom-made profile.')"
+  <section
+    id="section-garments"
+    class="journal-section mb-6"
   >
-    <template #chips>
-      <VChip
-        size="small"
-        color="primary"
-        variant="tonal"
-      >
-        {{ (modelData.standards || []).length }} {{ $t('Standards') }}
-      </VChip>
-      <VChip
-        size="small"
-        color="info"
-        variant="tonal"
-      >
-        {{ (modelData.certifications || []).length }} {{ $t('Certifications') }}
-      </VChip>
-      <VChip
-        v-if="modelData.custom_made_requirements?.is_custom_made"
-        size="small"
-        color="warning"
-        variant="tonal"
-      >
-        {{ $t('Bespoke Profile') }}
-      </VChip>
-    </template>
-
-    <template #actions>
-      <VBtn
-        variant="tonal"
-        color="primary"
-        prepend-icon="tabler-adjustments"
-        @click="isDialogOpen = true"
-      >
-        {{ $t('Configure Standards & Specs') }}
-      </VBtn>
-    </template>
-
-    <!-- ━━━ Summary ━━━ -->
-    <VRow>
-      <!-- EN / ISO standards -->
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <div class="info-card">
-          <div class="info-card__head">
-            <div class="min-w-0">
-              <h3 class="text-subtitle-2 font-weight-bold mb-0">
-                {{ $t('Normative EN / ISO Standards') }}
-              </h3>
-              <span class="text-caption text-medium-emphasis">
-                {{ $t('Protective PPE & technical workplace safety norms') }}
-              </span>
-            </div>
-            <VChip
-              size="x-small"
-              color="primary"
-              variant="tonal"
-            >
-              {{ (modelData.standards || []).length }}
-            </VChip>
-          </div>
-
-          <div
-            v-if="modelData.standards?.length"
-            class="d-flex flex-wrap gap-2"
-          >
-            <VChip
-              v-for="std in modelData.standards"
-              :key="std"
-              size="small"
-              color="primary"
-              variant="tonal"
-              class="font-mono font-weight-medium"
-            >
-              <VIcon
-                start
-                icon="tabler-shield-check"
-                size="14"
-              />
-              {{ std }}
-            </VChip>
-          </div>
-          <p
-            v-else
-            class="text-body-2 text-disabled mb-0"
-          >
-            {{ $t('No normative standards configured for this model.') }}
-          </p>
-        </div>
-      </VCol>
-
-      <!-- Certifications -->
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <div class="info-card">
-          <div class="info-card__head">
-            <div class="min-w-0">
-              <h3 class="text-subtitle-2 font-weight-bold mb-0">
-                {{ $t('Industry & Safety Certifications') }}
-              </h3>
-              <span class="text-caption text-medium-emphasis">
-                {{ $t('OEKO-TEX, CE Category & Quality Standards') }}
-              </span>
-            </div>
-            <VChip
-              size="x-small"
-              color="info"
-              variant="tonal"
-            >
-              {{ (modelData.certifications || []).length }}
-            </VChip>
-          </div>
-
-          <div
-            v-if="modelData.certifications?.length"
-            class="d-flex flex-wrap gap-2"
-          >
-            <VChip
-              v-for="cert in modelData.certifications"
-              :key="cert"
-              size="small"
-              color="info"
-              variant="tonal"
-              class="font-weight-medium"
-            >
-              <VIcon
-                start
-                icon="tabler-certificate"
-                size="14"
-              />
-              {{ cert }}
-            </VChip>
-          </div>
-          <p
-            v-else
-            class="text-body-2 text-disabled mb-0"
-          >
-            {{ $t('No compliance certifications recorded.') }}
-          </p>
-        </div>
-      </VCol>
-
-      <!-- Technical construction -->
-      <VCol
-        cols="12"
-        md="8"
-      >
-        <div class="info-card">
-          <div class="info-card__head">
-            <h3 class="text-subtitle-2 font-weight-bold mb-0">
-              {{ $t('Technical Construction Profile') }}
-            </h3>
-            <VChip
-              size="x-small"
-              color="secondary"
-              variant="tonal"
-            >
-              {{ activeTechnicalSpecsList.length }} {{ $t('specs') }}
-            </VChip>
-          </div>
-
-          <div
-            v-if="activeTechnicalSpecsList.length"
-            class="spec-grid"
-          >
-            <div
-              v-for="spec in activeTechnicalSpecsList"
-              :key="spec.key"
-              class="spec-pill"
-            >
-              <span class="text-caption text-medium-emphasis d-block">{{ spec.label }}</span>
-              <span class="text-body-2 font-weight-medium text-break">{{ spec.value }}</span>
-            </div>
-          </div>
-          <p
-            v-else
-            class="text-body-2 text-disabled mb-0"
-          >
-            {{ $t('Default workwear construction applies. Click "Configure" to set fastening, storage, reinforcements, or collar specs.') }}
-          </p>
-        </div>
-      </VCol>
-
-      <!-- Bespoke -->
-      <VCol
-        cols="12"
-        md="4"
-      >
-        <div class="info-card">
-          <div class="info-card__head">
-            <h3 class="text-subtitle-2 font-weight-bold mb-0">
-              {{ $t('Bespoke & Fit Profile') }}
-            </h3>
-            <VChip
-              size="x-small"
-              :color="modelData.custom_made_requirements?.is_custom_made ? 'warning' : 'secondary'"
-              variant="tonal"
-            >
-              {{ modelData.custom_made_requirements?.is_custom_made ? $t('Custom Made') : $t('Ready-to-Wear') }}
-            </VChip>
-          </div>
-
-          <dl class="fact-list">
-            <div>
-              <dt>{{ $t('Fit Variation:') }}</dt>
-              <dd class="text-capitalize">
-                {{ fitVariationLabel }}
-              </dd>
-            </div>
-            <div v-if="modelData.custom_made_requirements?.lead_time_days">
-              <dt>{{ $t('Lead Time:') }}</dt>
-              <dd>{{ modelData.custom_made_requirements.lead_time_days }} {{ $t('days') }}</dd>
-            </div>
-            <div v-if="modelData.custom_made_requirements?.moq">
-              <dt>{{ $t('MOQ:') }}</dt>
-              <dd>{{ modelData.custom_made_requirements.moq }} {{ $t('units') }}</dd>
-            </div>
-          </dl>
-        </div>
-      </VCol>
-    </VRow>
-
-    <!-- ━━━ Editor dialog ━━━ -->
-    <WpFormDialog
-      v-model="isDialogOpen"
-      :title="$t('Normative Standards & Technical Construction Editor')"
-      :subtitle="$t('Applicable European & international PPE norms, workwear technical specifications, and bespoke profile.')"
+    <WpSectionCard
       icon="tabler-certificate"
-      icon-color="primary"
-      size="large"
-      :max-width="1020"
-      :submit-label="$t('Apply & Done')"
-      :cancel-label="$t('Close')"
-      @submit="isDialogOpen = false"
-      @cancel="isDialogOpen = false"
+      :title="$t('Standards & Specs')"
+      :subtitle="$t('Applicable European & international PPE norms, workwear technical specifications, and custom-made profile.')"
     >
-      <VTabs
-        v-model="activeTab"
-        density="compact"
-        color="primary"
-        show-arrows
-        class="border-b mb-5"
-      >
-        <VTab value="standards">
-          <VIcon
-            start
-            icon="tabler-shield-check"
-            size="16"
-          />
-          {{ $t('Standards & Certifications') }}
-        </VTab>
-        <VTab value="specs">
-          <VIcon
-            start
-            icon="tabler-sewing-machine"
-            size="16"
-          />
-          {{ $t('Technical Construction Specs') }}
-        </VTab>
-        <VTab value="custom">
-          <VIcon
-            start
-            icon="tabler-ruler-measure"
-            size="16"
-          />
-          {{ $t('Bespoke & Fit Profile') }}
-        </VTab>
-      </VTabs>
+      <template #actions>
+        <VChip
+          size="small"
+          color="primary"
+          variant="tonal"
+        >
+          {{ (modelData.standards || []).length }} {{ $t('Standards') }}
+        </VChip>
+        <VChip
+          size="small"
+          color="info"
+          variant="tonal"
+        >
+          {{ (modelData.certifications || []).length }} {{ $t('Certifications') }}
+        </VChip>
+        <VChip
+          v-if="modelData.custom_made_requirements?.is_custom_made"
+          size="small"
+          color="warning"
+          variant="tonal"
+        >
+          {{ $t('Bespoke Profile') }}
+        </VChip>
+        <VBtn
+          variant="tonal"
+          color="primary"
+          prepend-icon="tabler-adjustments"
+          @click="isDialogOpen = true"
+        >
+          {{ $t('Configure Standards & Specs') }}
+        </VBtn>
+      </template>
 
-      <!-- Tab 1 · Standards & certifications -->
-      <div
-        v-if="activeTab === 'standards'"
-        class="d-flex flex-column gap-6"
-      >
-        <div>
-          <div class="text-subtitle-2 font-weight-bold mb-1">
-            {{ $t('Normative EN / ISO Standards') }}
-          </div>
-          <p class="text-body-2 text-medium-emphasis mb-3">
-            {{ $t('Select or enter applicable European PPE safety standards.') }}
-          </p>
-          <AppCombobox
-            v-model="modelData.standards"
-            :items="standardComboItems"
-            :label="$t('EN / ISO Standards')"
-            :placeholder="$t('Select or type normative standards...')"
-            multiple
-            chips
-            closable-chips
-            variant="outlined"
-          />
-          <div class="d-flex flex-wrap gap-2 mt-3">
-            <VChip
-              v-for="std in WORKWEAR_STANDARDS_CATALOG"
-              :key="std.code"
-              size="small"
-              :color="isStandardSelected(std.code) ? 'primary' : 'secondary'"
-              :variant="isStandardSelected(std.code) ? 'flat' : 'tonal'"
-              :prepend-icon="isStandardSelected(std.code) ? 'tabler-check' : undefined"
-              class="font-mono"
-              :aria-pressed="isStandardSelected(std.code)"
-              @click="toggleStandardChip(std.code)"
-            >
-              {{ std.code }}
-            </VChip>
-          </div>
-        </div>
-
-        <VDivider />
-
-        <div>
-          <div class="text-subtitle-2 font-weight-bold mb-1">
-            {{ $t('Compliance & Quality Certifications') }}
-          </div>
-          <p class="text-body-2 text-medium-emphasis mb-3">
-            {{ $t('Fabric and manufacturing quality certifications.') }}
-          </p>
-          <AppCombobox
-            v-model="modelData.certifications"
-            :items="WORKWEAR_CERTIFICATIONS_PRESETS"
-            :label="$t('Compliance Certifications')"
-            multiple
-            chips
-            closable-chips
-            variant="outlined"
-          />
-          <div class="d-flex flex-wrap gap-2 mt-3">
-            <VChip
-              v-for="cert in WORKWEAR_CERTIFICATIONS_PRESETS"
-              :key="cert"
-              size="small"
-              :color="(modelData.certifications || []).includes(cert) ? 'info' : 'secondary'"
-              :variant="(modelData.certifications || []).includes(cert) ? 'flat' : 'tonal'"
-              :prepend-icon="(modelData.certifications || []).includes(cert) ? 'tabler-check' : undefined"
-              :aria-pressed="(modelData.certifications || []).includes(cert)"
-              @click="toggleCertificationChip(cert)"
-            >
-              {{ cert }}
-            </VChip>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab 2 · Technical construction -->
-      <div
-        v-else-if="activeTab === 'specs'"
-        class="d-flex flex-column gap-4"
-      >
-        <div>
-          <div class="text-subtitle-2 font-weight-bold">
-            {{ $t('Technical Construction & Workwear Specifications') }}
-          </div>
-          <p class="text-body-2 text-medium-emphasis mb-0">
-            {{ $t('Click quick-answer chips or type custom construction details for each category.') }}
-          </p>
-        </div>
-
-        <VRow>
-          <VCol
-            v-for="(preset, fieldKey) in WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS"
-            :key="fieldKey"
-            cols="12"
-            md="6"
-          >
-            <div class="info-card">
-              <div class="d-flex align-center gap-2">
-                <VIcon
-                  :icon="preset.icon"
-                  size="18"
-                  color="primary"
-                />
-                <span class="text-subtitle-2 font-weight-bold">{{ preset.title }}</span>
+      <!-- ━━━ Summary ━━━ -->
+      <VRow>
+        <!-- EN / ISO standards -->
+        <VCol
+          cols="12"
+          md="6"
+        >
+          <div class="info-card">
+            <div class="info-card__head">
+              <div class="min-w-0">
+                <h3 class="text-subtitle-2 font-weight-bold mb-0">
+                  {{ $t('Normative EN / ISO Standards') }}
+                </h3>
+                <span class="text-caption text-medium-emphasis">
+                  {{ $t('Protective PPE & technical workplace safety norms') }}
+                </span>
               </div>
-              <AppTextField
-                v-model="modelData.technical_specs[fieldKey]"
-                :placeholder="preset.placeholder"
-                :aria-label="preset.title"
-                density="compact"
+              <VChip
+                size="x-small"
+                color="primary"
+                variant="tonal"
+              >
+                {{ (modelData.standards || []).length }}
+              </VChip>
+            </div>
+
+            <div
+              v-if="modelData.standards?.length"
+              class="d-flex flex-wrap gap-2"
+            >
+              <VChip
+                v-for="std in modelData.standards"
+                :key="std"
+                size="small"
+                color="primary"
+                variant="tonal"
+                class="font-mono font-weight-medium"
+              >
+                <VIcon
+                  start
+                  icon="tabler-shield-check"
+                  size="14"
+                />
+                {{ std }}
+              </VChip>
+            </div>
+            <p
+              v-else
+              class="text-body-2 text-disabled mb-0"
+            >
+              {{ $t('No normative standards configured for this model.') }}
+            </p>
+          </div>
+        </VCol>
+
+        <!-- Certifications -->
+        <VCol
+          cols="12"
+          md="6"
+        >
+          <div class="info-card">
+            <div class="info-card__head">
+              <div class="min-w-0">
+                <h3 class="text-subtitle-2 font-weight-bold mb-0">
+                  {{ $t('Industry & Safety Certifications') }}
+                </h3>
+                <span class="text-caption text-medium-emphasis">
+                  {{ $t('OEKO-TEX, CE Category & Quality Standards') }}
+                </span>
+              </div>
+              <VChip
+                size="x-small"
+                color="info"
+                variant="tonal"
+              >
+                {{ (modelData.certifications || []).length }}
+              </VChip>
+            </div>
+
+            <div
+              v-if="modelData.certifications?.length"
+              class="d-flex flex-wrap gap-2"
+            >
+              <VChip
+                v-for="cert in modelData.certifications"
+                :key="cert"
+                size="small"
+                color="info"
+                variant="tonal"
+                class="font-weight-medium"
+              >
+                <VIcon
+                  start
+                  icon="tabler-certificate"
+                  size="14"
+                />
+                {{ cert }}
+              </VChip>
+            </div>
+            <p
+              v-else
+              class="text-body-2 text-disabled mb-0"
+            >
+              {{ $t('No compliance certifications recorded.') }}
+            </p>
+          </div>
+        </VCol>
+
+        <!-- Technical construction -->
+        <VCol
+          cols="12"
+          md="8"
+        >
+          <div class="info-card">
+            <div class="info-card__head">
+              <h3 class="text-subtitle-2 font-weight-bold mb-0">
+                {{ $t('Technical Construction Profile') }}
+              </h3>
+              <VChip
+                size="x-small"
+                color="secondary"
+                variant="tonal"
+              >
+                {{ activeTechnicalSpecsList.length }} {{ $t('specs') }}
+              </VChip>
+            </div>
+
+            <div
+              v-if="activeTechnicalSpecsList.length"
+              class="spec-grid"
+            >
+              <div
+                v-for="spec in activeTechnicalSpecsList"
+                :key="spec.key"
+                class="spec-pill"
+              >
+                <span class="text-caption text-medium-emphasis d-block">{{ spec.label }}</span>
+                <span class="text-body-2 font-weight-medium text-break">{{ spec.value }}</span>
+              </div>
+            </div>
+            <p
+              v-else
+              class="text-body-2 text-disabled mb-0"
+            >
+              {{ $t('Default workwear construction applies. Click "Configure" to set fastening, storage, reinforcements, or collar specs.') }}
+            </p>
+          </div>
+        </VCol>
+
+        <!-- Bespoke -->
+        <VCol
+          cols="12"
+          md="4"
+        >
+          <div class="info-card">
+            <div class="info-card__head">
+              <h3 class="text-subtitle-2 font-weight-bold mb-0">
+                {{ $t('Bespoke & Fit Profile') }}
+              </h3>
+              <VChip
+                size="x-small"
+                :color="modelData.custom_made_requirements?.is_custom_made ? 'warning' : 'secondary'"
+                variant="tonal"
+              >
+                {{ modelData.custom_made_requirements?.is_custom_made ? $t('Custom Made') : $t('Ready-to-Wear') }}
+              </VChip>
+            </div>
+
+            <dl class="fact-list">
+              <div>
+                <dt>{{ $t('Fit Variation:') }}</dt>
+                <dd class="text-capitalize">
+                  {{ fitVariationLabel }}
+                </dd>
+              </div>
+              <div v-if="modelData.custom_made_requirements?.lead_time_days">
+                <dt>{{ $t('Lead Time:') }}</dt>
+                <dd>{{ modelData.custom_made_requirements.lead_time_days }} {{ $t('days') }}</dd>
+              </div>
+              <div v-if="modelData.custom_made_requirements?.moq">
+                <dt>{{ $t('MOQ:') }}</dt>
+                <dd>{{ modelData.custom_made_requirements.moq }} {{ $t('units') }}</dd>
+              </div>
+            </dl>
+          </div>
+        </VCol>
+      </VRow>
+
+      <!-- ━━━ Editor dialog ━━━ -->
+      <WpFormDialog
+        v-model="isDialogOpen"
+        :title="$t('Normative Standards & Technical Construction Editor')"
+        :subtitle="$t('Applicable European & international PPE norms, workwear technical specifications, and bespoke profile.')"
+        icon="tabler-certificate"
+        icon-color="primary"
+        size="large"
+        :max-width="1020"
+        :submit-label="$t('Apply & Done')"
+        :cancel-label="$t('Close')"
+        @submit="isDialogOpen = false"
+        @cancel="isDialogOpen = false"
+      >
+        <VTabs
+          v-model="activeTab"
+          density="compact"
+          color="primary"
+          show-arrows
+          class="border-b mb-5"
+        >
+          <VTab value="standards">
+            <VIcon
+              start
+              icon="tabler-shield-check"
+              size="16"
+            />
+            {{ $t('Standards & Certifications') }}
+          </VTab>
+          <VTab value="specs">
+            <VIcon
+              start
+              icon="tabler-sewing-machine"
+              size="16"
+            />
+            {{ $t('Technical Construction Specs') }}
+          </VTab>
+          <VTab value="custom">
+            <VIcon
+              start
+              icon="tabler-ruler-measure"
+              size="16"
+            />
+            {{ $t('Bespoke & Fit Profile') }}
+          </VTab>
+        </VTabs>
+
+        <!-- Tab 1 · Standards & certifications -->
+        <div
+          v-if="activeTab === 'standards'"
+          class="d-flex flex-column gap-6"
+        >
+          <div>
+            <div class="text-subtitle-2 font-weight-bold mb-1">
+              {{ $t('Normative EN / ISO Standards') }}
+            </div>
+            <p class="text-body-2 text-medium-emphasis mb-3">
+              {{ $t('Select or enter applicable European PPE safety standards.') }}
+            </p>
+            <AppCombobox
+              v-model="modelData.standards"
+              :items="standardComboItems"
+              :label="$t('EN / ISO Standards')"
+              :placeholder="$t('Select or type normative standards...')"
+              multiple
+              chips
+              closable-chips
+              variant="outlined"
+            />
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <VChip
+                v-for="std in WORKWEAR_STANDARDS_CATALOG"
+                :key="std.code"
+                size="small"
+                :color="isStandardSelected(std.code) ? 'primary' : 'secondary'"
+                :variant="isStandardSelected(std.code) ? 'flat' : 'tonal'"
+                :prepend-icon="isStandardSelected(std.code) ? 'tabler-check' : undefined"
+                class="font-mono"
+                :aria-pressed="isStandardSelected(std.code)"
+                @click="toggleStandardChip(std.code)"
+              >
+                {{ std.code }}
+              </VChip>
+            </div>
+          </div>
+
+          <VDivider />
+
+          <div>
+            <div class="text-subtitle-2 font-weight-bold mb-1">
+              {{ $t('Compliance & Quality Certifications') }}
+            </div>
+            <p class="text-body-2 text-medium-emphasis mb-3">
+              {{ $t('Fabric and manufacturing quality certifications.') }}
+            </p>
+            <AppCombobox
+              v-model="modelData.certifications"
+              :items="WORKWEAR_CERTIFICATIONS_PRESETS"
+              :label="$t('Compliance Certifications')"
+              multiple
+              chips
+              closable-chips
+              variant="outlined"
+            />
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <VChip
+                v-for="cert in WORKWEAR_CERTIFICATIONS_PRESETS"
+                :key="cert"
+                size="small"
+                :color="(modelData.certifications || []).includes(cert) ? 'info' : 'secondary'"
+                :variant="(modelData.certifications || []).includes(cert) ? 'flat' : 'tonal'"
+                :prepend-icon="(modelData.certifications || []).includes(cert) ? 'tabler-check' : undefined"
+                :aria-pressed="(modelData.certifications || []).includes(cert)"
+                @click="toggleCertificationChip(cert)"
+              >
+                {{ cert }}
+              </VChip>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2 · Technical construction -->
+        <div
+          v-else-if="activeTab === 'specs'"
+          class="d-flex flex-column gap-4"
+        >
+          <div>
+            <div class="text-subtitle-2 font-weight-bold">
+              {{ $t('Technical Construction & Workwear Specifications') }}
+            </div>
+            <p class="text-body-2 text-medium-emphasis mb-0">
+              {{ $t('Click quick-answer chips or type custom construction details for each category.') }}
+            </p>
+          </div>
+
+          <VRow>
+            <VCol
+              v-for="(preset, fieldKey) in WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS"
+              :key="fieldKey"
+              cols="12"
+              md="6"
+            >
+              <div class="info-card">
+                <div class="d-flex align-center gap-2">
+                  <VIcon
+                    :icon="preset.icon"
+                    size="18"
+                    color="primary"
+                  />
+                  <span class="text-subtitle-2 font-weight-bold">{{ preset.title }}</span>
+                </div>
+                <AppTextField
+                  v-model="modelData.technical_specs[fieldKey]"
+                  :placeholder="preset.placeholder"
+                  :aria-label="preset.title"
+                  density="compact"
+                  variant="outlined"
+                />
+                <div class="d-flex flex-wrap gap-1">
+                  <VChip
+                    v-for="chipText in preset.quickAnswers"
+                    :key="chipText"
+                    size="small"
+                    :color="isQuickAnswerActive(fieldKey, chipText) ? 'primary' : 'secondary'"
+                    :variant="isQuickAnswerActive(fieldKey, chipText) ? 'flat' : 'tonal'"
+                    :aria-pressed="isQuickAnswerActive(fieldKey, chipText)"
+                    @click="applyQuickAnswer(fieldKey, chipText)"
+                  >
+                    {{ chipText }}
+                  </VChip>
+                </div>
+              </div>
+            </VCol>
+          </VRow>
+        </div>
+
+        <!-- Tab 3 · Bespoke & fit -->
+        <div
+          v-else-if="activeTab === 'custom'"
+          class="d-flex flex-column gap-4"
+        >
+          <div class="d-flex align-center justify-space-between gap-3 info-card">
+            <div class="min-w-0">
+              <span class="text-subtitle-2 font-weight-bold d-block">{{ $t('Bespoke / Custom-Made Profile') }}</span>
+              <span class="text-body-2 text-medium-emphasis">{{ $t('Enable custom tailoring, non-standard fit variations, and bespoke requirements.') }}</span>
+            </div>
+            <VSwitch
+              v-model="modelData.custom_made_requirements.is_custom_made"
+              color="primary"
+              hide-details
+              :aria-label="$t('Bespoke / Custom-Made Profile')"
+            />
+          </div>
+
+          <VRow>
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppSelect
+                v-model="modelData.custom_made_requirements.fit_variation"
+                :items="WORKWEAR_FIT_VARIATIONS"
+                item-title="title"
+                item-value="value"
+                :label="$t('Fit Variation')"
                 variant="outlined"
               />
-              <div class="d-flex flex-wrap gap-1">
-                <VChip
-                  v-for="chipText in preset.quickAnswers"
-                  :key="chipText"
-                  size="small"
-                  :color="isQuickAnswerActive(fieldKey, chipText) ? 'primary' : 'secondary'"
-                  :variant="isQuickAnswerActive(fieldKey, chipText) ? 'flat' : 'tonal'"
-                  :aria-pressed="isQuickAnswerActive(fieldKey, chipText)"
-                  @click="applyQuickAnswer(fieldKey, chipText)"
-                >
-                  {{ chipText }}
-                </VChip>
-              </div>
-            </div>
-          </VCol>
-        </VRow>
-      </div>
+            </VCol>
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppTextField
+                v-model="modelData.custom_made_requirements.special_sizing"
+                :label="$t('Special Sizing / Tailoring Notes')"
+                :placeholder="$t('e.g. Extended leg inseam (+5cm), Tall sizing')"
+                variant="outlined"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppTextField
+                v-model.number="modelData.custom_made_requirements.lead_time_days"
+                type="number"
+                :label="$t('Manufacturing Lead Time (Days)')"
+                variant="outlined"
+              />
+            </VCol>
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppTextField
+                v-model.number="modelData.custom_made_requirements.moq"
+                type="number"
+                :label="$t('Minimum Order Quantity (MOQ Units)')"
+                variant="outlined"
+              />
+            </VCol>
+          </VRow>
 
-      <!-- Tab 3 · Bespoke & fit -->
-      <div
-        v-else-if="activeTab === 'custom'"
-        class="d-flex flex-column gap-4"
-      >
-        <div class="d-flex align-center justify-space-between gap-3 info-card">
-          <div class="min-w-0">
-            <span class="text-subtitle-2 font-weight-bold d-block">{{ $t('Bespoke / Custom-Made Profile') }}</span>
-            <span class="text-body-2 text-medium-emphasis">{{ $t('Enable custom tailoring, non-standard fit variations, and bespoke requirements.') }}</span>
+          <div>
+            <div class="text-subtitle-2 font-weight-bold mb-2">
+              {{ $t('Bespoke Construction Requirements') }}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <VChip
+                v-for="chip in WORKWEAR_CUSTOM_CONSTRUCTION_PRESETS"
+                :key="chip"
+                size="small"
+                :color="(modelData.custom_made_requirements.construction_requirements || []).includes(chip) ? 'primary' : 'secondary'"
+                :variant="(modelData.custom_made_requirements.construction_requirements || []).includes(chip) ? 'flat' : 'tonal'"
+                :aria-pressed="(modelData.custom_made_requirements.construction_requirements || []).includes(chip)"
+                @click="toggleCustomRequirement(chip)"
+              >
+                {{ chip }}
+              </VChip>
+            </div>
           </div>
-          <VSwitch
-            v-model="modelData.custom_made_requirements.is_custom_made"
-            color="primary"
-            hide-details
-            :aria-label="$t('Bespoke / Custom-Made Profile')"
+
+          <AppTextarea
+            v-model="modelData.custom_made_requirements.notes"
+            :label="$t('Custom-Made Production Notes')"
+            rows="3"
+            auto-grow
+            variant="outlined"
           />
         </div>
-
-        <VRow>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <AppSelect
-              v-model="modelData.custom_made_requirements.fit_variation"
-              :items="WORKWEAR_FIT_VARIATIONS"
-              item-title="title"
-              item-value="value"
-              :label="$t('Fit Variation')"
-              variant="outlined"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <AppTextField
-              v-model="modelData.custom_made_requirements.special_sizing"
-              :label="$t('Special Sizing / Tailoring Notes')"
-              :placeholder="$t('e.g. Extended leg inseam (+5cm), Tall sizing')"
-              variant="outlined"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <AppTextField
-              v-model.number="modelData.custom_made_requirements.lead_time_days"
-              type="number"
-              :label="$t('Manufacturing Lead Time (Days)')"
-              variant="outlined"
-            />
-          </VCol>
-          <VCol
-            cols="12"
-            md="6"
-          >
-            <AppTextField
-              v-model.number="modelData.custom_made_requirements.moq"
-              type="number"
-              :label="$t('Minimum Order Quantity (MOQ Units)')"
-              variant="outlined"
-            />
-          </VCol>
-        </VRow>
-
-        <div>
-          <div class="text-subtitle-2 font-weight-bold mb-2">
-            {{ $t('Bespoke Construction Requirements') }}
-          </div>
-          <div class="d-flex flex-wrap gap-2">
-            <VChip
-              v-for="chip in WORKWEAR_CUSTOM_CONSTRUCTION_PRESETS"
-              :key="chip"
-              size="small"
-              :color="(modelData.custom_made_requirements.construction_requirements || []).includes(chip) ? 'primary' : 'secondary'"
-              :variant="(modelData.custom_made_requirements.construction_requirements || []).includes(chip) ? 'flat' : 'tonal'"
-              :aria-pressed="(modelData.custom_made_requirements.construction_requirements || []).includes(chip)"
-              @click="toggleCustomRequirement(chip)"
-            >
-              {{ chip }}
-            </VChip>
-          </div>
-        </div>
-
-        <AppTextarea
-          v-model="modelData.custom_made_requirements.notes"
-          :label="$t('Custom-Made Production Notes')"
-          rows="3"
-          auto-grow
-          variant="outlined"
-        />
-      </div>
-    </WpFormDialog>
-  </WorkwearSectionCard>
+      </WpFormDialog>
+    </WpSectionCard>
+  </section>
 </template>
 
 <style lang="scss" scoped>

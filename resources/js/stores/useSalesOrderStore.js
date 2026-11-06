@@ -515,7 +515,7 @@ export const useSalesOrderStore = defineStore('crm-sales-order', () => {
     validationErrors.value = null
 
     try {
-      const response = await $api(`/crm/sales-orders/${id}/blueprint-lines`, {
+      const response = await $api(`/crm/sales-orders/${id}/lines/from-blueprint`, {
         method: 'POST',
         body: deepClone(data),
       })

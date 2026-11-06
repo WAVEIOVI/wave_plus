@@ -17,13 +17,15 @@ class CustomerFinancialService
 
     public function listCustomers(array $filters = []): LengthAwarePaginator
     {
-        $query = Client::query()->select('id', 'company_name', 'legal_name', 'phone', 'email', 'credit_limit', 'credit_currency', 'payment_terms');
+        $query = Client::query()
+            ->with(['contacts' => fn($q) => $q->where('is_primary', true)->select('id', 'contactable_id', 'contactable_type', 'phone', 'email')])
+            ->select('id', 'legal_name', 'commercial_name', 'primary_phone', 'primary_email', 'credit_limit', 'credit_currency', 'payment_terms');
 
         if (! empty($filters['search'])) {
             $s = $filters['search'];
             $query->where(function ($q) use ($s) {
-                $q->where('company_name', 'like', "%{$s}%")
-                    ->orWhere('legal_name', 'like', "%{$s}%");
+                $q->where('legal_name', 'like', "%{$s}%")
+                    ->orWhere('commercial_name', 'like', "%{$s}%");
             });
         }
 
@@ -41,6 +43,17 @@ class CustomerFinancialService
             $limit = (float) ($client->credit_limit ?? 0);
             $available = $limit > 0 ? max(0, $limit - $outstanding) : null;
 
+            // Extract contact info from primary contact or fallback to client fields
+            $primaryContact = $client->contacts->first();
+            $company_name = $client->commercial_name ?: $client->legal_name;
+            $phone = $primaryContact?->phone ?? $client->primary_phone;
+            $email = $primaryContact?->email ?? $client->primary_email;
+
+            // Add computed fields to maintain API contract
+            $client->company_name = $company_name;
+            $client->phone = $phone;
+            $client->email = $email;
+
             $client->financial_summary = [
                 'total_invoiced' => round($totalInvoiced, 3),
                 'total_credit_notes' => round($totalCreditNotes, 3),
@@ -51,6 +64,9 @@ class CustomerFinancialService
                 'is_over_limit' => $limit > 0 && $outstanding > $limit,
             ];
 
+            // Unset the relation to clean up response
+            unset($client->contacts);
+
             return $client;
         });
 
@@ -59,7 +75,8 @@ class CustomerFinancialService
 
     public function getAccountDetails(string $clientId): array
     {
-        $client = Client::findOrFail($clientId);
+        $client = Client::with(['contacts' => fn($q) => $q->where('is_primary', true)->select('id', 'contactable_id', 'contactable_type', 'phone', 'email')])
+            ->findOrFail($clientId);
 
         $invoices = SalesInvoice::forClient($clientId)->orderByDesc('invoice_date')->get();
         $invoiceItems = $invoices->where('type', 'invoice');
@@ -111,14 +128,17 @@ class CustomerFinancialService
 
         usort($timeline, fn ($a, $b) => strcmp($b['date'], $a['date']));
 
+        $primaryContact = $client->contacts->first();
+        $company_name = $client->commercial_name ?: $client->legal_name;
+
         return [
             'client' => [
                 'id' => $client->id,
-                'company_name' => $client->company_name,
+                'company_name' => $company_name,
                 'legal_name' => $client->legal_name,
-                'tax_number' => $client->tax_number ?? null,
+                'tax_number' => $client->tax_id ?? null,
                 'credit_limit' => round($creditLimit, 3),
-                'credit_currency' => $client->credit_currency ?? 'TND',
+                'credit_currency' => $client->credit_currency ?? $client->default_currency ?? 'TND',
                 'payment_terms' => $client->payment_terms,
             ],
             'summary' => [

@@ -1,5 +1,6 @@
 <script setup>
-import WorkwearSectionCard from '@/views/client-assets/workwear/models/components/WorkwearSectionCard.vue'
+/* eslint-disable camelcase */
+import { WpEmptyState, WpSectionCard, WpSimpleTable } from '@/components/shared'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -34,144 +35,101 @@ const STATUS_COLORS = {
 const statusColor = status => STATUS_COLORS[status] || 'secondary'
 const humanize = value => (value ? String(value).replace(/_/g, ' ') : '—')
 
+const columns = computed(() => [
+  { key: 'item_code', title: t('Code'), mobile: 'title' },
+  { key: 'size', title: t('Size') },
+  { key: 'status', title: t('Status') },
+  { key: 'item_condition', title: t('Condition') },
+  { key: 'assigned_to', title: t('Assigned To') },
+  { key: 'actions', title: '', align: 'end', mobile: 'hide' },
+])
+
 const openItem = item => {
   router.push({ name: 'client-assets-workwear-edit-id', params: { id: item.id }, query: { type: 'item' } })
 }
 </script>
 
 <template>
-  <WorkwearSectionCard
-    id="items"
-    icon="tabler-hanger"
-    :title="$t('Physical Items')"
-    :subtitle="$t('Serialized physical workwear garments produced from this model specification.')"
+  <section
+    id="section-items"
+    class="journal-section mb-6"
   >
-    <template #chips>
-      <VChip
-        size="small"
-        color="primary"
-        variant="tonal"
-        class="font-mono"
-      >
-        {{ totalItems }} {{ $t('items') }}
-      </VChip>
-    </template>
-
-    <template #actions>
-      <VBtn
-        variant="tonal"
-        color="primary"
-        prepend-icon="tabler-external-link"
-        :to="{ name: 'client-assets-workwear-list', query: { tab: 'items' } }"
-      >
-        {{ $t('View in Items Tab') }}
-      </VBtn>
-    </template>
-
-    <template v-if="items.length">
-      <!-- KPIs -->
-      <div class="kpi-row mb-4">
-        <div
-          v-for="kpi in kpis"
-          :key="kpi.key"
-          class="kpi-tile"
+    <WpSectionCard
+      icon="tabler-hanger"
+      :title="$t('Physical Items')"
+      :subtitle="$t('Serialized physical workwear garments produced from this model specification.')"
+    >
+      <template #actions>
+        <VChip
+          size="small"
+          color="primary"
+          variant="tonal"
+          class="font-mono"
         >
-          <VAvatar
-            :color="kpi.color"
-            variant="tonal"
-            size="36"
-            rounded
+          {{ totalItems }} {{ $t('items') }}
+        </VChip>
+        <VBtn
+          variant="tonal"
+          color="primary"
+          prepend-icon="tabler-external-link"
+          :to="{ name: 'client-assets-workwear-list', query: { tab: 'items' } }"
+        >
+          {{ $t('View in Items Tab') }}
+        </VBtn>
+      </template>
+
+      <template v-if="items.length">
+        <!-- KPIs -->
+        <div class="kpi-row mb-4">
+          <div
+            v-for="kpi in kpis"
+            :key="kpi.key"
+            class="kpi-tile"
           >
-            <VIcon
-              :icon="kpi.icon"
-              size="20"
-            />
-          </VAvatar>
-          <div>
-            <span class="text-body-2 text-medium-emphasis d-block">{{ kpi.label }}</span>
-            <span class="text-h6 font-weight-bold">{{ kpi.value }}</span>
+            <VAvatar
+              :color="kpi.color"
+              variant="tonal"
+              size="36"
+              rounded
+            >
+              <VIcon
+                :icon="kpi.icon"
+                size="20"
+              />
+            </VAvatar>
+            <div>
+              <span class="text-body-2 text-medium-emphasis d-block">{{ kpi.label }}</span>
+              <span class="text-h6 font-weight-bold">{{ kpi.value }}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Desktop table -->
-      <div class="d-none d-md-block">
-        <VTable
-          density="comfortable"
-          hover
-          class="text-no-wrap"
+        <!-- Responsive Table -->
+        <WpSimpleTable
+          :columns="columns"
+          :items="items"
+          item-key="id"
         >
-          <thead>
-            <tr>
-              <th>{{ $t('Code') }}</th>
-              <th>{{ $t('Size') }}</th>
-              <th>{{ $t('Status') }}</th>
-              <th>{{ $t('Condition') }}</th>
-              <th>{{ $t('Assigned To') }}</th>
-              <th class="text-end">
-                <span class="sr-only">{{ $t('Actions') }}</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="item in items"
-              :key="item.id"
-              class="cursor-pointer"
-              tabindex="0"
+          <template #cell.item_code="{ item }">
+            <span
+              class="font-weight-bold text-primary font-mono cursor-pointer text-link"
               @click="openItem(item)"
-              @keydown.enter="openItem(item)"
             >
-              <td class="font-weight-bold text-primary font-mono">
-                {{ item.item_code }}
-              </td>
-              <td>
-                <VChip
-                  size="small"
-                  variant="outlined"
-                  class="font-mono"
-                >
-                  {{ item.size || '—' }}
-                </VChip>
-              </td>
-              <td>
-                <VChip
-                  size="small"
-                  label
-                  variant="tonal"
-                  :color="statusColor(item.status)"
-                  class="text-capitalize"
-                >
-                  {{ humanize(item.status) }}
-                </VChip>
-              </td>
-              <td class="text-capitalize">
-                {{ humanize(item.item_condition) }}
-              </td>
-              <td>{{ item.current_assignment?.employee?.full_name || '—' }}</td>
-              <td class="text-end">
-                <VIcon
-                  icon="tabler-chevron-right"
-                  size="18"
-                  class="text-disabled"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </VTable>
-      </div>
+              {{ item.item_code }}
+            </span>
+          </template>
 
-      <!-- Mobile cards -->
-      <div class="d-flex d-md-none flex-column gap-2">
-        <VCard
-          v-for="item in items"
-          :key="item.id"
-          variant="outlined"
-          class="pa-3"
-          @click="openItem(item)"
-        >
-          <div class="d-flex justify-space-between align-center gap-2 mb-1">
-            <span class="font-mono font-weight-bold text-primary">{{ item.item_code }}</span>
+          <template #cell.size="{ item }">
+            <VChip
+              size="small"
+              variant="outlined"
+              class="font-mono"
+            >
+              {{ item.size || '—' }}
+            </VChip>
+          </template>
+
+          <template #cell.status="{ item }">
             <VChip
               size="small"
               label
@@ -181,29 +139,36 @@ const openItem = item => {
             >
               {{ humanize(item.status) }}
             </VChip>
-          </div>
-          <div class="text-body-2 text-medium-emphasis">
-            {{ $t('Size:') }} {{ item.size || '—' }}
-            · {{ item.current_assignment?.employee?.full_name || $t('Unassigned') }}
-          </div>
-        </VCard>
-      </div>
-    </template>
+          </template>
 
-    <div
-      v-else
-      class="empty-state"
-    >
-      <VIcon
-        icon="tabler-database-off"
-        size="36"
-        class="text-disabled"
+          <template #cell.item_condition="{ item }">
+            <span class="text-capitalize">{{ humanize(item.item_condition) }}</span>
+          </template>
+
+          <template #cell.assigned_to="{ item }">
+            <span>{{ item.current_assignment?.employee?.full_name || '—' }}</span>
+          </template>
+
+          <template #cell.actions="{ item }">
+            <VBtn
+              icon="tabler-chevron-right"
+              variant="text"
+              size="small"
+              color="secondary"
+              @click="openItem(item)"
+            />
+          </template>
+        </WpSimpleTable>
+      </template>
+
+      <WpEmptyState
+        v-else
+        icon="tabler-hanger"
+        :title="$t('No physical items generated for this model yet.')"
+        :subtitle="$t('Intake serialized items from the inventory tab to link them to this specification.')"
       />
-      <p class="text-body-1 mb-0">
-        {{ $t('No physical items generated for this model yet.') }}
-      </p>
-    </div>
-  </WorkwearSectionCard>
+    </WpSectionCard>
+  </section>
 </template>
 
 <style lang="scss" scoped>
@@ -224,31 +189,5 @@ const openItem = item => {
   border-radius: 10px;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border: 1px dashed rgba(var(--v-border-color), 0.4);
-  border-radius: 10px;
-  gap: 0.5rem;
-  padding: 2rem 1rem;
-  text-align: center;
-}
-
-// Screen-reader-only text (header of the icon-only column)
-.sr-only {
-  position: absolute;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  block-size: 1px;
-  inline-size: 1px;
-  white-space: nowrap;
-}
-
-tbody tr:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-  outline-offset: -2px;
 }
 </style>

@@ -78,7 +78,7 @@ class ProfitabilityService
             'order' => [
                 'id'         => $so->id,
                 'reference'  => $so->reference,
-                'client'     => $so->client?->company_name ?? 'N/A',
+                'client'     => $so->client?->commercial_name ?: $so->client?->legal_name ?: 'N/A',
                 'status'     => $so->status,
                 'currency'   => $so->currency ?? 'TND',
             ],

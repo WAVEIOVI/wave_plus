@@ -17,6 +17,8 @@ class ProfitabilityController extends Controller
 
     public function overview(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', \App\Modules\Finance\Models\SalesInvoice::class);
+
         $overview = $this->profitabilityService->getOverview($request->all());
 
         return response()->json([
@@ -27,6 +29,8 @@ class ProfitabilityController extends Controller
 
     public function salesOrder(string $id): JsonResponse
     {
+        $this->authorize('viewAny', \App\Modules\Finance\Models\SalesInvoice::class);
+
         $data = $this->profitabilityService->forSalesOrder($id);
 
         return response()->json([

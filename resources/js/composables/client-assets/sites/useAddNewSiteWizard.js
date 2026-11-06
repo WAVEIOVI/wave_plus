@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import { useClientStore } from '@/stores/useClientStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -10,7 +10,7 @@ import { useRouter } from 'vue-router'
 export function useAddNewSiteWizard(isOpen, emit) {
   const store = useClientAssetStore()
   const clientStore = useClientStore()
-  const snackbarStore = useSnackbarStore()
+  const { success: showSuccess, showApiError } = useAppSnackbar()
   const router = useRouter()
   const { t } = useI18n()
 
@@ -208,10 +208,7 @@ export function useAddNewSiteWizard(isOpen, emit) {
       const created = await store.createSite(payload)
       const newId = created?.data?.id || created?.id
 
-      snackbarStore.showMessage(
-        t('client_assets.sites.messages.created', 'Site created successfully'),
-        'success',
-      )
+      showSuccess(t('client_assets.sites.messages.created', 'Site created successfully'))
 
       emit('created', created)
       emit('addSite', created)

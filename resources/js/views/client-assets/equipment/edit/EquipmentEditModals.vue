@@ -3,7 +3,7 @@
 import { WpDeleteDialog, WpImageDialog, WpUnsavedChangesDialog } from '@/components/shared'
 import WpMediaViewerDialog from '@/components/shared/media/WpMediaViewerDialog.vue'
 import { localizedValue } from '@/composables/useLocaleField'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import ViewClientDialog from '@/views/business-partners/clients/list/ViewClientDialog.vue'
 import ViewGuidelineDialog from '@/views/catalog/guidelines/list/ViewGuidelineDialog.vue'
 import ClassBlueprintSelectModal from '@/views/client-assets/equipment/dialogs/ClassBlueprintSelectModal.vue'
@@ -54,7 +54,7 @@ const isMediaViewerOpen = defineModel('mediaViewerModal', { type: Boolean, defau
 const isDeleteDialogVisible = defineModel('deleteModal', { type: Boolean, default: false })
 const isUnsavedChangesDialogVisible = defineModel('unsavedChangesModal', { type: Boolean, default: false })
 
-const snackbarStore = useSnackbarStore()
+const { showError } = useAppSnackbar()
 </script>
 
 <template>
@@ -118,7 +118,7 @@ const snackbarStore = useSnackbarStore()
     show-cropper
     show-title-input
     @save="$emit('savePhoto', $event)"
-    @error="err => snackbarStore.showMessage(err?.message || $t('Photo upload error'), 'error')"
+    @error="err => showError(err?.message || $t('Photo upload error'))"
   />
 
   <WpMediaViewerDialog

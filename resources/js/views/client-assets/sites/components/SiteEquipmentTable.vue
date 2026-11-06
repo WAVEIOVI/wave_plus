@@ -1,5 +1,6 @@
 <script setup>
-import { WpMobileCard } from '@/components/shared'
+/* eslint-disable camelcase */
+import { WpMobileCard, WpResponsiveList, WpRowActions } from '@/components/shared'
 import {
   equipmentPhoto,
   resolveComplianceVariant,
@@ -8,7 +9,6 @@ import {
 } from '@/composables/client-assets/equipment/useEquipmentHelpers'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useDisplay } from 'vuetify'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
@@ -23,7 +23,6 @@ const emit = defineEmits([
 ])
 
 const { t } = useI18n()
-const { smAndDown } = useDisplay()
 
 const {
   equipmentTitle,
@@ -48,208 +47,150 @@ const tableHeaders = computed(() => [
   { title: t('Compliance'), key: 'compliance', sortable: false },
   { title: t('Serial / Tag'), key: 'serial', sortable: false },
   { title: t('Next Inspection'), key: 'inspection', sortable: false },
-  { title: t('Actions'), key: 'actions', sortable: false, align: 'end', width: '140px' },
+  { title: t('Actions'), key: 'actions', sortable: false, align: 'end', width: '120px' },
 ])
+
+const getRowActions = item => {
+  const actions = [
+    { label: t('View'), icon: 'tabler-eye', emit: 'view' },
+  ]
+
+  if (!props.readonly) {
+    actions.push(
+      { label: t('Edit'), icon: 'tabler-edit', emit: 'edit' },
+      { label: t('Delete'), icon: 'tabler-trash', emit: 'delete', color: 'error' },
+    )
+  }
+
+  return actions
+}
 </script>
 
 <template>
   <div class="site-equipment-table-container">
-    <!-- Mobile: Card-based list -->
-    <div
-      v-if="smAndDown"
-      class="d-flex flex-column gap-2"
+    <WpResponsiveList
+      :headers="tableHeaders"
+      :items="items"
+      :total-items="items.length"
+      hide-pagination
+      item-value="id"
+      density="compact"
     >
-      <WpMobileCard
-        v-for="eq in items"
-        :key="eq.id"
-        :title="equipmentTitle(eq)"
-        :subtitle="eq.equipment_code || `EQ #${eq.id}`"
-        :status="eq.lifecycle_status || 'operational'"
-        :status-map="LIFECYCLE_STATUS_MAP"
-        :accent-color="resolveLifecycleVariant(eq.lifecycle_status)"
-        :meta="[
-          { label: t('Location'), value: resolveAreaLabel(eq) },
-          { label: t('Serial / Tag'), value: eq.serial_number || eq.asset_tag || '—' },
-          { label: t('Compliance'), value: complianceLabel(eq.compliance_status) || '—' },
-        ]"
-        @click="$emit('view', eq.id)"
-      >
-        <template #actions>
-          <IconBtn
-            size="small"
-            @click="$emit('view', eq.id)"
-          >
-            <VIcon
-              icon="tabler-eye"
-              size="16"
+      <!-- Mobile: Card layout via mobile-card slot -->
+      <template #mobile-card="{ item }">
+        <WpMobileCard
+          :title="equipmentTitle(item)"
+          :subtitle="item.equipment_code || `EQ #${item.id}`"
+          :status="item.lifecycle_status || 'operational'"
+          :status-map="LIFECYCLE_STATUS_MAP"
+          :accent-color="resolveLifecycleVariant(item.lifecycle_status)"
+          :meta="[
+            { label: t('Location'), value: resolveAreaLabel(item) },
+            { label: t('Serial / Tag'), value: item.serial_number || item.asset_tag || '—' },
+            { label: t('Compliance'), value: complianceLabel(item.compliance_status) || '—' },
+          ]"
+          @click="$emit('view', item.id)"
+        >
+          <template #actions>
+            <WpRowActions
+              :actions="getRowActions(item)"
+              @view="$emit('view', item.id)"
+              @edit="$emit('edit', item)"
+              @delete="$emit('delete', item)"
             />
-          </IconBtn>
-          <IconBtn
-            v-if="!readonly"
-            size="small"
-            color="info"
-            @click="$emit('edit', eq)"
-          >
-            <VIcon
-              icon="tabler-edit"
-              size="16"
-            />
-          </IconBtn>
-          <IconBtn
-            v-if="!readonly"
-            size="small"
-            color="error"
-            @click="$emit('delete', eq)"
-          >
-            <VIcon
-              icon="tabler-trash"
-              size="16"
-            />
-          </IconBtn>
-        </template>
-      </WpMobileCard>
-    </div>
+          </template>
+        </WpMobileCard>
+      </template>
 
-    <!-- Desktop: Data table -->
-    <div
-      v-else
-      class="equipment-table-wrap"
-    >
-      <VDataTable
-        :headers="tableHeaders"
-        :items="items"
-        item-value="id"
-        :items-per-page="-1"
-        hide-default-footer
-        class="equipment-data-table"
-      >
-        <template #item.asset="{ item }">
-          <div class="d-flex align-center gap-3 py-1">
-            <VAvatar
-              size="36"
-              rounded="lg"
-              color="primary"
-              variant="tonal"
-            >
-              <VImg
-                v-if="equipmentPhoto(item)"
-                :src="equipmentPhoto(item)"
-              />
-              <VIcon
-                v-else
-                icon="tabler-fire-extinguisher"
-                size="18"
-              />
-            </VAvatar>
-            <div class="min-w-0">
-              <span
-                class="text-body-2 font-weight-bold d-block text-truncate cursor-pointer text-primary"
-                @click="$emit('view', item.id)"
-              >
-                {{ equipmentTitle(item) }}
-              </span>
-              <span class="text-caption font-weight-medium">
-                {{ item.equipment_code }}
-              </span>
-            </div>
-          </div>
-        </template>
-
-        <template #item.location="{ item }">
-          <span class="text-body-2">{{ resolveAreaLabel(item) }}</span>
-        </template>
-
-        <template #item.lifecycle="{ item }">
-          <VChip
-            size="small"
-            :color="resolveLifecycleVariant(item.lifecycle_status)"
-            label
-            class="text-capitalize"
-          >
-            {{ lifecycleLabel(item.lifecycle_status) }}
-          </VChip>
-        </template>
-
-        <template #item.compliance="{ item }">
-          <VChip
-            size="small"
-            :color="resolveComplianceVariant(item.compliance_status)"
+      <!-- Desktop Table Column Slots -->
+      <template #item.asset="{ item }">
+        <div class="d-flex align-center gap-3 py-1">
+          <VAvatar
+            size="36"
+            rounded="lg"
+            color="primary"
             variant="tonal"
-            class="text-capitalize"
           >
-            {{ complianceLabel(item.compliance_status) || '—' }}
-          </VChip>
-        </template>
-
-        <template #item.serial="{ item }">
-          <span class="text-caption">{{ item.serial_number || item.asset_tag || '—' }}</span>
-        </template>
-
-        <template #item.inspection="{ item }">
-          <VChip
-            v-if="inspectionCountdown(item.next_inspection_date)"
-            size="x-small"
-            :color="inspectionCountdown(item.next_inspection_date).color"
-            variant="tonal"
-            :prepend-icon="inspectionCountdown(item.next_inspection_date).icon"
-          >
-            {{ inspectionCountdown(item.next_inspection_date).text }}
-          </VChip>
-          <span
-            v-else
-            class="text-disabled text-caption"
-          >—</span>
-        </template>
-
-        <template #item.actions="{ item }">
-          <div class="d-flex align-center justify-end gap-1">
-            <IconBtn
-              size="small"
-              :title="t('View')"
+            <VImg
+              v-if="equipmentPhoto(item)"
+              :src="equipmentPhoto(item)"
+            />
+            <VIcon
+              v-else
+              icon="tabler-fire-extinguisher"
+              size="18"
+            />
+          </VAvatar>
+          <div class="min-w-0">
+            <span
+              class="text-body-2 font-weight-bold d-block text-truncate cursor-pointer text-primary"
               @click="$emit('view', item.id)"
             >
-              <VIcon
-                icon="tabler-eye"
-                size="18"
-              />
-            </IconBtn>
-            <IconBtn
-              v-if="!readonly"
-              size="small"
-              color="info"
-              :title="t('Edit')"
-              @click="$emit('edit', item)"
-            >
-              <VIcon
-                icon="tabler-edit"
-                size="18"
-              />
-            </IconBtn>
-            <IconBtn
-              v-if="!readonly"
-              size="small"
-              color="error"
-              :title="t('Delete')"
-              @click="$emit('delete', item)"
-            >
-              <VIcon
-                icon="tabler-trash"
-                size="18"
-              />
-            </IconBtn>
+              {{ equipmentTitle(item) }}
+            </span>
+            <span class="text-caption font-weight-medium">
+              {{ item.equipment_code }}
+            </span>
           </div>
-        </template>
-      </VDataTable>
-    </div>
+        </div>
+      </template>
+
+      <template #item.location="{ item }">
+        <span class="text-body-2">{{ resolveAreaLabel(item) }}</span>
+      </template>
+
+      <template #item.lifecycle="{ item }">
+        <VChip
+          size="small"
+          :color="resolveLifecycleVariant(item.lifecycle_status)"
+          label
+          class="text-capitalize"
+        >
+          {{ lifecycleLabel(item.lifecycle_status) }}
+        </VChip>
+      </template>
+
+      <template #item.compliance="{ item }">
+        <VChip
+          size="small"
+          :color="resolveComplianceVariant(item.compliance_status)"
+          variant="tonal"
+          class="text-capitalize"
+        >
+          {{ complianceLabel(item.compliance_status) || '—' }}
+        </VChip>
+      </template>
+
+      <template #item.serial="{ item }">
+        <span class="text-caption">{{ item.serial_number || item.asset_tag || '—' }}</span>
+      </template>
+
+      <template #item.inspection="{ item }">
+        <VChip
+          v-if="inspectionCountdown(item.next_inspection_date)"
+          size="x-small"
+          :color="inspectionCountdown(item.next_inspection_date).color"
+          variant="tonal"
+          :prepend-icon="inspectionCountdown(item.next_inspection_date).icon"
+        >
+          {{ inspectionCountdown(item.next_inspection_date).text }}
+        </VChip>
+        <span
+          v-else
+          class="text-disabled text-caption"
+        >—</span>
+      </template>
+
+      <template #item.actions="{ item }">
+        <div class="d-flex align-center justify-end">
+          <WpRowActions
+            :actions="getRowActions(item)"
+            @view="$emit('view', item.id)"
+            @edit="$emit('edit', item)"
+            @delete="$emit('delete', item)"
+          />
+        </div>
+      </template>
+    </WpResponsiveList>
   </div>
 </template>
-
-<style scoped lang="scss">
-.equipment-table-wrap {
-  overflow-x: auto;
-}
-
-.equipment-data-table {
-  min-inline-size: 760px;
-}
-</style>

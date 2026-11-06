@@ -33,12 +33,13 @@ export const useCatalogItemStore = defineStore('catalogItem', {
     },
 
     // 👉 Fetch paginated/filtered item list
-    async fetchItems(params) {
+    async fetchItems(params, options = {}) {
       this.loading = true
       try {
         const response = await $api('/catalog/items', {
           method: 'GET',
           params,
+          signal: options?.signal,
         })
 
         this.items = response.data || []

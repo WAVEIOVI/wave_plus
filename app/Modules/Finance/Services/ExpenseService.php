@@ -190,33 +190,38 @@ class ExpenseService
             ]);
         }
 
-        if ($expense->status === 'posted' && $expense->financial_account_id) {
-            // Refund financial account
-            $account = FinancialAccount::findOrFail($expense->financial_account_id);
-            $newBalance = $account->current_balance + $expense->amount_ttc;
+        return DB::transaction(function () use ($expense, $cancelledBy) {
+            // Lock expense for update
+            $expense = Expense::lockForUpdate()->findOrFail($expense->id);
 
-            FinancialAccountTransaction::create([
-                'financial_account_id' => $account->id,
-                'transaction_date'     => now()->toDateString(),
-                'type'                 => 'credit',
-                'amount'               => $expense->amount_ttc,
-                'balance_after'        => $newBalance,
-                'reference'            => "CANC-{$expense->expense_number}",
-                'description'          => "Cancellation of Expense {$expense->expense_number}",
-                'source_type'          => Expense::class,
-                'source_id'            => $expense->id,
-                'created_by'           => $cancelledBy,
+            if ($expense->status === 'posted' && $expense->financial_account_id) {
+                // Lock account and refund
+                $account = FinancialAccount::lockForUpdate()->findOrFail($expense->financial_account_id);
+                $newBalance = $account->current_balance + $expense->amount_ttc;
+
+                FinancialAccountTransaction::create([
+                    'financial_account_id' => $account->id,
+                    'transaction_date'     => now()->toDateString(),
+                    'type'                 => 'credit',
+                    'amount'               => $expense->amount_ttc,
+                    'balance_after'        => $newBalance,
+                    'reference'            => "CANC-{$expense->expense_number}",
+                    'description'          => "Cancellation of Expense {$expense->expense_number}",
+                    'source_type'          => Expense::class,
+                    'source_id'            => $expense->id,
+                    'created_by'           => $cancelledBy,
+                ]);
+
+                $account->current_balance = $newBalance;
+                $account->save();
+            }
+
+            $expense->update([
+                'status'     => 'cancelled',
+                'updated_by' => $cancelledBy,
             ]);
 
-            $account->current_balance = $newBalance;
-            $account->save();
-        }
-
-        $expense->update([
-            'status'     => 'cancelled',
-            'updated_by' => $cancelledBy,
-        ]);
-
-        return $expense->fresh();
+            return $expense->fresh();
+        });
     }
 }

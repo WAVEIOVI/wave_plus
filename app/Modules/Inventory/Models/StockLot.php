@@ -105,7 +105,9 @@ class StockLot extends Model
      */
     public function scopeExpired($query)
     {
-        return $query->where('status', 'expired')
-            ->orWhere(fn ($q) => $q->whereNotNull('expiry_date')->where('expiry_date', '<', now()));
+        return $query->where(function ($q) {
+            $q->where('status', 'expired')
+                ->orWhere(fn ($sub) => $sub->whereNotNull('expiry_date')->where('expiry_date', '<', now()));
+        });
     }
 }

@@ -46,8 +46,13 @@ Route::prefix('bp')
         Route::put('clients/{client}', [ClientController::class, 'update']);
         Route::delete('clients/{client}', [ClientController::class, 'destroy']);
 
-        // Suppliers PDF Export / Email
+        // Static supplier routes
         Route::get('suppliers/export/pdf', [SupplierController::class, 'exportPdf']);
+        Route::get('suppliers', [SupplierController::class, 'index']);
+        Route::post('suppliers', [SupplierController::class, 'store']);
+
+        // Dynamic supplier routes
+        Route::get('suppliers/{id}/scorecard', [SupplierController::class, 'scorecard']);
         Route::get('suppliers/{id}/export/pdf', [SupplierController::class, 'exportSinglePdf']);
         Route::get('suppliers/{id}/contextual-email', [BusinessPartnerEmailController::class, 'prepare'])->defaults('partnerType', 'supplier');
         Route::post('suppliers/send-email', [SupplierController::class, 'sendEmailList']);

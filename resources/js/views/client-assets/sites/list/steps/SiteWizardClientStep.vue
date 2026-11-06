@@ -1,7 +1,7 @@
 <script setup>
 /* eslint-disable camelcase */
 import { WpPartnerCard, WpSearchSelectDialog } from '@/components/shared'
-import { $api } from '@/utils/api'
+import { useClientStore } from '@/stores/useClientStore'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -14,6 +14,7 @@ const props = defineProps({
 const emit = defineEmits(['selectClient', 'clearClient'])
 
 const { t } = useI18n()
+const clientStore = useClientStore()
 
 const isSearchDialogOpen = ref(false)
 
@@ -22,21 +23,18 @@ const clientSearchConfig = computed(() => ({
   entityLabel: t('Client'),
   icon: 'tabler-user-search',
   fetcher: async ({ page, perPage, search, filters, sortBy, sortDir, signal }) => {
-    const res = await $api('/bp/clients', {
-      signal,
-      params: {
-        page,
-        per_page: perPage,
-        search: search || undefined,
-        q: search || undefined,
-        'filter[status]': filters?.status || undefined,
-        sort: sortBy ? `${sortDir === 'desc' ? '-' : ''}${sortBy}` : undefined,
-      },
-    })
+    const res = await clientStore.fetchClients({
+      page,
+      per_page: perPage,
+      search: search || undefined,
+      q: search || undefined,
+      'filter[status]': filters?.status || undefined,
+      sort: sortBy ? `${sortDir === 'desc' ? '-' : ''}${sortBy}` : undefined,
+    }, { signal })
 
     return {
-      items: res.data || [],
-      total: res.total || res.meta?.total || 0,
+      items: res?.data || [],
+      total: res?.total || res?.meta?.total || 0,
     }
   },
   columns: [

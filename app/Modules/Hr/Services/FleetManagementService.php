@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Hr\Services;
 
+use App\Modules\Hr\Models\ApprovedDriver;
+use App\Modules\Hr\Models\Employee;
 use App\Modules\Hr\Models\Vehicle;
 use App\Modules\Hr\Models\VehicleActivityLog;
 use App\Modules\Hr\Models\VehicleAssignment;
@@ -794,14 +796,27 @@ class FleetManagementService
     /**
      * Check if employee is authorized to drive a specific vehicle.
      * Default driver designation does NOT grant driving authorization.
+     * 
+     * @param string $userId The user_id (since controller validates against users table)
+     * @param string $vehicleId The vehicle ID
      */
-    public function isAuthorizedDriver(string $employeeId, string $vehicleId): array
+    public function isAuthorizedDriver(string $userId, string $vehicleId): array
     {
         $vehicle = Vehicle::findOrFail($vehicleId);
 
+        // Find employee by user_id
+        $employee = Employee::where('user_id', $userId)->first();
+        
+        if (! $employee) {
+            return [
+                'authorized' => false,
+                'reason' => 'Employee record not found for this user',
+            ];
+        }
+
         // Check if employee has approved driver authorization
         $approvedDriver = ApprovedDriver::active()
-            ->where('employee_id', $employeeId)
+            ->where('employee_id', $employee->id)
             ->first();
 
         if (! $approvedDriver) {

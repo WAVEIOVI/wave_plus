@@ -83,8 +83,14 @@ class MissionController extends Controller
             });
         }
 
+        // Sorting
+        $allowedSortFields = ['planned_date', 'mission_number', 'created_at', 'status'];
         $sortBy = $request->input('sortBy', 'planned_date');
+        $sortBy = in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'planned_date';
+        
         $orderBy = $request->input('orderBy', 'desc');
+        $orderBy = in_array($orderBy, ['asc', 'desc'], true) ? $orderBy : 'desc';
+        
         $query->orderBy($sortBy, $orderBy);
 
         $perPage = (int) $request->input('itemsPerPage', $request->input('per_page', 15));

@@ -1,7 +1,6 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
-  AppBottomNav,
   AppBreadcrumb,
   AppQuickActionsSheet,
   WpDeleteDialog,
@@ -24,9 +23,10 @@ import {
 import { useSiteEdit } from '@/composables/client-assets/sites/useSiteEdit'
 import { useSiteEquipment } from '@/composables/client-assets/sites/useSiteEquipment'
 import { useUnsavedChangesGuard } from '@/composables/dialog/useUnsavedChangesGuard'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import { useClientStore } from '@/stores/useClientStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
 import ViewClientDialog from '@/views/business-partners/clients/list/ViewClientDialog.vue'
 import ViewAddressDialog from '@/views/business-partners/shared-components/dialogs/ViewAddressDialog.vue'
 import EquipmentWizardDialog from '@/views/client-assets/equipment/dialogs/EquipmentWizardDialog.vue'
@@ -42,7 +42,7 @@ import SiteMediaSection from '@/views/client-assets/sites/edit/SiteMediaSection.
 import SiteNavSidebar from '@/views/client-assets/sites/edit/SiteNavSidebar.vue'
 import SiteParametersSection from '@/views/client-assets/sites/edit/SiteParametersSection.vue'
 import SiteProfileSection from '@/views/client-assets/sites/edit/SiteProfileSection.vue'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -62,9 +62,14 @@ const route = useRoute()
 const targetSiteId = computed(() => route.params.id)
 const store = useClientAssetStore()
 const clientStore = useClientStore()
-const snackbarStore = useSnackbarStore()
+const ability = useAbility()
 const { t } = useI18n()
+const { success: showSuccess, error: showError, warning: showWarning, showApiError, showMessage } = useAppSnackbar()
 const { mdAndDown, smAndDown } = useDisplay()
+
+// ── Permissions & Read-only State ───────────────────────────────────────────
+const isReadOnly = computed(() => !ability.can('update', 'ClientAssets'))
+const canDelete = computed(() => ability.can('delete', 'ClientAssets'))
 
 // ── Composables ──────────────────────────────────────────────────────────────
 const {
@@ -239,18 +244,18 @@ const confirmDeleteItem = async () => {
   try {
     if (pending.kind === 'area') {
       await store.deleteSiteArea(pending.payload.id)
-      snackbarStore.showMessage(t('Area deleted successfully'), 'success')
+      showSuccess(t('Area deleted successfully'))
       await fetchAreas()
       await fetchEquipment()
     }
     else if (pending.kind === 'photo') {
       await store.deleteSiteMedia(targetSiteId.value, pending.payload)
-      snackbarStore.showMessage(t('Photo deleted'), 'success')
+      showSuccess(t('Photo deleted'))
       await fetchSite()
     }
     else {
       await store.deleteSiteMedia(targetSiteId.value, pending.payload)
-      snackbarStore.showMessage(t('Document deleted'), 'success')
+      showSuccess(t('Document deleted'))
       await fetchSite()
     }
 
@@ -263,7 +268,7 @@ const confirmDeleteItem = async () => {
       document: t('Failed to delete document'),
     }[pending.kind]
 
-    snackbarStore.showMessage(pending.kind === 'area' ? (err?.data?.message || fallback) : fallback, 'error')
+    showError(pending.kind === 'area' ? (err?.data?.message || fallback) : fallback)
 
     return false
   }
@@ -274,13 +279,13 @@ const handleDeleteArea = area => {
   const equipCount = area.equipment_count || 0
 
   if (childCount > 0) {
-    snackbarStore.showMessage(t('Cannot delete area: it contains child sub-areas. Delete or move sub-areas first.'), 'error')
+    showError(t('Cannot delete area: it contains child sub-areas. Delete or move sub-areas first.'))
 
     return
   }
 
   if (equipCount > 0) {
-    snackbarStore.showMessage(t('Cannot delete area: it contains installed equipment assets. Move equipment first.'), 'error')
+    showError(t('Cannot delete area: it contains installed equipment assets. Move equipment first.'))
 
     return
   }
@@ -306,13 +311,13 @@ const handleSavePhotoFromDialog = async payload => {
         title: item?.title || payload?.title || null,
       })
     }
-    snackbarStore.showMessage(items.length > 1 ? t('Photos uploaded successfully') : t('Photo uploaded successfully'), 'success')
+    showSuccess(items.length > 1 ? t('Photos uploaded successfully') : t('Photo uploaded successfully'))
     isImageDialogOpen.value = false
     await fetchSite()
   }
   catch (err) {
     console.error('Photo dialog upload error:', err)
-    snackbarStore.showMessage(err?.data?.message || t('Failed to upload photo'), 'error')
+    showError(err?.data?.message || t('Failed to upload photo'))
   }
   finally {
     uploadingPhoto.value = false
@@ -325,11 +330,11 @@ const handleSetMainPhoto = async itemOrId => {
 
   try {
     await store.setSiteMainPhoto(targetSiteId.value, mediaId)
-    snackbarStore.showMessage(t('Main photo updated'), 'success')
+    showSuccess(t('Main photo updated'))
     await fetchSite()
   }
   catch {
-    snackbarStore.showMessage(t('Failed to update main photo'), 'error')
+    showError(t('Failed to update main photo'))
   }
 }
 
@@ -369,7 +374,7 @@ const openDocPreview = doc => {
 const handleUploadDocument = async (payload, onDone) => {
   const items = payload?.files?.length ? payload.files : (payload?.file ? [payload] : [])
   if (!items.length) {
-    snackbarStore.showMessage(t('Please select a file to upload'), 'warning')
+    showWarning(t('Please select a file to upload'))
 
     return
   }
@@ -388,14 +393,14 @@ const handleUploadDocument = async (payload, onDone) => {
       })
     }
 
-    snackbarStore.showMessage(items.length > 1 ? t('Documents uploaded successfully') : t('Document uploaded successfully'), 'success')
+    showSuccess(items.length > 1 ? t('Documents uploaded successfully') : t('Document uploaded successfully'))
     isUploadDocDialogOpen.value = false
     onDone?.()
     await fetchSite()
   }
   catch (err) {
     console.error('Document upload error:', err)
-    snackbarStore.showMessage(err?.data?.message || t('Failed to upload document'), 'error')
+    showError(err?.data?.message || t('Failed to upload document'))
   }
   finally {
     uploadingDocument.value = false
@@ -407,7 +412,7 @@ const handleDownloadDocument = async (mediaId, filename) => {
     await store.downloadSiteMedia(targetSiteId.value, mediaId, filename)
   }
   catch (err) {
-    snackbarStore.showMessage(t('Failed to download document'), 'error')
+    showError(t('Failed to download document'))
   }
 }
 
@@ -497,17 +502,14 @@ const quickActions = computed(() => [
     disabled: !fetchedSite.value?.address,
     onClick: () => { isAddressViewDialogOpen.value = true },
   },
-  {
+  ...(canDelete.value ? [{
     id: 'delete-site',
     title: t('Delete Site'),
     icon: 'tabler-trash',
     color: 'error',
     onClick: () => { isDeleteDialogVisible.value = true },
-  },
+  }] : []),
 ])
-
-// ── Intersection Observer ────────────────────────────────────────────────────
-let sectionObserver = null
 
 onMounted(async () => {
   await fetchSite()
@@ -515,28 +517,6 @@ onMounted(async () => {
     fetchAreas(),
     fetchEquipment(),
   ])
-
-  sectionObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const id = entry.target.id.replace('section-', '')
-
-        activeSection.value = id
-      }
-    })
-  }, { threshold: 0.2, rootMargin: '-150px 0px -50% 0px' })
-
-  nextTick(() => {
-    sections.forEach(s => {
-      const el = document.getElementById(`section-${s.id}`)
-      if (el) sectionObserver?.observe(el)
-    })
-  })
-})
-
-onBeforeUnmount(() => {
-  sectionObserver?.disconnect()
-  sectionObserver = null
 })
 </script>
 
@@ -566,16 +546,17 @@ onBeforeUnmount(() => {
       v-else-if="fetchedSite"
       class="site-edit-layout"
     >
-      <!-- Desktop Sticky Sidebar Navigation -->
+      <!-- Navigation: Desktop Sticky Sidebar + Mobile Bottom Navigation -->
       <SiteNavSidebar
-        v-if="!smAndDown"
+        v-model="activeSection"
         :site="fetchedSite"
         :form="form"
         :sections="sections"
-        :active-section="activeSection"
         :saving="saving"
         :is-dirty="isDirty"
-        @scroll-to-section="scrollToSection"
+        :is-read-only="isReadOnly"
+        :can-delete="canDelete"
+        id-prefix="section-"
         @save="handleSave"
         @delete="isDeleteDialogVisible = true"
       />
@@ -718,16 +699,6 @@ onBeforeUnmount(() => {
       </main>
     </div>
 
-    <!-- Mobile Bottom Navigation -->
-    <AppBottomNav
-      v-if="smAndDown"
-      v-model="activeSection"
-      :items="mobileNavItems"
-      fit-content
-      :show-badges="false"
-      @update:model-value="scrollToSection"
-    />
-
     <!-- Mobile Quick Actions Floating Launcher & Sheet -->
     <div
       v-if="smAndDown && fetchedSite"
@@ -756,7 +727,7 @@ onBeforeUnmount(() => {
       :document-types="documentCategories"
       preset="compact"
       @save="handleUploadDocument"
-      @error="err => snackbarStore.showMessage(err?.message || $t('Document upload error'), 'error')"
+      @error="err => showError(err?.message || $t('Document upload error'))"
     />
 
     <WpMediaViewerDialog
@@ -830,7 +801,7 @@ onBeforeUnmount(() => {
       show-cropper
       show-title-input
       @save="handleSavePhotoFromDialog"
-      @error="err => snackbarStore.showMessage(err?.message || $t('Photo upload error'), 'error')"
+      @error="err => showError(err?.message || $t('Photo upload error'))"
     />
 
     <WpDeleteDialog

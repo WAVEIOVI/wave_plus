@@ -18,6 +18,8 @@ class SalesInvoiceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SalesInvoice::class);
+
         $invoices = $this->invoiceService->list($request->all());
 
         return response()->json([
@@ -29,6 +31,7 @@ class SalesInvoiceController extends Controller
     public function show(string $id): JsonResponse
     {
         $invoice = $this->invoiceService->find($id);
+        $this->authorize('view', $invoice);
 
         return response()->json([
             'success' => true,
@@ -38,6 +41,8 @@ class SalesInvoiceController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', SalesInvoice::class);
+
         $validated = $request->validate([
             'client_id' => 'required|ulid|exists:clients,id',
             'type' => 'nullable|string|in:invoice,credit_note,debit_note',
@@ -70,6 +75,8 @@ class SalesInvoiceController extends Controller
 
     public function issue(SalesInvoice $salesInvoice, Request $request): JsonResponse
     {
+        $this->authorize('post', $salesInvoice);
+
         $invoice = $this->invoiceService->issue($salesInvoice, $request->user()?->id);
 
         return response()->json([
@@ -81,6 +88,8 @@ class SalesInvoiceController extends Controller
 
     public function void(SalesInvoice $salesInvoice, Request $request): JsonResponse
     {
+        $this->authorize('delete', $salesInvoice);
+
         $validated = $request->validate([
             'reason' => 'required|string|max:255',
         ]);
@@ -96,6 +105,8 @@ class SalesInvoiceController extends Controller
 
     public function aging(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SalesInvoice::class);
+
         $clientId = $request->filled('client_id') ? $request->input('client_id') : null;
         $aging = $this->invoiceService->calculateAging($clientId);
 

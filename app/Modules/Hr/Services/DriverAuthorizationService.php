@@ -300,7 +300,7 @@ class DriverAuthorizationService
         }
 
         // Bonus for clean record
-        if ($recentIncidents->isEmpty() && $driver->authorization_date->diffInMonths(now()) >= 6) {
+        if ($recentIncidents->isEmpty() && $driver->authorization_date && $driver->authorization_date->diffInMonths(now()) >= 6) {
             $baseScore += 5.0;
         }
 
@@ -394,6 +394,15 @@ class DriverAuthorizationService
 
         $score = $driver->driver_score;
 
+        // Numeric ranking for proper comparison
+        $levelRanking = [
+            'trainee' => 1,
+            'junior' => 2,
+            'standard' => 3,
+            'senior' => 4,
+            'expert' => 5,
+        ];
+
         $newLevel = match (true) {
             $score >= 95 => 'expert',
             $score >= 85 => 'senior',
@@ -406,14 +415,16 @@ class DriverAuthorizationService
             $oldLevel = $driver->driver_level;
             $driver->update(['driver_level' => $newLevel]);
 
+            $isUpgrade = ($levelRanking[$newLevel] ?? 0) > ($levelRanking[$oldLevel] ?? 0);
+
             $this->logDriverActivity($driverId, [
-                'event_type' => 'other',
-                'event_title' => 'Driver Level Changed',
+                'event_type' => $isUpgrade ? 'driver_level_upgraded' : 'driver_level_downgraded',
+                'event_title' => $isUpgrade ? 'Driver Level Upgraded' : 'Driver Level Downgraded',
                 'event_description' => "Driver level changed from {$oldLevel} to {$newLevel}",
                 'event_date' => now(),
                 'old_value' => $oldLevel,
                 'new_value' => $newLevel,
-                'impact' => $newLevel > $oldLevel ? 'positive' : 'negative',
+                'impact' => $isUpgrade ? 'positive' : 'negative',
             ]);
         }
     }

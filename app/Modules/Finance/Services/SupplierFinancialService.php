@@ -17,13 +17,15 @@ class SupplierFinancialService
 
     public function listSuppliers(array $filters = []): LengthAwarePaginator
     {
-        $query = Supplier::query()->select('id', 'company_name', 'legal_name', 'phone', 'email', 'payment_terms');
+        $query = Supplier::query()
+            ->with(['contacts' => fn($q) => $q->where('is_primary', true)->select('id', 'contactable_id', 'contactable_type', 'phone', 'email')])
+            ->select('id', 'legal_name', 'commercial_name', 'primary_phone', 'primary_email', 'payment_terms');
 
         if (! empty($filters['search'])) {
             $s = $filters['search'];
             $query->where(function ($q) use ($s) {
-                $q->where('company_name', 'like', "%{$s}%")
-                    ->orWhere('legal_name', 'like', "%{$s}%");
+                $q->where('legal_name', 'like', "%{$s}%")
+                    ->orWhere('commercial_name', 'like', "%{$s}%");
             });
         }
 
@@ -38,11 +40,25 @@ class SupplierFinancialService
             $outstanding = (float) $approved->sum('amount_outstanding');
             $overdue = (float) $approved->filter(fn ($i) => $i->is_overdue)->sum('amount_outstanding');
 
+            // Extract contact info from primary contact or fallback to supplier fields
+            $primaryContact = $supplier->contacts->first();
+            $company_name = $supplier->commercial_name ?: $supplier->legal_name;
+            $phone = $primaryContact?->phone ?? $supplier->primary_phone;
+            $email = $primaryContact?->email ?? $supplier->primary_email;
+
+            // Add computed fields to maintain API contract
+            $supplier->company_name = $company_name;
+            $supplier->phone = $phone;
+            $supplier->email = $email;
+
             $supplier->financial_summary = [
                 'total_invoiced' => round($totalInvoiced, 3),
                 'outstanding' => round($outstanding, 3),
                 'overdue' => round($overdue, 3),
             ];
+
+            // Unset the relation to clean up response
+            unset($supplier->contacts);
 
             return $supplier;
         });
@@ -52,7 +68,8 @@ class SupplierFinancialService
 
     public function getAccountDetails(string $supplierId): array
     {
-        $supplier = Supplier::findOrFail($supplierId);
+        $supplier = Supplier::with(['contacts' => fn($q) => $q->where('is_primary', true)->select('id', 'contactable_id', 'contactable_type', 'phone', 'email')])
+            ->findOrFail($supplierId);
 
         $invoices = SupplierInvoice::where('supplier_id', $supplierId)->orderByDesc('invoice_date')->get();
         $approved = $invoices->where('status', 'approved');
@@ -99,12 +116,15 @@ class SupplierFinancialService
 
         usort($timeline, fn ($a, $b) => strcmp($b['date'], $a['date']));
 
+        $primaryContact = $supplier->contacts->first();
+        $company_name = $supplier->commercial_name ?: $supplier->legal_name;
+
         return [
             'supplier' => [
                 'id' => $supplier->id,
-                'company_name' => $supplier->company_name,
+                'company_name' => $company_name,
                 'legal_name' => $supplier->legal_name,
-                'tax_number' => $supplier->tax_number ?? null,
+                'tax_number' => $supplier->tax_id ?? null,
                 'payment_terms' => $supplier->payment_terms,
             ],
             'summary' => [

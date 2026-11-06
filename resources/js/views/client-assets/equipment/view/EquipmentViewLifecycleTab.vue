@@ -1,5 +1,7 @@
 <script setup>
 /* eslint-disable camelcase */
+import { WpEmptyState } from '@/components/shared'
+
 defineProps({
   timelineFormProxy: { type: Object, required: true },
   calculatedExpiryDate: { type: String, default: null },
@@ -105,12 +107,12 @@ defineProps({
           </div>
         </div>
       </div>
-      <div
+      <WpEmptyState
         v-else
-        class="text-caption text-disabled py-6 text-center"
-      >
-        {{ $t('No projected lifecycle events available.') }}
-      </div>
+        icon="tabler-calendar-off"
+        :title="$t('No Projected Milestones')"
+        :description="$t('No projected lifecycle events available.')"
+      />
     </VCard>
   </div>
 </template>

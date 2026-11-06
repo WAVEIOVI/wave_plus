@@ -3,8 +3,8 @@
 import {
   WpDocumentList,
   WpMediaGallery,
+  WpSectionCard,
 } from '@/components/shared'
-import WorkwearSectionCard from '@/views/client-assets/workwear/models/components/WorkwearSectionCard.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -112,99 +112,99 @@ const handleDeleteItem = itemOrId => {
 </script>
 
 <template>
-  <WorkwearSectionCard
-    id="media"
-    icon="tabler-photo"
-    :title="$t('Branding & Media')"
-    :subtitle="$t('Company placement artwork, embroidery files, design blueprints, and safety certificates.')"
+  <section
+    id="section-media"
+    class="journal-section mb-6"
   >
-    <template #chips>
-      <VChip
-        size="small"
-        color="primary"
-        variant="tonal"
-      >
-        {{ logos.length }} {{ $t('Logos') }}
-      </VChip>
-      <VChip
-        size="small"
-        color="info"
-        variant="tonal"
-      >
-        {{ designFiles.length }} {{ $t('Documents') }}
-      </VChip>
-    </template>
-
-    <template
-      v-if="!readOnly"
-      #actions
+    <WpSectionCard
+      icon="tabler-photo"
+      :title="$t('Branding & Media')"
+      :subtitle="$t('Company placement artwork, embroidery files, design blueprints, and safety certificates.')"
     >
-      <VBtn
-        variant="tonal"
-        color="primary"
-        prepend-icon="tabler-upload"
-        :loading="isUploadingMedia && mediaCollectionToUpload === 'logos'"
-        @click="openLogoUpload"
-      >
-        {{ $t('Upload Logo') }}
-      </VBtn>
-      <VBtn
-        variant="tonal"
-        color="info"
-        prepend-icon="tabler-file-upload"
-        :loading="isUploadingMedia && mediaCollectionToUpload === 'design_files'"
-        @click="openDesignDocUpload"
-      >
-        {{ $t('Upload Spec / Cert') }}
-      </VBtn>
-    </template>
+      <template #actions>
+        <VChip
+          size="small"
+          color="primary"
+          variant="tonal"
+        >
+          {{ logos.length }} {{ $t('Logos') }}
+        </VChip>
+        <VChip
+          size="small"
+          color="info"
+          variant="tonal"
+        >
+          {{ designFiles.length }} {{ $t('Documents') }}
+        </VChip>
+        <template v-if="!readOnly">
+          <VBtn
+            variant="tonal"
+            color="primary"
+            prepend-icon="tabler-upload"
+            :loading="isUploadingMedia && mediaCollectionToUpload === 'logos'"
+            @click="openLogoUpload"
+          >
+            {{ $t('Upload Logo') }}
+          </VBtn>
+          <VBtn
+            variant="tonal"
+            color="info"
+            prepend-icon="tabler-file-upload"
+            :loading="isUploadingMedia && mediaCollectionToUpload === 'design_files'"
+            @click="openDesignDocUpload"
+          >
+            {{ $t('Upload Spec / Cert') }}
+          </VBtn>
+        </template>
+      </template>
 
-    <!-- ━━━ Company & Placement Logos (Specialized Artwork Gallery with fit="contain") ━━━ -->
-    <div class="mb-6">
-      <WpMediaGallery
-        ref="logoGalleryRef"
-        :items="normalizedLogos"
-        :title="$t('Company & Placement Logos')"
-        :subtitle="$t('High-resolution transparent logos and vector artwork used in 2D Garment Studio placement zones')"
-        icon="tabler-badge-tm"
-        fit="contain"
-        show-title-input
+      <!-- ━━━ Company & Placement Logos (Specialized Artwork Gallery with fit="contain") ━━━ -->
+      <div class="mb-6">
+        <WpMediaGallery
+          ref="logoGalleryRef"
+          :items="normalizedLogos"
+          :title="$t('Company & Placement Logos')"
+          :subtitle="$t('High-resolution transparent logos and vector artwork used in 2D Garment Studio placement zones')"
+          icon="tabler-badge-tm"
+          fit="contain"
+          show-title-input
+          :read-only="readOnly"
+          :can-upload="!readOnly"
+          :can-capture-photo="!readOnly"
+          :can-record-video="false"
+          :can-set-main="false"
+          :can-delete="!readOnly"
+          :loading="isUploadingMedia && mediaCollectionToUpload === 'logos'"
+          :empty-title="$t('No placement logos uploaded yet')"
+          @upload="handleLogoUpload"
+          @delete="handleDeleteItem"
+        />
+      </div>
+
+      <VDivider class="my-5" />
+
+      <!-- ━━━ Technical Design Specs, CAD Artwork & Safety Certificates (Attachment List) ━━━ -->
+      <WpDocumentList
+        ref="designDocListRef"
+        :documents="normalizedDesignFiles"
+        :title="$t('Design Specs & Safety Certificates')"
+        :subtitle="$t('Technical packs, vector artwork (AI/EPS/SVG), grading charts, and EN/ISO certificates')"
+        icon="tabler-vector-bezier-2"
+        :add-label="$t('Upload Spec / Cert')"
+        :empty-text="$t('No technical documents or certificates uploaded.')"
+        :document-types="designFileTypes"
+        accept=".pdf,.ai,.eps,.svg,.png,.psd,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,application/pdf,image/svg+xml,image/png"
+        :max-size-mb="50"
         :read-only="readOnly"
-        :can-upload="!readOnly"
-        :can-capture-photo="!readOnly"
-        :can-record-video="false"
-        :can-set-main="false"
-        :can-delete="!readOnly"
-        :loading="isUploadingMedia && mediaCollectionToUpload === 'logos'"
-        :empty-title="$t('No placement logos uploaded yet')"
-        @upload="handleLogoUpload"
+        :can-edit="false"
+        :loading="isUploadingMedia && mediaCollectionToUpload === 'design_files'"
+        :saving="isUploadingMedia && mediaCollectionToUpload === 'design_files'"
+        :auto-close="false"
+        compact-header
+        @save="handleDesignFileUpload"
+        @download="item => emit('downloadMedia', item)"
         @delete="handleDeleteItem"
       />
-    </div>
-
-    <VDivider class="my-5" />
-
-    <!-- ━━━ Technical Design Specs, CAD Artwork & Safety Certificates (Attachment List) ━━━ -->
-    <WpDocumentList
-      ref="designDocListRef"
-      :documents="normalizedDesignFiles"
-      :title="$t('Design Specs & Safety Certificates')"
-      :subtitle="$t('Technical packs, vector artwork (AI/EPS/SVG), grading charts, and EN/ISO certificates')"
-      icon="tabler-vector-bezier-2"
-      :add-label="$t('Upload Spec / Cert')"
-      :empty-text="$t('No technical documents or certificates uploaded.')"
-      :document-types="designFileTypes"
-      accept=".pdf,.ai,.eps,.svg,.png,.psd,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,application/pdf,image/svg+xml,image/png"
-      :max-size-mb="50"
-      :read-only="readOnly"
-      :can-edit="false"
-      :loading="isUploadingMedia && mediaCollectionToUpload === 'design_files'"
-      :saving="isUploadingMedia && mediaCollectionToUpload === 'design_files'"
-      :auto-close="false"
-      compact-header
-      @save="handleDesignFileUpload"
-      @download="item => emit('downloadMedia', item)"
-      @delete="handleDeleteItem"
-    />
-  </WorkwearSectionCard>
+    </WpSectionCard>
+  </section>
 </template>

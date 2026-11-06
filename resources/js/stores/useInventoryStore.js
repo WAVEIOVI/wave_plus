@@ -692,6 +692,74 @@ export const useInventoryStore = defineStore('inventory', () => {
     }
   }
 
+  // ─── Mobile Warehouse Actions ────────────────────────────────
+  const linkVehicle = async (siteId, payload) => {
+    error.value = null
+    validationErrors.value = null
+
+    try {
+      const response = await $api(`/inventory/sites/${siteId}/link-vehicle`, {
+        method: 'POST',
+        body: payload,
+      })
+
+      return response.data || response
+    } catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      validationErrors.value = extracted.errors
+      throw err
+    }
+  }
+
+  const unlinkVehicle = async siteId => {
+    error.value = null
+    validationErrors.value = null
+
+    try {
+      const response = await $api(`/inventory/sites/${siteId}/unlink-vehicle`, {
+        method: 'POST',
+      })
+
+      return response.data || response
+    } catch (err) {
+      const extracted = extractApiError(err)
+
+      error.value = extracted.message
+      validationErrors.value = extracted.errors
+      throw err
+    }
+  }
+
+  const fetchSiteAssignmentHistory = async (siteId, params = {}) => {
+    error.value = null
+    validationErrors.value = null
+
+    try {
+      /* eslint-disable camelcase */
+      const apiParams = { ...params }
+      if (apiParams.itemsPerPage !== undefined) {
+        apiParams.per_page = apiParams.itemsPerPage
+        delete apiParams.itemsPerPage
+      }
+      /* eslint-enable camelcase */
+
+      return await $api(`/inventory/sites/${siteId}/assignment-history`, {
+        method: 'GET',
+        params: apiParams,
+      })
+    } catch (err) {
+      if (!is401(err)) {
+        const extracted = extractApiError(err)
+
+        error.value = extracted.message
+        validationErrors.value = extracted.errors
+      }
+      throw err
+    }
+  }
+
   return {
     stockItems,
     totalStockItems,
@@ -738,5 +806,8 @@ export const useInventoryStore = defineStore('inventory', () => {
     createLot,
     updateLot,
     deleteLot,
+    linkVehicle,
+    unlinkVehicle,
+    fetchSiteAssignmentHistory,
   }
 })

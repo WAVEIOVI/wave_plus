@@ -2,8 +2,8 @@
 /* eslint-disable camelcase */
 import { WpFormDialog } from '@/components/shared'
 import { localizedValue } from '@/composables/useLocaleField'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
 import SiteAreaSelectModal from '@/views/client-assets/equipment/dialogs/SiteAreaSelectModal.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -31,7 +31,7 @@ const props = defineProps({
 const emit = defineEmits(['update:isDialogVisible', 'update:modelValue', 'transferred', 'saved', 'close'])
 
 const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
+const { showSuccess } = useAppSnackbar()
 const { t } = useI18n()
 const { smAndDown } = useDisplay()
 
@@ -165,7 +165,7 @@ const handleSubmit = async () => {
 
   try {
     await store.transferEquipment(eqId, form.value)
-    snackbarStore.showMessage(t('Equipment transferred successfully'), 'success')
+    showSuccess(t('Equipment transferred successfully'))
     emit('transferred')
     emit('saved')
     handleClose()

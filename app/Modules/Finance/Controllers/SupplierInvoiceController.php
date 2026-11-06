@@ -18,6 +18,8 @@ class SupplierInvoiceController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SupplierInvoice::class);
+
         $invoices = $this->invoiceService->list($request->all());
 
         return response()->json([
@@ -29,6 +31,7 @@ class SupplierInvoiceController extends Controller
     public function show(string $id): JsonResponse
     {
         $invoice = $this->invoiceService->find($id);
+        $this->authorize('view', $invoice);
 
         return response()->json([
             'success' => true,
@@ -38,6 +41,8 @@ class SupplierInvoiceController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', SupplierInvoice::class);
+
         $validated = $request->validate([
             'supplier_id' => 'required|ulid|exists:suppliers,id',
             'supplier_invoice_ref' => 'nullable|string|max:100',
@@ -68,6 +73,8 @@ class SupplierInvoiceController extends Controller
 
     public function approve(SupplierInvoice $supplierInvoice, Request $request): JsonResponse
     {
+        $this->authorize('post', $supplierInvoice);
+
         $invoice = $this->invoiceService->approve($supplierInvoice, $request->user()?->id);
 
         return response()->json([
@@ -79,6 +86,8 @@ class SupplierInvoiceController extends Controller
 
     public function aging(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', SupplierInvoice::class);
+
         $supplierId = $request->filled('supplier_id') ? $request->input('supplier_id') : null;
         $aging = $this->invoiceService->calculateAging($supplierId);
 

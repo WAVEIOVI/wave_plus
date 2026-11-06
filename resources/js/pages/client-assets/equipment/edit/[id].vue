@@ -1,7 +1,6 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
-  AppBottomNav,
   AppBreadcrumb,
   AppQuickActionsSheet,
   WpErrorBanner,
@@ -29,7 +28,8 @@ import EquipmentLocationSection from '@/views/client-assets/equipment/sections/E
 import EquipmentMediaGallery from '@/views/client-assets/equipment/sections/EquipmentMediaGallery.vue'
 import EquipmentSpecsKvEditor from '@/views/client-assets/equipment/sections/EquipmentSpecsKvEditor.vue'
 import EquipmentStatusTiles from '@/views/client-assets/equipment/sections/EquipmentStatusTiles.vue'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -55,6 +55,11 @@ const route = useRoute()
 const targetEquipmentId = computed(() => props.embeddedEquipmentId ?? route.params.id)
 const { t } = useI18n()
 const { smAndDown } = useDisplay()
+const ability = useAbility()
+
+const isReadOnly = computed(() => props.isReadOnly || !ability.can('update', 'ClientAssets'))
+const canDelete = computed(() => !isNew.value && ability.can('delete', 'ClientAssets'))
+const canUpdate = computed(() => ability.can('update', 'ClientAssets'))
 
 // ── Composables ──────────────────────────────────────────────────────────────
 const {
@@ -256,13 +261,11 @@ const quickActions = computed(() => [
   },
 ])
 
-// ── Keyboard Save Shortcut & Intersection Observer ───────────────────────────
-let sectionObserver = null
-
+// ── Keyboard Save Shortcut ───────────────────────────────────────────────────
 const handleKeydown = e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
     e.preventDefault()
-    if (!props.isReadOnly && !saving.value && (isDirty.value || isNew.value)) {
+    if (!isReadOnly.value && !saving.value && (isDirty.value || isNew.value)) {
       handleSave()
     }
   }
@@ -275,29 +278,10 @@ onMounted(async () => {
     fetchEquipment(),
     loadMasterData(),
   ])
-
-  sectionObserver = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const id = entry.target.id.replace('section-', '')
-
-        activeSection.value = id
-      }
-    })
-  }, { threshold: 0.2, rootMargin: '-150px 0px -50% 0px' })
-
-  nextTick(() => {
-    visibleSections.value.forEach(s => {
-      const el = document.getElementById(`section-${s.id}`)
-      if (el) sectionObserver?.observe(el)
-    })
-  })
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydown)
-  sectionObserver?.disconnect()
-  sectionObserver = null
 })
 </script>
 
@@ -328,17 +312,18 @@ onBeforeUnmount(() => {
       v-else-if="fetchedEquipment"
       class="equipment-edit-layout"
     >
-      <!-- Desktop Sticky Sidebar Navigation -->
+      <!-- Sticky Sidebar Navigation (Desktop & Mobile via WpJournalNav) -->
       <EquipmentNavSidebar
-        v-if="!smAndDown"
+        v-if="!isModal"
+        v-model="activeSection"
         :equipment="fetchedEquipment"
         :form="form"
         :sections="visibleSections"
-        :active-section="activeSection"
         :saving="saving"
         :is-dirty="isDirty"
         :is-new="isNew"
         :readonly="isReadOnly"
+        :can-delete="canDelete"
         @scroll-to-section="scrollToSection"
         @save="handleSave"
         @transfer="isTransferDialogOpen = true"
@@ -607,16 +592,6 @@ onBeforeUnmount(() => {
       :sm-and-down="smAndDown"
       @discard="fetchEquipment"
       @save="handleSave"
-    />
-
-    <!-- Mobile Bottom Navigation -->
-    <AppBottomNav
-      v-if="smAndDown && !isModal"
-      v-model="activeSection"
-      :items="visibleMobileNavItems"
-      fit-content
-      :show-badges="false"
-      @update:model-value="scrollToSection"
     />
 
     <!-- Mobile Quick Actions Floating Launcher & Sheet -->

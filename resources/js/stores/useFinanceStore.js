@@ -10,7 +10,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchDashboard = async () => {
     isDashboardLoading.value = true
     try {
-      const res = await $api('/api/finance/dashboard')
+      const res = await $api('/finance/dashboard')
       dashboardKpis.value = res.data
       return res.data
     } finally {
@@ -25,7 +25,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchAccounts = async (params = {}) => {
     isAccountsLoading.value = true
     try {
-      const res = await $api('/api/finance/financial-accounts', { params })
+      const res = await $api('/finance/financial-accounts', { params })
       accounts.value = res.data
       return res.data
     } finally {
@@ -34,7 +34,7 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const createAccount = async data => {
-    const res = await $api('/api/finance/financial-accounts', {
+    const res = await $api('/finance/financial-accounts', {
       method: 'POST',
       body: data,
     })
@@ -43,7 +43,7 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const reconcileAccount = async (accountId, transactionIds) => {
-    const res = await $api(`/api/finance/financial-accounts/${accountId}/reconcile`, {
+    const res = await $api(`/finance/financial-accounts/${accountId}/reconcile`, {
       method: 'POST',
       body: { transaction_ids: transactionIds },
     })
@@ -59,7 +59,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchPeriods = async (params = {}) => {
     isPeriodsLoading.value = true
     try {
-      const res = await $api('/api/finance/financial-periods', { params })
+      const res = await $api('/finance/financial-periods', { params })
       periods.value = res.data?.data || res.data || []
       return res.data
     } finally {
@@ -68,19 +68,19 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const fetchCurrentPeriod = async () => {
-    const res = await $api('/api/finance/financial-periods/current')
+    const res = await $api('/finance/financial-periods/current')
     currentPeriod.value = res.data
     return res.data
   }
 
   const closePeriod = async periodId => {
-    const res = await $api(`/api/finance/financial-periods/${periodId}/close`, { method: 'POST' })
+    const res = await $api(`/finance/financial-periods/${periodId}/close`, { method: 'POST' })
     await fetchPeriods()
     return res.data
   }
 
   const reopenPeriod = async periodId => {
-    const res = await $api(`/api/finance/financial-periods/${periodId}/reopen`, { method: 'POST' })
+    const res = await $api(`/finance/financial-periods/${periodId}/reopen`, { method: 'POST' })
     await fetchPeriods()
     return res.data
   }
@@ -92,7 +92,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchCostCenters = async (params = {}) => {
     isCostCentersLoading.value = true
     try {
-      const res = await $api('/api/finance/cost-centers', { params })
+      const res = await $api('/finance/cost-centers', { params })
       costCenters.value = res.data
       return res.data
     } finally {
@@ -101,7 +101,7 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const createCostCenter = async data => {
-    const res = await $api('/api/finance/cost-centers', {
+    const res = await $api('/finance/cost-centers', {
       method: 'POST',
       body: data,
     })
@@ -116,7 +116,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchBudgets = async (params = {}) => {
     isBudgetsLoading.value = true
     try {
-      const res = await $api('/api/finance/budgets', { params })
+      const res = await $api('/finance/budgets', { params })
       budgets.value = res.data?.data || res.data || []
       return res.data
     } finally {
@@ -125,7 +125,7 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const createBudget = async data => {
-    const res = await $api('/api/finance/budgets', {
+    const res = await $api('/finance/budgets', {
       method: 'POST',
       body: data,
     })
@@ -134,7 +134,7 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const recalculateBudget = async budgetId => {
-    const res = await $api(`/api/finance/budgets/${budgetId}/recalculate`, { method: 'POST' })
+    const res = await $api(`/finance/budgets/${budgetId}/recalculate`, { method: 'POST' })
     await fetchBudgets()
     return res.data
   }
@@ -146,7 +146,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchProfitability = async (params = {}) => {
     isProfitabilityLoading.value = true
     try {
-      const res = await $api('/api/finance/profitability/overview', { params })
+      const res = await $api('/finance/profitability/overview', { params })
       profitabilityOverview.value = res.data
       return res.data
     } finally {
@@ -155,7 +155,7 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const fetchSoProfitability = async soId => {
-    const res = await $api(`/api/finance/profitability/sales-order/${soId}`)
+    const res = await $api(`/finance/profitability/sales-order/${soId}`)
     return res.data
   }
 
@@ -167,7 +167,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchChartOfAccounts = async () => {
     isAccountingLoading.value = true
     try {
-      const res = await $api('/api/finance/accounting/chart-of-accounts')
+      const res = await $api('/finance/accounting/chart-of-accounts')
       chartOfAccounts.value = res.data
       return res.data
     } finally {
@@ -178,7 +178,7 @@ export const useFinanceStore = defineStore('finance', () => {
   const fetchJournalEntries = async (params = {}) => {
     isAccountingLoading.value = true
     try {
-      const res = await $api('/api/finance/accounting/journal-entries', { params })
+      const res = await $api('/finance/accounting/journal-entries', { params })
       journalEntries.value = res.data?.data || res.data || []
       return res.data
     } finally {
@@ -187,7 +187,7 @@ export const useFinanceStore = defineStore('finance', () => {
   }
 
   const createJournalEntry = async data => {
-    const res = await $api('/api/finance/accounting/journal-entries', {
+    const res = await $api('/finance/accounting/journal-entries', {
       method: 'POST',
       body: data,
     })

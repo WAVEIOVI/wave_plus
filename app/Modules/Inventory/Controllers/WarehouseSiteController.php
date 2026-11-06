@@ -4,11 +4,12 @@ namespace App\Modules\Inventory\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Inventory\Controllers\Concerns\AuthorizesInventoryRequests;
-use App\Modules\Inventory\Models\WarehouseSite;
 use App\Modules\Inventory\Models\MobileWarehouseAssignment;
+use App\Modules\Inventory\Models\WarehouseSite;
+use App\Modules\Inventory\Requests\LinkMobileWarehouseRequest;
 use App\Modules\Inventory\Requests\StoreWarehouseSiteRequest;
 use App\Modules\Inventory\Requests\UpdateWarehouseSiteRequest;
-use App\Modules\Inventory\Requests\LinkMobileWarehouseRequest;
+use App\Modules\Inventory\Resources\MobileWarehouseAssignmentResource;
 use App\Modules\Inventory\Resources\WarehouseSiteResource;
 use App\Modules\Inventory\Services\InventoryQueryService;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +30,7 @@ class WarehouseSiteController extends Controller
     {
         $this->authorize('viewAny', WarehouseSite::class);
         $query = WarehouseSite::withCount(['zones', 'locations'])
-            ->with('manager');
+            ->with(['manager', 'vehicle', 'currentAssignment.vehicle']);
 
         if ($search = $request->input('q')) {
             $query->where(function ($q) use ($search) {
@@ -40,6 +41,10 @@ class WarehouseSiteController extends Controller
 
         if ($status = $request->input('filter.status')) {
             $query->where('status', $status);
+        }
+
+        if ($siteType = $request->input('filter.site_type')) {
+            $query->where('site_type', $siteType);
         }
 
         return WarehouseSiteResource::collection(
@@ -72,7 +77,7 @@ class WarehouseSiteController extends Controller
      */
     public function show(string $id): WarehouseSiteResource
     {
-        $site = WarehouseSite::with(['manager', 'zones.locations'])
+        $site = WarehouseSite::with(['manager', 'vehicle', 'currentAssignment.vehicle', 'zones.locations'])
             ->withCount(['zones', 'locations'])
             ->findOrFail($id);
 
@@ -154,12 +159,12 @@ class WarehouseSiteController extends Controller
             // Create new assignment
             MobileWarehouseAssignment::create([
                 'warehouse_site_id' => $site->id,
-                'vehicle_id'        => $vehicleId,
-                'assigned_from'     => $validated['assigned_from'],
-                'assigned_until'    => $validated['assigned_until'] ?? null,
-                'notes'             => $validated['notes'] ?? null,
-                'is_current'        => true,
-                'created_by'        => Auth::id(),
+                'vehicle_id' => $vehicleId,
+                'assigned_from' => $validated['assigned_from'],
+                'assigned_until' => $validated['assigned_until'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+                'is_current' => true,
+                'created_by' => Auth::id(),
             ]);
 
             // Update the site's vehicle_id for quick reference
@@ -219,7 +224,7 @@ class WarehouseSiteController extends Controller
         $this->authorize('view', $site);
 
         if ($site->site_type !== 'mobile') {
-            return MobileWarehouseAssignment::collection(collect());
+            return MobileWarehouseAssignmentResource::collection(collect());
         }
 
         $assignments = MobileWarehouseAssignment::where('warehouse_site_id', $site->id)
@@ -227,6 +232,6 @@ class WarehouseSiteController extends Controller
             ->orderByDesc('assigned_from')
             ->paginate($this->queryService->cappedPerPage($request));
 
-        return MobileWarehouseAssignment::collection($assignments);
+        return MobileWarehouseAssignmentResource::collection($assignments);
     }
 }

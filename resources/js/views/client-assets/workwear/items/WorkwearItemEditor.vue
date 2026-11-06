@@ -1,13 +1,26 @@
 <script setup>
 /* eslint-disable camelcase */
-import { WpImageDialog, WpMediaViewerDialog } from '@/components/shared'
-import { useWorkwearDocumentOptions } from '@/composables/client-assets/workwear/useWorkwearDocumentOptions'
-import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
-import { $api } from '@/utils/api'
-import WorkwearGarmentIllustration from '@/views/client-assets/workwear/models/components/WorkwearGarmentIllustration.vue'
+import {
+  AppBottomNav,
+  AppQuickActionsSheet,
+  WpDeleteDialog,
+  WpImageDialog,
+  WpJournalNav,
+  WpMediaViewerDialog,
+  WpUnsavedChangesDialog,
+} from '@/components/shared'
+import AppBreadcrumb from '@/components/shared/AppBreadcrumb.vue'
+import { useWorkwearItemEdit } from '@/composables/client-assets/workwear/useWorkwearItemEdit'
+import { useUnsavedChangesGuard } from '@/composables/dialog/useUnsavedChangesGuard'
+import AssignItemDialog from '@/views/client-assets/workwear/items/components/AssignItemDialog.vue'
+import FlagStolenItemDialog from '@/views/client-assets/workwear/items/components/FlagStolenItemDialog.vue'
+import WorkwearItemBioSection from '@/views/client-assets/workwear/items/components/WorkwearItemBioSection.vue'
+import WorkwearItemHistorySection from '@/views/client-assets/workwear/items/components/WorkwearItemHistorySection.vue'
+import WorkwearItemMediaSection from '@/views/client-assets/workwear/items/components/WorkwearItemMediaSection.vue'
+import WorkwearItemNotesSection from '@/views/client-assets/workwear/items/components/WorkwearItemNotesSection.vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
 const props = defineProps({
@@ -16,48 +29,73 @@ const props = defineProps({
 
 const route = useRoute()
 const router = useRouter()
-const itemId = computed(() => props.id || route.params.id)
-const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
 const { t } = useI18n()
 const { smAndDown } = useDisplay()
 
-const loading = ref(false)
-const saving = ref(false)
-const error = ref(null)
-const itemData = ref(null)
-const originalData = ref(null)
-const activeSection = ref('bio')
+const itemId = computed(() => props.id || route.params.id)
+const listRoute = { name: 'client-assets-workwear-list', query: { tab: 'items' } }
+const quickActionsSheetOpen = ref(false)
 
-const supplierOptions = ref([])
-const modelStockMatrix = ref([])
-const isImageDialogOpen = ref(false)
-const isUploadingPhoto = ref(false)
-const isViewerOpen = ref(false)
-const viewerFile = ref(null)
+const {
+  loading,
+  saving,
+  error,
+  itemData,
+  activeSection,
+  supplierOptions,
+  modelStockMatrix,
+  employeeOptions,
+  assignments,
+  statusMap,
+  conditionOptions,
+  statusOptions,
+  isDirty,
+  fieldErrors,
+  documentsLoading,
+  salesOrderItems,
+  deliveryNoteItems,
 
-const isAssignDialogOpen = ref(false)
-const isStolenDialogOpen = ref(false)
-const assignForm = ref({ employee_id: null, notes: '' })
-const stolenForm = ref({ stolen_notes: '' })
-const employeeOptions = ref([])
+  // Dialogs
+  isImageDialogOpen,
+  isUploadingPhoto,
+  isViewerOpen,
+  viewerFile,
+  isAssignDialogOpen,
+  isStolenDialogOpen,
+  isDeleteDialogVisible,
+  assignForm,
+  stolenForm,
 
-const assignments = computed(() => itemData.value?.assignments || [])
+  // Actions
+  fetchItem,
+  handleUpdate,
+  handleDelete,
+  handleUploadPhoto,
+  handleDeletePhoto,
+  handlePreviewPhoto,
+  openAssignDialog,
+  handleAssign,
+  openStolenDialog,
+  handleFlagStolen,
+  handleQr,
+  loadSupplierOptions,
+} = useWorkwearItemEdit(itemId)
 
-const serverErrors = ref({})
-const fieldErrors = field => serverErrors.value[field] || []
+const { unsavedDialogVisible, confirmLeave } = useUnsavedChangesGuard(isDirty)
 
-const { loading: documentsLoading, salesOrderItems, deliveryNoteItems } = useWorkwearDocumentOptions(
-  computed(() => itemData.value?.client_id),
-  computed(() => ({ salesOrder: itemData.value?.sales_order, deliveryNote: itemData.value?.delivery_note })),
-)
+const sections = computed(() => [
+  { id: 'bio', label: t('General Info & SKU'), icon: 'tabler-info-circle' },
+  { id: 'media', label: t('Product Media & Model'), icon: 'tabler-photo', badge: itemData.value?.photos?.length || undefined },
+  { id: 'history', label: t('Assignment History'), icon: 'tabler-history', badge: assignments.value.length || undefined },
+  { id: 'notes', label: t('Notes'), icon: 'tabler-notes' },
+])
 
-const sections = [
-  { id: 'bio', label: 'General Info & SKU', icon: 'tabler-info-circle' },
-  { id: 'media', label: 'Product Media & Model', icon: 'tabler-photo' },
-  { id: 'history', label: 'Assignment History', icon: 'tabler-history' },
-  { id: 'notes', label: 'Notes', icon: 'tabler-notes' },
-]
+const breadcrumbItems = computed(() => [
+  { title: t('Home'), to: '/dashboard', icon: 'tabler-home' },
+  { title: t('Client Assets'), to: listRoute, icon: 'tabler-shirt' },
+  { title: t('Workwear Items'), to: listRoute, icon: 'tabler-hanger' },
+  { title: itemData.value?.item_code || t('Edit Item'), icon: 'tabler-edit' },
+])
 
 const scrollToSection = sectionId => {
   activeSection.value = sectionId
@@ -66,958 +104,362 @@ const scrollToSection = sectionId => {
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-const statusMap = { in_stock: 'success', assigned: 'info', returned: 'secondary', retired: 'warning', lost: 'error', stolen: 'error' }
-const conditionMap = { new: 'success', good: 'info', fair: 'warning', worn: 'secondary', damaged: 'error' }
-const conditionOptions = ['new', 'good', 'fair', 'worn', 'damaged'].map(c => ({ title: c.replace(/\b\w/g, l => l.toUpperCase()), value: c }))
-const statusOptions = ['in_stock', 'assigned', 'returned', 'retired', 'lost', 'stolen'].map(s => ({ title: s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), value: s }))
+const quickActions = computed(() => [
+  {
+    id: 'save-item',
+    title: t('Save Changes'),
+    icon: 'tabler-device-floppy',
+    color: 'primary',
+    disabled: saving.value || !isDirty.value,
+    onClick: handleUpdate,
+  },
+  {
+    id: 'assign-item',
+    title: t('Assign to Staff'),
+    icon: 'tabler-user-plus',
+    color: 'info',
+    disabled: itemData.value?.status === 'assigned',
+    onClick: openAssignDialog,
+  },
+  {
+    id: 'qr-code',
+    title: t('Download QR'),
+    icon: 'tabler-qrcode',
+    color: 'warning',
+    onClick: handleQr,
+  },
+  {
+    id: 'flag-stolen',
+    title: t('Flag Stolen'),
+    icon: 'tabler-alert-octagon',
+    color: 'error',
+    onClick: openStolenDialog,
+  },
+  {
+    id: 'delete-item',
+    title: t('Delete Item'),
+    icon: 'tabler-trash',
+    color: 'error',
+    onClick: () => { isDeleteDialogVisible.value = true },
+  },
+])
 
 onMounted(async () => {
-  try {
-    const suppliersRes = await $api('/bp/suppliers/options', { params: { limit: 150 } }).catch(() => ({ data: [] }))
+  await fetchItem()
+  loadSupplierOptions()
 
-    supplierOptions.value = (suppliersRes.data || []).map(s => ({ title: s.legal_name, value: s.id }))
-  } catch (err) {
-    console.error(err)
-  }
+  const observer = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          activeSection.value = entry.target.id.replace('section-', '')
+        }
+      })
+    },
+    { threshold: 0.2, rootMargin: '-80px 0px -50% 0px' },
+  )
 
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => { if (entry.isIntersecting) activeSection.value = entry.target.id.replace('section-', '') })
-  }, { threshold: 0.2, rootMargin: '-80px 0px -50% 0px' })
-
-  nextTick(() => { sections.forEach(s => { const el = document.getElementById(`section-${s.id}`); if (el) observer.observe(el) }) })
-})
-
-const fetchItem = async () => {
-  if (!itemId.value) return
-  loading.value = true
-  try {
-    const data = await store.fetchWorkwearItem(itemId.value)
-
-    itemData.value = { ...data }
-    originalData.value = JSON.parse(JSON.stringify(data))
-
-    if (data?.model_id) {
-      modelStockMatrix.value = await store.fetchWorkwearStock({ model_id: data.model_id }).catch(() => [])
-    }
-  }
-  catch (err) { error.value = err?.data?.message || t('Failed to load item') }
-  finally { loading.value = false }
-}
-
-const handleUpdate = async () => {
-  if (!itemId.value) return
-  saving.value = true
-  serverErrors.value = {}
-  try {
-    await store.updateWorkwearItem(itemId.value, {
-      sku: itemData.value.sku || null,
-      garment_type: itemData.value.garment_type,
-      size: itemData.value.size,
-      color: itemData.value.color || null,
-      supplier_id: itemData.value.supplier_id || null,
-      unit_cost: itemData.value.unit_cost !== '' && itemData.value.unit_cost !== null ? Number(itemData.value.unit_cost) : null,
-      item_condition: itemData.value.item_condition,
-      status: itemData.value.status,
-      notes: itemData.value.notes,
-      sales_order_id: itemData.value.sales_order_id || null,
-      delivery_note_id: itemData.value.delivery_note_id || null,
+  nextTick(() => {
+    sections.value.forEach(s => {
+      const el = document.getElementById(`section-${s.id}`)
+      if (el) observer.observe(el)
     })
-    await fetchItem()
-    snackbarStore.showMessage(t('Item updated successfully'), 'success')
-  }
-  catch (err) {
-    serverErrors.value = err?.data?.errors || {}
-    snackbarStore.showMessage(err?.data?.message || t('Failed to update'), 'error')
-  }
-  finally { saving.value = false }
-}
-
-const handleUploadPhoto = async payload => {
-  if (!itemId.value || !payload) return
-  const rawFile = payload instanceof File || payload instanceof Blob ? payload : payload?.file
-  if (!rawFile) return
-
-  const formData = new FormData()
-
-  formData.append('file', rawFile, rawFile.name || 'photo.jpg')
-  formData.append('collection', 'photos')
-  if (payload?.title) formData.append('title', payload.title)
-
-  isUploadingPhoto.value = true
-  try {
-    await store.uploadItemMedia(itemId.value, formData)
-    snackbarStore.showMessage(t('Product photo uploaded'), 'success')
-    isImageDialogOpen.value = false
-    await fetchItem()
-  } catch (err) {
-    snackbarStore.showMessage(err?.data?.message || t('Failed to upload photo'), 'error')
-  } finally {
-    isUploadingPhoto.value = false
-  }
-}
-
-const handleDeletePhoto = async mediaId => {
-  if (!itemId.value || !mediaId) return
-  try {
-    await store.deleteItemMedia(itemId.value, mediaId)
-    snackbarStore.showMessage(t('Photo removed'), 'success')
-    await fetchItem()
-  } catch (err) {
-    snackbarStore.showMessage(err?.data?.message || t('Failed to delete photo'), 'error')
-  }
-}
-
-const handlePreviewPhoto = photo => {
-  viewerFile.value = {
-    title: photo.name || 'Garment Photo',
-    url: photo.url || photo.thumb,
-    downloadUrl: photo.url,
-    mimeType: 'image/jpeg',
-  }
-  isViewerOpen.value = true
-}
-
-const isDeleteDialogVisible = ref(false)
-
-const handleDelete = async () => {
-  if (!itemId.value) return
-  try {
-    await store.deleteWorkwearItem(itemId.value)
-    snackbarStore.showMessage(t('Item deleted'), 'success')
-    router.push({ name: 'client-assets-workwear-list', query: { tab: 'items' } })
-  }
-  catch (err) { snackbarStore.showMessage(t('Failed to delete'), 'error') }
-}
-
-// Actions
-const openAssignDialog = async () => {
-  assignForm.value = { employee_id: null, notes: '' }
-  try {
-    await store.fetchWorkwearEmployees({ itemsPerPage: -1 })
-    employeeOptions.value = store.workwearEmployees.map(e => ({ title: e.full_name, value: e.id }))
-  } catch (e) { console.error(e) }
-  isAssignDialogOpen.value = true
-}
-
-const handleAssign = async () => {
-  saving.value = true
-  try {
-    await store.assignWorkwearItem(route.params.id, assignForm.value)
-    snackbarStore.showMessage(t('Item assigned successfully'), 'success')
-    isAssignDialogOpen.value = false
-    await fetchItem()
-  } catch (err) { snackbarStore.showMessage(err?.data?.message || t('Assign failed'), 'error') }
-  finally { saving.value = false }
-}
-
-const openStolenDialog = () => { stolenForm.value = { stolen_notes: '' }; isStolenDialogOpen.value = true }
-
-const handleFlagStolen = async () => {
-  saving.value = true
-  try {
-    await store.flagStolenWorkwearItem(route.params.id, stolenForm.value)
-    snackbarStore.showMessage(t('Item flagged as stolen'), 'success')
-    isStolenDialogOpen.value = false
-    await fetchItem()
-  } catch (err) { snackbarStore.showMessage(err?.data?.message || t('Failed to flag stolen'), 'error') }
-  finally { saving.value = false }
-}
-
-const handleQr = () => { store.downloadItemQr(route.params.id) }
-
-const unsavedDialogVisible = ref(false)
-const nextRouteRef = ref(null)
-
-const isDirty = computed(() => { if (!originalData.value) return false 
-
-  return JSON.stringify(itemData.value) !== JSON.stringify(originalData.value) })
-
-onBeforeRouteLeave((to, from, next) => { if (isDirty.value) { unsavedDialogVisible.value = true; next(false); nextRouteRef.value = to } else { next() } })
-
-const confirmLeave = () => { originalData.value = JSON.parse(JSON.stringify(itemData.value)); unsavedDialogVisible.value = false; router.push(nextRouteRef.value.fullPath) }
-
-onMounted(fetchItem)
+  })
+})
 </script>
 
 <template>
   <div>
-    <VBreadcrumbs class="px-0 mb-4">
-      <VBreadcrumbsItem
-        to="/dashboard"
-        :title="$t('Home')"
-      />
-      <VBreadcrumbsDivider><VIcon icon="tabler-chevron-right" /></VBreadcrumbsDivider>
-      <VBreadcrumbsItem
-        :to="{ name: 'client-assets-workwear-list', query: { tab: 'items' } }"
-        :title="$t('Workwear')"
-      />
-      <VBreadcrumbsDivider><VIcon icon="tabler-chevron-right" /></VBreadcrumbsDivider>
-      <VBreadcrumbsItem
-        :title="itemData?.item_code || $t('Loading...')"
-        disabled
-      />
-    </VBreadcrumbs>
+    <!-- 👉 Breadcrumb -->
+    <AppBreadcrumb
+      :items="breadcrumbItems"
+      class="mb-4"
+    />
 
+    <!-- 👉 Loading state -->
     <VSkeletonLoader
       v-if="loading && !itemData"
       type="card-avatar, article, list-item-two-line"
       class="mb-6 w-100 bg-transparent"
     />
+
+    <!-- 👉 Error banner -->
     <VAlert
       v-else-if="error"
       type="error"
       variant="tonal"
       class="mb-6"
     >
-      {{ error }}
+      <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+        <span>{{ error }}</span>
+        <VBtn
+          size="small"
+          variant="tonal"
+          color="error"
+          prepend-icon="tabler-refresh"
+          @click="fetchItem"
+        >
+          {{ $t('Retry') }}
+        </VBtn>
+      </div>
     </VAlert>
 
+    <!-- 👉 Journal Layout -->
     <div
       v-else-if="itemData"
       class="journal-layout"
     >
-      <!-- Sidebar -->
-      <nav
+      <!-- Desktop Navigation Sidebar -->
+      <WpJournalNav
         v-if="!smAndDown"
-        class="journal-nav glass-panel"
+        v-model="activeSection"
+        :sections="sections"
+        :title="itemData.item_code"
+        :subtitle="itemData.sku || itemData.model?.name || ''"
+        id-prefix="section-"
+        @update:model-value="scrollToSection"
       >
-        <div class="d-flex flex-column align-center text-center mb-4">
+        <template #avatar>
           <VAvatar
-            rounded
-            :size="64"
+            rounded="lg"
+            :size="40"
             :color="itemData.is_stolen ? 'error' : 'primary'"
             variant="tonal"
-            class="mb-3"
           >
             <VIcon
               :icon="itemData.is_stolen ? 'tabler-alert-octagon' : 'tabler-hanger'"
-              size="32"
+              size="22"
             />
           </VAvatar>
-          <h6 class="text-subtitle-1 font-weight-bold">
-            {{ itemData.item_code }}
-          </h6>
-          <div class="d-flex gap-1 mt-1 justify-center flex-wrap">
-            <VChip
-              v-if="itemData.is_stolen"
-              color="error"
-              label
-              size="x-small"
-            >
-              STOLEN
-            </VChip>
-            <VChip
-              :color="statusMap[itemData.status] || 'secondary'"
-              size="x-small"
-              label
-              class="text-capitalize"
-            >
-              {{ itemData.status?.replace(/_/g, ' ') }}
-            </VChip>
-          </div>
-        </div>
-        <VDivider class="mb-3" />
-        <PerfectScrollbar
-          :options="{ wheelPropagation: false }"
-          class="nav-scroll-area"
-        >
-          <VList
-            density="compact"
-            nav
-            class="bg-transparent mb-4"
-          >
-            <VListItem
-              v-for="s in sections"
-              :key="s.id"
-              :active="activeSection === s.id"
-              color="primary"
-              rounded="lg"
-              @click="scrollToSection(s.id)"
-            >
-              <template #prepend>
-                <VIcon
-                  :icon="s.icon"
-                  size="18"
-                />
-              </template>
-              <VListItemTitle class="text-body-2">
-                {{ $t(s.label) }}
-              </VListItemTitle>
-            </VListItem>
-          </VList>
-          
-          <VDivider class="mb-4" />
-          
-          <!-- Actions Menu -->
-          <div class="d-flex flex-column gap-2">
-            <VBtn
-              block
-              color="info"
-              variant="tonal"
-              prepend-icon="tabler-user-plus"
-              :disabled="itemData.status === 'assigned'"
-              @click="openAssignDialog"
-            >
-              {{ $t('Assign') }}
-            </VBtn>
-            <VBtn
-              block
-              color="warning"
-              variant="tonal"
-              prepend-icon="tabler-qrcode"
-              @click="handleQr"
-            >
-              {{ $t('QR Code') }}
-            </VBtn>
-            <VBtn
-              v-if="!itemData.is_stolen"
-              block
-              color="error"
-              variant="tonal"
-              prepend-icon="tabler-alert-octagon"
-              @click="openStolenDialog"
-            >
-              {{ $t('Flag Stolen') }}
-            </VBtn>
-          </div>
-        </PerfectScrollbar>
-        
-        <div class="mt-auto pt-4">
-          <VDivider class="mb-4" />
-          <VBtn
-            block
-            color="primary"
-            :disabled="saving || !isDirty"
-            :loading="saving"
-            class="mb-2"
-            @click="handleUpdate"
-          >
-            <VIcon
-              start
-              icon="tabler-device-floppy"
-            />{{ $t('Save Changes') }}
-          </VBtn>
-          <VBtn
-            block
-            variant="tonal"
-            color="error"
-            @click="isDeleteDialogVisible = true"
-          >
-            <VIcon
-              start
-              icon="tabler-trash"
-            />{{ $t('Delete') }}
-          </VBtn>
-        </div>
-      </nav>
+        </template>
 
-      <!-- Feed -->
-      <main class="journal-feed">
-        <div
-          v-if="smAndDown"
-          class="d-flex justify-space-between align-center mb-4"
-        >
-          <div class="d-flex align-center gap-3">
-            <VAvatar
-              rounded
-              :size="36"
-              color="primary"
-              variant="tonal"
+        <template #footer>
+          <div class="pt-4">
+            <div class="d-flex gap-1 mb-3 flex-wrap">
+              <VChip
+                v-if="itemData.is_stolen"
+                color="error"
+                label
+                size="x-small"
+              >
+                STOLEN
+              </VChip>
+              <VChip
+                :color="statusMap[itemData.status] || 'secondary'"
+                size="x-small"
+                label
+                class="text-capitalize"
+              >
+                {{ itemData.status?.replace(/_/g, ' ') }}
+              </VChip>
+            </div>
+
+            <VDivider class="mb-4" />
+
+            <!-- Secondary Actions -->
+            <div class="d-flex flex-column gap-2 mb-4">
+              <VBtn
+                block
+                color="info"
+                variant="tonal"
+                prepend-icon="tabler-user-plus"
+                :disabled="itemData.status === 'assigned'"
+                @click="openAssignDialog"
+              >
+                {{ $t('Assign to Staff') }}
+              </VBtn>
+              <VBtn
+                block
+                color="warning"
+                variant="tonal"
+                prepend-icon="tabler-qrcode"
+                @click="handleQr"
+              >
+                {{ $t('Download QR') }}
+              </VBtn>
+              <VBtn
+                v-if="!itemData.is_stolen"
+                block
+                color="error"
+                variant="tonal"
+                prepend-icon="tabler-alert-octagon"
+                @click="openStolenDialog"
+              >
+                {{ $t('Flag Stolen') }}
+              </VBtn>
+            </div>
+
+            <div
+              v-if="isDirty"
+              class="d-flex align-center gap-2 mb-3 text-caption text-warning"
+              role="status"
             >
-              <VIcon icon="tabler-hanger" />
-            </VAvatar>
-            <h6 class="text-subtitle-1 font-weight-bold">
-              {{ itemData.item_code }}
-            </h6>
-          </div>
-          <div class="d-flex gap-2">
+              <VIcon
+                icon="tabler-point-filled"
+                size="16"
+              />
+              {{ $t('Unsaved changes') }}
+            </div>
+
+            <!-- Primary Commit Actions -->
             <VBtn
-              size="small"
+              block
               color="primary"
               :disabled="saving || !isDirty"
               :loading="saving"
+              class="mb-2 font-weight-semibold"
               @click="handleUpdate"
             >
-              {{ $t('Save') }}
+              <VIcon
+                start
+                icon="tabler-device-floppy"
+              />
+              {{ $t('Save Changes') }}
             </VBtn>
-            <VMenu>
-              <template #activator="{ props: activatorProps }">
-                <VBtn
-                  icon
-                  variant="tonal"
-                  color="secondary"
-                  size="small"
-                  v-bind="activatorProps"
-                >
-                  <VIcon icon="tabler-dots-vertical" />
-                </VBtn>
-              </template>
-              <VList>
-                <VListItem
-                  prepend-icon="tabler-user-plus"
-                  :disabled="itemData.status === 'assigned'"
-                  @click="openAssignDialog"
-                >
-                  <VListItemTitle>Assign</VListItemTitle>
-                </VListItem>
-                <VListItem
-                  prepend-icon="tabler-qrcode"
-                  @click="handleQr"
-                >
-                  <VListItemTitle>QR Code</VListItemTitle>
-                </VListItem>
-                <VListItem
-                  v-if="!itemData.is_stolen"
-                  prepend-icon="tabler-alert-octagon"
-                  base-color="error"
-                  @click="openStolenDialog"
-                >
-                  <VListItemTitle>Flag Stolen</VListItemTitle>
-                </VListItem>
-                <VListItem
-                  prepend-icon="tabler-trash"
-                  base-color="error"
-                  @click="isDeleteDialogVisible = true"
-                >
-                  <VListItemTitle>Delete</VListItemTitle>
-                </VListItem>
-              </VList>
-            </VMenu>
+
+            <VBtn
+              block
+              variant="text"
+              color="error"
+              size="small"
+              @click="isDeleteDialogVisible = true"
+            >
+              <VIcon
+                start
+                icon="tabler-trash"
+              />
+              {{ $t('Delete Item') }}
+            </VBtn>
           </div>
+        </template>
+      </WpJournalNav>
+
+      <!-- Main Feed -->
+      <main class="journal-feed">
+        <!-- Mobile Header Bar -->
+        <div
+          v-if="smAndDown"
+          class="d-flex align-center gap-3 w-100 mb-2"
+        >
+          <VAvatar
+            rounded="lg"
+            :size="40"
+            :color="itemData.is_stolen ? 'error' : 'primary'"
+            variant="tonal"
+          >
+            <VIcon
+              :icon="itemData.is_stolen ? 'tabler-alert-octagon' : 'tabler-hanger'"
+              size="22"
+            />
+          </VAvatar>
+          <div class="min-w-0 flex-grow-1">
+            <h1 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
+              {{ itemData.item_code }}
+            </h1>
+            <span class="text-caption font-mono text-disabled">{{ itemData.sku || itemData.model?.name }}</span>
+          </div>
+          <VBtn
+            color="primary"
+            size="small"
+            :loading="saving"
+            :disabled="saving || !isDirty"
+            @click="handleUpdate"
+          >
+            {{ $t('Save') }}
+          </VBtn>
         </div>
 
-        <!-- General Info -->
-        <section
-          id="section-bio"
-          class="journal-section"
-        >
-          <VCard class="glass-panel">
-            <VCardText>
-              <h6 class="text-h6 mb-4">
-                <VIcon
-                  icon="tabler-info-circle"
-                  size="20"
-                  class="me-2"
-                />{{ $t('General Information') }}
-              </h6>
-              <VRow>
-                <VCol
-                  cols="12"
-                  md="4"
-                >
-                  <AppTextField
-                    v-model="itemData.sku"
-                    :label="$t('SKU / Variant Code')"
-                    :error-messages="fieldErrors('sku')"
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="4"
-                >
-                  <AppTextField
-                    v-model="itemData.garment_type"
-                    :label="$t('Garment Type')"
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="2"
-                >
-                  <AppTextField
-                    v-model="itemData.size"
-                    :label="$t('Size')"
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="2"
-                >
-                  <AppTextField
-                    v-model="itemData.color"
-                    :label="$t('Color')"
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="4"
-                >
-                  <AppAutocomplete
-                    v-model="itemData.supplier_id"
-                    :items="supplierOptions"
-                    :label="$t('Supplier / Manufacturer')"
-                    clearable
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="4"
-                >
-                  <AppTextField
-                    v-model.number="itemData.unit_cost"
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    prefix="TND"
-                    :label="$t('Unit Cost')"
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="2"
-                >
-                  <AppSelect
-                    v-model="itemData.item_condition"
-                    :label="$t('Condition')"
-                    :items="conditionOptions"
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="2"
-                >
-                  <AppSelect
-                    v-model="itemData.status"
-                    :label="$t('Status')"
-                    :items="statusOptions"
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="6"
-                >
-                  <AppAutocomplete
-                    v-model="itemData.sales_order_id"
-                    :label="$t('Sales Order (optional)')"
-                    :items="salesOrderItems"
-                    :loading="documentsLoading"
-                    :error-messages="fieldErrors('sales_order_id')"
-                    :placeholder="$t('No sales order')"
-                    :no-data-text="$t('No sales orders for this client')"
-                    clearable
-                    variant="outlined"
-                  />
-                </VCol>
-                <VCol
-                  cols="12"
-                  md="6"
-                >
-                  <AppAutocomplete
-                    v-model="itemData.delivery_note_id"
-                    :label="$t('Delivery Note (optional)')"
-                    :items="deliveryNoteItems"
-                    :loading="documentsLoading"
-                    :error-messages="fieldErrors('delivery_note_id')"
-                    :placeholder="$t('No delivery note')"
-                    :no-data-text="$t('No delivery notes for this client')"
-                    clearable
-                    variant="outlined"
-                  />
-                </VCol>
-              </VRow>
-              <VDivider class="my-4" />
-              <VRow dense>
-                <VCol
-                  v-for="item in [
-                    { label: $t('Client'), value: itemData.client?.legal_name || '—' },
-                    { label: $t('Linked Model'), value: itemData.model?.name || itemData.workwear_model?.name || '—' },
-                    { label: $t('Assigned Staff'), value: itemData.current_assignment?.employee?.full_name || $t('In Stock / Unassigned') },
-                    { label: $t('Created'), value: itemData.created_at ? new Date(itemData.created_at).toLocaleDateString() : '—' },
-                  ]"
-                  :key="item.label"
-                  cols="12"
-                  sm="3"
-                >
-                  <div class="detail-row">
-                    <div>
-                      <span class="text-caption text-disabled text-uppercase">{{ item.label }}</span>
-                      <div class="text-body-2 font-weight-medium">
-                        {{ item.value }}
-                      </div>
-                    </div>
-                  </div>
-                </VCol>
-              </VRow>
-            </VCardText>
-          </VCard>
-        </section>
+        <!-- Section 1: General Info & SKU -->
+        <WorkwearItemBioSection
+          :item-data="itemData"
+          :supplier-options="supplierOptions"
+          :sales-order-items="salesOrderItems"
+          :delivery-note-items="deliveryNoteItems"
+          :documents-loading="documentsLoading"
+          :status-options="statusOptions"
+          :condition-options="conditionOptions"
+          :field-errors="fieldErrors"
+        />
 
-        <!-- Product Media & Linked Model Preview -->
-        <section
-          id="section-media"
-          class="journal-section"
-        >
-          <VCard class="glass-panel">
-            <VCardText>
-              <VRow>
-                <!-- Left: Linked Model Illustration Preview & Variant Stock -->
-                <VCol
-                  cols="12"
-                  md="5"
-                >
-                  <div class="d-flex justify-space-between align-center mb-3">
-                    <h6 class="text-subtitle-1 font-weight-bold mb-0">
-                      <VIcon
-                        icon="tabler-shirt"
-                        size="18"
-                        class="me-1"
-                      />{{ $t('Linked Model Specification') }}
-                    </h6>
-                    <VBtn
-                      v-if="itemData.model_id"
-                      size="x-small"
-                      variant="tonal"
-                      color="primary"
-                      :to="{ name: 'client-assets-workwear-edit-id', params: { id: itemData.model_id }, query: { type: 'model' } }"
-                    >
-                      {{ $t('View Model') }}
-                    </VBtn>
-                  </div>
-                  <WorkwearGarmentIllustration
-                    v-if="itemData.model"
-                    :silhouette="itemData.model.silhouette || itemData.garment_type || 'coverall'"
-                    :colors="itemData.model.colors?.length ? itemData.model.colors : [itemData.color || 'navy', 'hi-vis-yellow']"
-                    :placements="itemData.model.placements || []"
-                    :logos="itemData.model.logos || []"
-                    readonly
-                    compact
-                  />
-                  <div
-                    v-if="modelStockMatrix.length"
-                    class="mt-3"
-                  >
-                    <div class="text-caption font-weight-bold text-uppercase text-disabled mb-1">
-                      {{ $t('Sibling Variant Stock Availability') }}
-                    </div>
-                    <div class="d-flex flex-wrap gap-1">
-                      <VChip
-                        v-for="(st, sIdx) in modelStockMatrix"
-                        :key="sIdx"
-                        size="x-small"
-                        :color="st.available > 0 ? 'success' : 'secondary'"
-                        variant="tonal"
-                      >
-                        {{ st.size || 'STD' }}{{ st.color ? ` (${st.color})` : '' }}: {{ st.available }}/{{ st.total }}
-                      </VChip>
-                    </div>
-                  </div>
-                </VCol>
+        <!-- Section 2: Product Media & Linked Model -->
+        <WorkwearItemMediaSection
+          :item-data="itemData"
+          :model-stock-matrix="modelStockMatrix"
+          :is-uploading-photo="isUploadingPhoto"
+          @open-photo-dialog="isImageDialogOpen = true"
+          @preview-photo="handlePreviewPhoto"
+          @delete-photo="handleDeletePhoto"
+        />
 
-                <!-- Right: Product Photos Gallery -->
-                <VCol
-                  cols="12"
-                  md="7"
-                >
-                  <div class="d-flex justify-space-between align-center mb-3">
-                    <div>
-                      <h6 class="text-subtitle-1 font-weight-bold mb-0">
-                        <VIcon
-                          icon="tabler-photo"
-                          size="18"
-                          class="me-1"
-                        />{{ $t('Product Media & Inspection Photos') }}
-                      </h6>
-                      <span class="text-caption text-medium-emphasis">
-                        {{ $t('Upload actual garment photos, barcode tags, or condition snapshots.') }}
-                      </span>
-                    </div>
-                    <VBtn
-                      size="small"
-                      variant="tonal"
-                      color="primary"
-                      prepend-icon="tabler-upload"
-                      :loading="isUploadingPhoto"
-                      @click="isImageDialogOpen = true"
-                    >
-                      {{ $t('Upload Photo') }}
-                    </VBtn>
-                  </div>
+        <!-- Section 3: Assignment History -->
+        <WorkwearItemHistorySection
+          :assignments="assignments"
+          :item-data="itemData"
+          @assign="openAssignDialog"
+        />
 
-                  <div
-                    v-if="itemData.photos?.length"
-                    class="d-flex flex-wrap gap-3"
-                  >
-                    <VCard
-                      v-for="photo in itemData.photos"
-                      :key="photo.id"
-                      variant="outlined"
-                      class="pa-2 d-flex flex-column align-center cursor-pointer"
-                      style="inline-size: 135px;"
-                      @click="handlePreviewPhoto(photo)"
-                    >
-                      <VImg
-                        :src="photo.thumb || photo.url"
-                        height="85"
-                        width="115"
-                        cover
-                        class="rounded mb-2"
-                      />
-                      <span class="text-caption text-truncate w-100 text-center">{{ photo.name }}</span>
-                      <VBtn
-                        size="x-small"
-                        variant="text"
-                        color="error"
-                        class="mt-1"
-                        @click.stop="handleDeletePhoto(photo.id)"
-                      >
-                        {{ $t('Remove') }}
-                      </VBtn>
-                    </VCard>
-                  </div>
-                  <div
-                    v-else
-                    class="text-center py-8 border rounded text-disabled"
-                  >
-                    <VIcon
-                      icon="tabler-camera-plus"
-                      size="32"
-                      class="mb-1"
-                    />
-                    <p class="text-caption mb-0">
-                      {{ $t('No product photos uploaded for this item yet.') }}
-                    </p>
-                  </div>
-                </VCol>
-              </VRow>
-            </VCardText>
-          </VCard>
-        </section>
-
-        <!-- History -->
-        <section
-          id="section-history"
-          class="journal-section"
-        >
-          <VCard class="glass-panel">
-            <VCardText>
-              <h6 class="text-h6 mb-4">
-                <VIcon
-                  icon="tabler-history"
-                  size="20"
-                  class="me-2"
-                />{{ $t('Assignment History') }}
-              </h6>
-              <VTable
-                v-if="assignments.length"
-                density="compact"
-                class="text-no-wrap bg-transparent"
-              >
-                <thead><tr><th>{{ $t('Employee') }}</th><th>{{ $t('Assigned') }}</th><th>{{ $t('Returned') }}</th><th>{{ $t('Status') }}</th></tr></thead>
-                <tbody>
-                  <tr
-                    v-for="a in assignments"
-                    :key="a.id"
-                  >
-                    <td>{{ a.employee?.full_name || '—' }}</td>
-                    <td>{{ a.assigned_at ? new Date(a.assigned_at).toLocaleDateString() : '—' }}</td>
-                    <td>{{ a.returned_at ? new Date(a.returned_at).toLocaleDateString() : '—' }}</td>
-                    <td>
-                      <VChip
-                        size="small"
-                        label
-                        :color="a.returned_at ? 'secondary' : 'success'"
-                      >
-                        {{ a.returned_at ? 'Returned' : 'Active' }}
-                      </VChip>
-                    </td>
-                  </tr>
-                </tbody>
-              </VTable>
-              <div
-                v-else
-                class="text-center py-6 text-disabled"
-              >
-                <VIcon
-                  icon="tabler-history"
-                  size="32"
-                  class="mb-2"
-                />
-                <p>{{ $t('No assignment history') }}</p>
-              </div>
-            </VCardText>
-          </VCard>
-        </section>
-
-        <!-- Notes -->
-        <section
-          id="section-notes"
-          class="journal-section"
-        >
-          <VCard class="glass-panel">
-            <VCardText>
-              <h6 class="text-h6 mb-4">
-                <VIcon
-                  icon="tabler-notes"
-                  size="20"
-                  class="me-2"
-                />{{ $t('Notes') }}
-              </h6>
-              <AppTextarea
-                v-model="itemData.notes"
-                :label="$t('Notes')"
-                rows="4"
-                variant="outlined"
-              />
-            </VCardText>
-          </VCard>
-        </section>
+        <!-- Section 4: Notes -->
+        <WorkwearItemNotesSection :item-data="itemData" />
       </main>
     </div>
 
-    <!-- Modals -->
-    <VDialog
-      v-model="isDeleteDialogVisible"
-      max-width="420"
+    <!-- Mobile Navigation Bar -->
+    <AppBottomNav
+      v-if="smAndDown && itemData"
+      v-model="activeSection"
+      :items="sections"
+      @update:model-value="scrollToSection"
+    />
+
+    <!-- Mobile Quick Actions FAB -->
+    <div
+      v-if="smAndDown && itemData"
+      class="workwear-edit-quick-actions-launcher"
     >
-      <VCard class="pa-4">
-        <VCardText class="text-center">
-          <VIcon
-            icon="tabler-alert-triangle"
-            size="48"
-            color="warning"
-            class="mb-4"
-          /><h6 class="text-lg font-weight-medium mb-2">
-            {{ $t('Delete Item') }}
-          </h6><p class="text-body-2 mb-0">
-            {{ $t('Are you sure? This cannot be undone.') }}
-          </p>
-        </VCardText>
-        <VCardActions>
-          <VSpacer /><VBtn
-            variant="tonal"
-            color="secondary"
-            @click="isDeleteDialogVisible = false"
-          >
-            {{ $t('Cancel') }}
-          </VBtn><VBtn
-            color="error"
-            @click="handleDelete"
-          >
-            {{ $t('Delete') }}
-          </VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
-    
-    <VDialog
+      <VBtn
+        icon="tabler-bolt"
+        color="primary"
+        elevation="6"
+        size="large"
+        @click="quickActionsSheetOpen = true"
+      />
+    </div>
+
+    <AppQuickActionsSheet
+      v-model="quickActionsSheetOpen"
+      :title="$t('Quick Actions')"
+      :actions="quickActions"
+    />
+
+    <!-- Dialogs -->
+    <AssignItemDialog
       v-model="isAssignDialogOpen"
-      max-width="500"
-    >
-      <VCard :title="$t('Assign to Employee')">
-        <VCardText>
-          <VRow>
-            <VCol cols="12">
-              <AppAutocomplete
-                v-model="assignForm.employee_id"
-                :items="employeeOptions"
-                :label="$t('Employee *')"
-                :placeholder="$t('Select employee')"
-              />
-            </VCol>
-            <VCol cols="12">
-              <AppTextarea
-                v-model="assignForm.notes"
-                :label="$t('Notes')"
-                rows="2"
-              />
-            </VCol>
-          </VRow>
-        </VCardText>
-        <VCardActions>
-          <VSpacer /><VBtn
-            variant="tonal"
-            @click="isAssignDialogOpen = false"
-          >
-            {{ $t('Cancel') }}
-          </VBtn><VBtn
-            color="primary"
-            :loading="saving"
-            :disabled="!assignForm.employee_id"
-            @click="handleAssign"
-          >
-            {{ $t('Assign') }}
-          </VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
+      :form="assignForm"
+      :employee-options="employeeOptions"
+      :loading="saving"
+      @submit="handleAssign"
+    />
 
-    <VDialog
+    <FlagStolenItemDialog
       v-model="isStolenDialogOpen"
-      max-width="450"
-    >
-      <VCard :title="$t('Flag as Stolen')">
-        <VCardText>
-          <VIcon
-            icon="tabler-alert-octagon"
-            size="40"
-            color="error"
-            class="mb-4"
-          />
-          <p>{{ $t('This will flag the item as stolen and update its status.') }}</p>
-          <AppTextarea
-            v-model="stolenForm.stolen_notes"
-            :label="$t('Stolen Notes')"
-            rows="2"
-          />
-        </VCardText>
-        <VCardActions>
-          <VSpacer /><VBtn
-            variant="tonal"
-            @click="isStolenDialogOpen = false"
-          >
-            {{ $t('Cancel') }}
-          </VBtn><VBtn
-            color="error"
-            :loading="saving"
-            @click="handleFlagStolen"
-          >
-            {{ $t('Flag Stolen') }}
-          </VBtn>
-        </VCardActions>
-      </VCard>
-    </VDialog>
+      :form="stolenForm"
+      :loading="saving"
+      @submit="handleFlagStolen"
+    />
 
-    <VDialog
+    <WpDeleteDialog
+      v-model:is-open="isDeleteDialogVisible"
+      :title="$t('Delete Workwear Item')"
+      :message="$t('Are you sure you want to delete item {code}? This action cannot be undone.', { code: itemData?.item_code || '' })"
+      :item-name="itemData?.item_code"
+      @confirm="handleDelete"
+    />
+
+    <WpUnsavedChangesDialog
       v-model="unsavedDialogVisible"
-      max-width="450"
-    >
-      <VCard class="glass-panel">
-        <VCardText class="text-center px-10 py-6">
-          <VIcon
-            icon="tabler-alert-triangle"
-            size="48"
-            color="warning"
-            class="mb-4"
-          /><h6 class="text-lg font-weight-medium mb-2">
-            {{ $t('Unsaved Changes') }}
-          </h6><p class="text-body-2 mb-0">
-            {{ $t('You have unsaved changes. Do you really want to leave without saving?') }}
-          </p>
-        </VCardText>
-        <VCardText class="d-flex justify-center gap-4 pb-6">
-          <VBtn
-            color="warning"
-            @click="confirmLeave"
-          >
-            {{ $t('Leave') }}
-          </VBtn><VBtn
-            variant="tonal"
-            color="secondary"
-            @click="unsavedDialogVisible = false"
-          >
-            {{ $t('Cancel') }}
-          </VBtn>
-        </VCardText>
-      </VCard>
-    </VDialog>
+      @confirm="confirmLeave"
+      @cancel="unsavedDialogVisible = false"
+    />
 
     <WpImageDialog
       v-model="isImageDialogOpen"
@@ -1030,18 +472,6 @@ onMounted(fetchItem)
       v-model:model-value="isViewerOpen"
       :file="viewerFile"
     />
-
-    <VSnackbar
-      v-model="snackbarStore.show"
-      :color="snackbarStore.color"
-      :timeout="snackbarStore.timeout"
-      transition="scale-transition"
-      variant="tonal"
-    >
-      <div style="text-align: center;">
-        {{ snackbarStore.text }}
-      </div>
-    </VSnackbar>
   </div>
 </template>
 
@@ -1053,36 +483,10 @@ onMounted(fetchItem)
   gap: 1.5rem;
   min-block-size: 100vh;
 
-  @media (max-width: 960px) { flex-direction: column; padding-block-end: 80px; }
-}
-
-.glass-panel {
-  border: 1px solid rgba(var(--v-border-color), 0.08);
-  border-radius: 16px !important;
-  backdrop-filter: blur(20px) saturate(1.8);
-  background: rgba(var(--v-theme-surface), 0.7) !important;
-  box-shadow: 0 4px 32px rgba(0, 0, 0, 6%), 0 1px 4px rgba(0, 0, 0, 4%), inset 0 1px 0 rgba(255, 255, 255, 6%);
-  transition: box-shadow 0.3s ease;
-
-  &:hover {
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 10%), 0 2px 8px rgba(0, 0, 0, 6%), inset 0 1px 0 rgba(255, 255, 255, 8%);
+  @media (max-width: 960px) {
+    flex-direction: column;
+    padding-block-end: calc(96px + env(safe-area-inset-bottom, 0px));
   }
-}
-
-.journal-nav {
-  position: sticky;
-  display: flex;
-  flex: 0 0 240px;
-  flex-direction: column;
-  padding: 1.25rem;
-  inline-size: 240px;
-  inset-block-start: 80px;
-  max-block-size: calc(100vh - 100px);
-}
-
-.nav-scroll-area {
-  flex: 1;
-  max-block-size: calc(100vh - 320px);
 }
 
 .journal-feed {
@@ -1093,24 +497,16 @@ onMounted(fetchItem)
   inline-size: 100%;
   min-inline-size: 0;
   padding-block-end: 2rem;
-}
 
-.journal-section {
-  scroll-margin-block-start: 80px;
-
-  @media (max-width: 960px) { scroll-margin-block-start: 16px; }
-}
-
-.detail-row {
-  display: flex;
-  align-items: center;
-  padding: 8px;
-  border-radius: 10px;
-  gap: 12px;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: rgba(var(--v-theme-primary), 0.04);
+  @media (max-width: 600px) {
+    gap: 1rem;
   }
+}
+
+.workwear-edit-quick-actions-launcher {
+  position: fixed;
+  z-index: 1001;
+  inset-block-end: calc(76px + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: 20px;
 }
 </style>

@@ -18,6 +18,8 @@ class BudgetController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Budget::class);
+
         $budgets = $this->budgetService->list($request->all());
 
         return response()->json([
@@ -29,6 +31,7 @@ class BudgetController extends Controller
     public function show(string $id): JsonResponse
     {
         $budget = $this->budgetService->find($id);
+        $this->authorize('view', $budget);
 
         return response()->json([
             'success' => true,
@@ -38,6 +41,8 @@ class BudgetController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Budget::class);
+
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'type' => 'nullable|string|in:annual,quarterly,monthly,project',
@@ -64,6 +69,8 @@ class BudgetController extends Controller
 
     public function recalculate(Budget $budget, Request $request): JsonResponse
     {
+        $this->authorize('update', $budget);
+
         $updated = $this->budgetService->recalculateActuals($budget);
 
         return response()->json([

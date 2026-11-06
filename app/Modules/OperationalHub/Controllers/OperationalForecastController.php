@@ -128,6 +128,8 @@ class OperationalForecastController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $this->authorize('viewAny', OperationalForecast::class);
+
         $query = OperationalForecast::query()
             ->with(['client', 'equipment', 'serviceSite', 'convertedSwo']);
 
@@ -141,14 +143,25 @@ class OperationalForecastController extends Controller
             $query->where('forecast_type', $request->input('forecast_type'));
         }
 
+        // Sorting
+        $allowedSortFields = ['expected_date', 'created_at', 'title'];
+        $sortBy = $request->input('sortBy', 'expected_date');
+        $sortBy = in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'expected_date';
+        
+        $sortOrder = in_array($request->input('sortOrder'), ['asc', 'desc'], true) 
+            ? $request->input('sortOrder') 
+            : 'asc';
+
         $perPage = (int) $request->input('itemsPerPage', $request->input('per_page', 15));
-        $forecasts = $query->orderBy('expected_date', 'asc')->paginate($perPage);
+        $forecasts = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
         return OperationalForecastResource::collection($forecasts);
     }
 
     public function show(OperationalForecast $operationalForecast): JsonResponse
     {
+        $this->authorize('view', $operationalForecast);
+
         $operationalForecast->load(['client', 'equipment', 'serviceSite', 'convertedSwo']);
 
         return response()->json([
@@ -158,6 +171,8 @@ class OperationalForecastController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', OperationalForecast::class);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'client_id' => 'required|ulid|exists:clients,id',
@@ -185,6 +200,8 @@ class OperationalForecastController extends Controller
 
     public function update(Request $request, OperationalForecast $operationalForecast): JsonResponse
     {
+        $this->authorize('update', $operationalForecast);
+
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'client_id' => 'sometimes|ulid|exists:clients,id',

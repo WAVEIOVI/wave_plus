@@ -1,94 +1,74 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
+  WpActiveFilters,
+  WpBulkActions,
+  WpDeleteDialog,
+  WpFilterDialog,
   WpMobileCard,
   WpPageToolbar,
   WpResponsiveList,
   WpRowActions,
 } from '@/components/shared'
-import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
-import { $api } from '@/utils/api'
+import { useWorkwearActions } from '@/composables/client-assets/workwear/useWorkwearActions'
+import { useWorkwearDialogs } from '@/composables/client-assets/workwear/useWorkwearDialogs'
+import { useWorkwearEmployeeList } from '@/composables/client-assets/workwear/useWorkwearEmployeeList'
 import AddNewEmployeeDialog from '@/views/client-assets/workwear/employees/list/AddNewEmployeeDialog.vue'
 import BatchCreateEmployeesDialog from '@/views/client-assets/workwear/employees/list/BatchCreateEmployeesDialog.vue'
-import DeleteEmployeeDialog from '@/views/client-assets/workwear/employees/list/DeleteEmployeeDialog.vue'
 import ViewEmployeeDialog from '@/views/client-assets/workwear/employees/list/ViewEmployeeDialog.vue'
-import { refDebounced } from '@vueuse/core'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
 const { t } = useI18n()
 const router = useRouter()
 
-// ── Search & Filter ────────────────────────────────────────────────────────
-const searchQuery = ref('')
-const debouncedSearch = refDebounced(searchQuery, 500)
-const selectedStatus = ref()
-const selectedClientId = ref()
-const clientOptions = ref([])
+// ── Employee List Orchestration ────────────────────────────────────────────
+const {
+  items,
+  totalItems,
+  loading,
+  error,
+  searchQuery,
+  filters,
+  stagedFilters,
+  activeFilters,
+  activeFilterCount,
+  setFilter,
+  removeFilter,
+  resetFilters,
+  applyStaged,
+  resetStaged,
+  page,
+  itemsPerPage,
+  sortBy,
+  refresh,
+  headers,
+  clientOptions,
+  statusOptions,
+  statusMap,
+  selectedIds,
+  clearSelection,
+  loadFilterOptions,
+} = useWorkwearEmployeeList()
 
-const itemsPerPage = ref(10)
-const page = ref(1)
-const sortBy = ref()
+const isFilterDialogOpen = ref(false)
 
-const headers = computed(() => [
-  { title: t('Employee Name'), key: 'full_name', sortable: false },
-  { title: t('Ref'), key: 'employee_ref', sortable: true },
-  { title: t('Client'), key: 'client', sortable: false },
-  { title: t('Department / Role'), key: 'department', sortable: true },
-  { title: t('Assigned Models'), key: 'model_assignments_count', sortable: false, align: 'center' },
-  { title: t('Issued Garments'), key: 'assignments_count', sortable: false, align: 'center' },
-  { title: t('Status'), key: 'status', sortable: true },
-  { title: t('Actions'), key: 'actions', sortable: false, align: 'end' },
-])
-
-const statusMap = {
-  active: 'success',
-  inactive: 'secondary',
-  terminated: 'error',
-}
-
-const statusOptions = Object.keys(statusMap).map(s => ({
-  title: s.replace(/\b\w/g, l => l.toUpperCase()),
-  value: s,
-}))
-
-onMounted(async () => {
-  try {
-    const res = await $api('/bp/clients/options', { params: { limit: 150 } })
-
-    clientOptions.value = (res.data || []).map(c => ({ title: c.legal_name, value: c.id }))
-  } catch (err) {
-    console.error('Failed to fetch clients filter:', err)
-  }
+onMounted(() => {
+  loadFilterOptions()
 })
 
-const fetchData = async () => {
-  await store.fetchWorkwearEmployees({
-    q: debouncedSearch.value,
-    'filter[status]': selectedStatus.value || undefined,
-    'filter[client_id]': selectedClientId.value || undefined,
-    itemsPerPage: itemsPerPage.value,
-    page: page.value,
-    sortBy: sortBy.value,
-  })
-}
+// ── Dialogs & Actions ──────────────────────────────────────────────────────
+const dialogs = useWorkwearDialogs()
 
-watch([debouncedSearch, selectedStatus, selectedClientId, itemsPerPage, page, sortBy], () => fetchData(), { immediate: true })
+const actions = useWorkwearActions({
+  onRefresh: refresh,
+})
 
-// ── Dialogs ────────────────────────────────────────────────────────────────
-const isAddNewDialogOpen = ref(false)
 const isBatchCreateDialogOpen = ref(false)
-const isViewDialogOpen = ref(false)
-const isDeleteDialogOpen = ref(false)
-const selectedEmployee = ref(null)
 
 const handleView = emp => {
-  selectedEmployee.value = emp
-  isViewDialogOpen.value = true
+  dialogs.openView(emp, 'employee')
 }
 
 const handleEdit = emp => {
@@ -96,19 +76,23 @@ const handleEdit = emp => {
 }
 
 const handleDelete = emp => {
-  selectedEmployee.value = emp
-  isDeleteDialogOpen.value = true
+  dialogs.openDelete(emp, 'employee')
 }
 
-const confirmDelete = async () => {
-  if (!selectedEmployee.value?.id) return
-  try {
-    await store.deleteWorkwearEmployee(selectedEmployee.value.id)
-    snackbarStore.showMessage(t('Workwear employee deleted successfully'), 'success')
-    fetchData()
-  } catch (e) {
-    snackbarStore.showMessage(e?.data?.message || t('Failed to delete employee'), 'error')
+const handleConfirmDelete = async () => {
+  if (dialogs.activeEntity.value?.id) {
+    const success = await actions.deleteEmployee(dialogs.activeEntity.value.id)
+    if (success) {
+      dialogs.closeDelete()
+    }
   }
+}
+
+const handleBulkDelete = async () => {
+  for (const id of selectedIds.value) {
+    await actions.deleteEmployee(id)
+  }
+  clearSelection()
 }
 
 // ── Row Actions Standard Contract ──────────────────────────────────────────
@@ -119,9 +103,9 @@ const getRowActions = () => [
 ]
 
 defineExpose({
-  openAdd: () => { isAddNewDialogOpen.value = true },
+  openAdd: () => dialogs.openAdd('employee'),
   openBatch: () => { isBatchCreateDialogOpen.value = true },
-  refresh: fetchData,
+  refresh,
 })
 </script>
 
@@ -132,29 +116,35 @@ defineExpose({
     :search-placeholder="$t('Search employees by name, ref, role...')"
     :create-label="$t('New Employee')"
     hide-create-on-mobile
-    :total-items="store.totalWorkwearEmployees"
-    :loading="store.loading"
-    @create="isAddNewDialogOpen = true"
-    @refresh="fetchData"
+    show-filter
+    hide-filter-on-mobile
+    :active-filter-count="activeFilterCount"
+    :total-items="totalItems"
+    :loading="loading"
+    @create="dialogs.openAdd('employee')"
+    @open-filters="isFilterDialogOpen = true"
+    @refresh="refresh"
   >
     <template #prepend>
       <VAutocomplete
-        v-model="selectedClientId"
+        :model-value="filters.client_id"
         :label="$t('Filter by Client')"
         :items="clientOptions"
         density="compact"
         clearable
         style="inline-size: 210px;"
         class="me-2"
+        @update:model-value="val => setFilter('client_id', val)"
       />
       <VSelect
-        v-model="selectedStatus"
+        :model-value="filters.status"
         :label="$t('Filter by Status')"
         :items="statusOptions"
         density="compact"
         clearable
         style="inline-size: 170px;"
         class="me-2"
+        @update:model-value="val => setFilter('status', val)"
       />
       <VBtn
         color="primary"
@@ -163,22 +153,46 @@ defineExpose({
         class="me-2 d-none d-sm-inline-flex"
         @click="isBatchCreateDialogOpen = true"
       >
-        {{ $t('Batch Enroll') }}
+        {{ $t('Batch Import') }}
       </VBtn>
     </template>
+
+    <template #filter-chips>
+      <WpActiveFilters
+        v-if="activeFilters.length"
+        :filters="activeFilters"
+        @remove="removeFilter"
+        @clear-all="resetFilters"
+      />
+    </template>
   </WpPageToolbar>
+
+  <!-- 👉 Bulk Actions Bar -->
+  <div
+    v-if="selectedIds?.length"
+    class="px-4 pb-2"
+  >
+    <WpBulkActions
+      :selected-count="selectedIds?.length || 0"
+      @clear="clearSelection"
+      @delete="handleBulkDelete"
+    />
+  </div>
 
   <!-- 👉 Responsive List -->
   <WpResponsiveList
     v-model:page="page"
     v-model:items-per-page="itemsPerPage"
     v-model:sort-by="sortBy"
+    v-model:selected="selectedIds"
     :headers="headers"
-    :items="store.workwearEmployees"
-    :total-items="store.totalWorkwearEmployees"
-    :loading="store.loading"
+    :items="items"
+    :total-items="totalItems"
+    :loading="loading"
+    :error="error"
+    show-select
     item-value="id"
-    @retry="fetchData"
+    @retry="refresh"
   >
     <!-- Employee Name column -->
     <template #item.full_name="{ item }">
@@ -199,18 +213,21 @@ defineExpose({
             class="font-weight-medium text-high-emphasis cursor-pointer text-link"
             @click="handleView(item)"
           >
-            {{ item.first_name }} {{ item.last_name }}
+            {{ item.full_name }}
           </span>
-          <span class="text-caption text-disabled">
-            {{ item.email || item.phone || $t('No Contact Info') }}
+          <span
+            v-if="item.job_title"
+            class="text-caption text-disabled"
+          >
+            {{ item.job_title }}
           </span>
         </div>
       </div>
     </template>
 
-    <!-- Employee Ref column -->
+    <!-- Ref column -->
     <template #item.employee_ref="{ item }">
-      <span class="font-weight-medium py-1 d-block">
+      <span class="font-mono text-caption">
         {{ item.employee_ref || '—' }}
       </span>
     </template>
@@ -224,39 +241,33 @@ defineExpose({
 
     <!-- Department / Role column -->
     <template #item.department="{ item }">
-      <div class="d-flex flex-column py-1">
-        <span>{{ item.department || '—' }}</span>
-        <span
-          v-if="item.role || item.position"
-          class="text-caption text-medium-emphasis"
-        >
-          {{ item.role || item.position }}
-        </span>
-      </div>
+      <span class="text-caption text-medium-emphasis">
+        {{ item.department || '—' }}
+      </span>
     </template>
 
-    <!-- Assigned Models (Entitlements) column -->
+    <!-- Assigned Models count -->
     <template #item.model_assignments_count="{ item }">
       <div class="text-center">
         <VChip
-          size="small"
+          size="x-small"
           variant="tonal"
           color="info"
         >
-          {{ item.active_model_assignments_count ?? item.model_assignments?.length ?? 0 }}
+          {{ item.model_assignments_count ?? item.assigned_models?.length ?? 0 }}
         </VChip>
       </div>
     </template>
 
-    <!-- Active Issued Garments column -->
+    <!-- Issued Garments count -->
     <template #item.assignments_count="{ item }">
       <div class="text-center">
         <VChip
-          size="small"
+          size="x-small"
           variant="tonal"
-          color="primary"
+          :color="(item.assignments_count || item.active_assignments?.length || 0) > 0 ? 'success' : 'secondary'"
         >
-          {{ item.assignments_count ?? item.active_assignments_count ?? 0 }}
+          {{ item.assignments_count ?? item.active_assignments?.length ?? 0 }}
         </VChip>
       </div>
     </template>
@@ -286,10 +297,10 @@ defineExpose({
     <!-- Mobile Card slot -->
     <template #mobile-card="{ item }">
       <WpMobileCard
-        :title="`${item.first_name || ''} ${item.last_name || ''}`"
-        :subtitle="item.employee_ref"
+        :title="item.full_name"
+        :subtitle="item.employee_ref || item.job_title || $t('Employee')"
         icon="tabler-user"
-        :status="item.status"
+        :status="item.status || 'active'"
         :status-color="statusMap[item.status] || 'secondary'"
         @click="handleView(item)"
       >
@@ -298,7 +309,7 @@ defineExpose({
             size="x-small"
             variant="tonal"
           >
-            {{ item.assignments_count ?? 0 }} {{ $t('assigned') }}
+            {{ item.assignments_count ?? item.active_assignments?.length ?? 0 }} {{ $t('garments') }}
           </VChip>
         </template>
 
@@ -335,22 +346,62 @@ defineExpose({
     </template>
   </WpResponsiveList>
 
+  <!-- 👉 Filter Dialog -->
+  <WpFilterDialog
+    v-model:is-open="isFilterDialogOpen"
+    :active-count="activeFilterCount"
+    @apply="applyStaged"
+    @reset="resetStaged"
+  >
+    <VRow>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <VAutocomplete
+          v-model="stagedFilters.client_id"
+          :label="$t('Client')"
+          :items="clientOptions"
+          clearable
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <VSelect
+          v-model="stagedFilters.status"
+          :label="$t('Status')"
+          :items="statusOptions"
+          clearable
+        />
+      </VCol>
+    </VRow>
+  </WpFilterDialog>
+
   <!-- 👉 Dialogs -->
   <AddNewEmployeeDialog
-    v-model:is-dialog-visible="isAddNewDialogOpen"
-    @employee-created="fetchData"
-    @add-employee="fetchData"
+    v-model:is-dialog-visible="dialogs.addDialog.isOpen.value"
+    @employee-created="refresh"
+    @add-employee="refresh"
   />
+
   <BatchCreateEmployeesDialog
     v-model:is-dialog-visible="isBatchCreateDialogOpen"
-    @employees-created="fetchData"
+    @employees-created="refresh"
   />
+
   <ViewEmployeeDialog
-    v-model:is-dialog-visible="isViewDialogOpen"
-    :employee="selectedEmployee"
+    v-model:is-dialog-visible="dialogs.viewDialog.isOpen.value"
+    :employee="dialogs.activeEntity.value"
+    :employee-id="dialogs.activeEntity.value?.id"
   />
-  <DeleteEmployeeDialog
-    v-model:is-dialog-visible="isDeleteDialogOpen"
-    @delete-employee="confirmDelete"
+
+  <WpDeleteDialog
+    v-model:is-open="dialogs.deleteDialog.isOpen.value"
+    :title="$t('Delete Workwear Employee')"
+    :message="$t('Are you sure you want to delete employee {name}? All issued garments and assignment history will be unlinked.', { name: dialogs.activeEntity.value?.full_name || '' })"
+    :loading="actions.isDeleting.value"
+    @confirm="handleConfirmDelete"
   />
 </template>

@@ -31,7 +31,8 @@ class SupplierInvoiceService
                 $q->where('invoice_number', 'like', "%{$search}%")
                     ->orWhere('supplier_invoice_ref', 'like', "%{$search}%")
                     ->orWhereHas('supplier', function ($sq) use ($search) {
-                        $sq->where('company_name', 'like', "%{$search}%");
+                        $sq->where('legal_name', 'like', "%{$search}%")
+                            ->orWhere('commercial_name', 'like', "%{$search}%");
                     });
             });
         }
@@ -181,7 +182,7 @@ class SupplierInvoiceService
                 'source_id' => $invoice->id,
                 'party_type' => 'supplier',
                 'party_id' => $invoice->supplier_id,
-                'party_name' => $invoice->supplier?->company_name,
+                'party_name' => $invoice->supplier?->commercial_name ?: $invoice->supplier?->legal_name,
                 'cost_center_id' => $invoice->cost_center_id,
                 'reference' => $invoice->invoice_number,
                 'description' => "Supplier Invoice {$invoice->invoice_number} (Ref: {$invoice->supplier_invoice_ref})",

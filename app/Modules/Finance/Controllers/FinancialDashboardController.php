@@ -17,6 +17,8 @@ class FinancialDashboardController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', \App\Modules\Finance\Models\FinancialAccount::class);
+
         $kpis = $this->dashboardService->getKpis();
 
         return response()->json([

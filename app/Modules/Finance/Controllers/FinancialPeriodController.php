@@ -18,6 +18,8 @@ class FinancialPeriodController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', FinancialPeriod::class);
+
         $periods = $this->periodService->list($request->all());
 
         return response()->json([
@@ -28,6 +30,8 @@ class FinancialPeriodController extends Controller
 
     public function current(): JsonResponse
     {
+        $this->authorize('viewAny', FinancialPeriod::class);
+
         $period = $this->periodService->currentPeriod();
 
         return response()->json([
@@ -38,6 +42,8 @@ class FinancialPeriodController extends Controller
 
     public function close(FinancialPeriod $financialPeriod, Request $request): JsonResponse
     {
+        $this->authorize('closePeriod', $financialPeriod);
+
         $closed = $this->periodService->closePeriod($financialPeriod, $request->user()?->id);
 
         return response()->json([
@@ -49,6 +55,8 @@ class FinancialPeriodController extends Controller
 
     public function reopen(FinancialPeriod $financialPeriod, Request $request): JsonResponse
     {
+        $this->authorize('closePeriod', $financialPeriod);
+
         $reopened = $this->periodService->reopenPeriod($financialPeriod);
 
         return response()->json([

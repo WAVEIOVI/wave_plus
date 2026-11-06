@@ -32,6 +32,7 @@ export { default as WpEntityCard } from './data/WpEntityCard.vue'
 export { default as WpEntityCardGrid } from './data/WpEntityCardGrid.vue'
 export { default as WpEntityCollection } from './data/WpEntityCollection.vue'
 export { default as MultiLangField } from './data/MultiLangField.vue'
+export { default as WpLocalizedField } from './data/MultiLangField.vue'
 export { default as WpSimpleTable } from './data/WpSimpleTable.vue'
 
 // Feedback

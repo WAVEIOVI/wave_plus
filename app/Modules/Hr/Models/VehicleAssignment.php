@@ -28,6 +28,7 @@ class VehicleAssignment extends Model
         'start_date',
         'end_date',
         'is_current',
+        'unique_current_key',
         'reason',
         'notes',
         'odometer_at_start',

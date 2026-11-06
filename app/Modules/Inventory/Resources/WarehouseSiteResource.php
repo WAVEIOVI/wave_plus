@@ -26,11 +26,32 @@ class WarehouseSiteResource extends JsonResource
             'status' => $this->status,
             'notes' => $this->notes,
 
+            // Mobile warehouse fields
+            'site_type' => $this->site_type ?? 'fixed',
+            'vehicle_id' => $this->vehicle_id,
+            'mobile_status' => $this->mobile_status,
+            'current_location' => $this->current_location,
+            'location_notes' => $this->location_notes,
+
             // Relations
             'manager' => $this->whenLoaded('manager', fn () => [
                 'id' => $this->manager?->id,
                 'name' => $this->manager?->name,
             ]),
+
+            'vehicle' => $this->whenLoaded('vehicle', fn () => $this->vehicle ? [
+                'id' => $this->vehicle->id,
+                'plate_number' => $this->vehicle->plate_number,
+                'label' => $this->vehicle->label,
+                'type' => $this->vehicle->type,
+            ] : null),
+
+            'current_assignment' => $this->whenLoaded(
+                'currentAssignment',
+                fn () => $this->currentAssignment
+                    ? new MobileWarehouseAssignmentResource($this->currentAssignment)
+                    : null,
+            ),
 
             // Counts
             'zones_count' => $this->whenCounted('zones', (int) $this->zones_count),

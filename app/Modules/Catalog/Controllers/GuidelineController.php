@@ -148,4 +148,30 @@ class GuidelineController extends Controller
 
         return response()->json(['message' => 'Guideline detached from blueprint.']);
     }
+
+    /**
+     * Reorder guideline steps.
+     */
+    public function reorderSteps(Request $request, Guideline $guideline): JsonResponse
+    {
+        $this->authorize('update', $guideline);
+
+        $validated = $request->validate([
+            'steps' => 'required|array',
+            'steps.*.id' => 'required|exists:guideline_steps,id',
+            'steps.*.order' => 'required|integer|min:0',
+        ]);
+
+        foreach ($validated['steps'] as $stepData) {
+            GuidelineStep::where('id', $stepData['id'])
+                ->where('guideline_id', $guideline->id)
+                ->update(['order' => $stepData['order']]);
+        }
+
+        return response()->json([
+            'message' => 'Steps reordered successfully.',
+            'data' => new GuidelineResource($guideline->fresh(['steps'])),
+        ]);
+    }
+
 }

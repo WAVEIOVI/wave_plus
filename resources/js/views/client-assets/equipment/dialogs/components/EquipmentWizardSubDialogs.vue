@@ -1,12 +1,11 @@
 <script setup>
 /* eslint-disable camelcase */
-import { WpSearchSelectDialog } from '@/components/shared'
+import { WpDeleteDialog, WpSearchSelectDialog } from '@/components/shared'
 import ClassBlueprintSelectModal from '@/views/client-assets/equipment/dialogs/ClassBlueprintSelectModal.vue'
 import EquipmentCreateAnotherDialog from '@/views/client-assets/equipment/dialogs/components/EquipmentCreateAnotherDialog.vue'
 import QrScannerModal from '@/views/client-assets/equipment/dialogs/QrScannerModal.vue'
 import EquipmentReplaceQrDialog from '@/views/client-assets/equipment/EquipmentReplaceQrDialog.vue'
 import EquipmentTransferDialog from '@/views/client-assets/equipment/EquipmentTransferDialog.vue'
-import DeleteEquipmentDialog from '@/views/client-assets/equipment/list/DeleteEquipmentDialog.vue'
 import SiteAreaSearchDialog from '@/views/client-assets/sites/edit/SiteAreaSearchDialog.vue'
 
 defineProps({
@@ -124,12 +123,12 @@ const isCreateAnotherPromptOpen = defineModel('createAnotherModal', { type: Bool
   />
 
   <!-- Delete Dialog (edit mode only) -->
-  <DeleteEquipmentDialog
+  <WpDeleteDialog
     v-if="!isModeNew && equipmentId"
-    v-model:is-dialog-visible="isDeleteEquipmentDialogVisible"
-    :equipment-id="equipmentId"
-    :equipment-name="form.equipment_code || form.model_name"
-    @deleted="$emit('deleted')"
+    v-model:is-open="isDeleteEquipmentDialogVisible"
+    :title="$t('Delete Equipment')"
+    :message="$t('Are you sure you want to delete equipment {code}? This action cannot be undone.', { code: form.equipment_code || form.model_name || '' })"
+    @confirm="$emit('deleted')"
   />
 
   <!-- Post-create "Add another?" prompt -->

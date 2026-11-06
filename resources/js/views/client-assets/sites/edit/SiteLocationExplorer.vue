@@ -1,5 +1,6 @@
 <script setup>
 /* eslint-disable camelcase */
+import { WpSectionCard } from '@/components/shared'
 import { buildAreaBreadcrumb } from '@/composables/client-assets/sites/areaHierarchyHelper'
 import { localizedValue } from '@/composables/useLocaleField'
 import { computed, ref } from 'vue'
@@ -161,166 +162,167 @@ const onNodeKeydown = (event, area) => {
 </script>
 
 <template>
-  <div class="location-explorer">
-    <div class="explorer-head">
-      <div class="mb-3">
-        <div class="text-subtitle-2 font-weight-bold">
-          {{ $t('Locations') }}
-        </div>
-        <div class="text-caption text-medium-emphasis">
-          {{ $t('Filter inventory by zone') }}
-        </div>
-      </div>
-
-      <AppTextField
-        v-model="locationQuery"
-        :placeholder="$t('Search zones...')"
-        :aria-label="$t('Search zones...')"
-        prepend-inner-icon="tabler-search"
-        clearable
-        density="compact"
-        variant="outlined"
-        hide-details
-        class="mb-2"
-      />
-
-      <VSwitch
-        :model-value="includeSubAreas"
-        density="compact"
-        hide-details
-        color="primary"
-        inset
-        class="explorer-switch mb-2"
-        :label="includeSubAreas ? $t('Including nested sub-areas') : $t('Exact location only')"
-        :title="$t('Include Sub-areas')"
-        @update:model-value="emit('update:includeSubAreas', $event)"
-      />
-    </div>
-
-    <button
-      type="button"
-      class="explorer-facility"
-      :class="{ 'is-active': !selectedLocationAreaId }"
-      :aria-pressed="!selectedLocationAreaId"
-      @click="selectArea(null)"
+  <div class="location-explorer-wrapper h-100">
+    <WpSectionCard
+      :title="$t('Locations')"
+      :subtitle="$t('Filter inventory by zone')"
+      icon="tabler-map-pin"
+      icon-color="primary"
+      class="h-100"
     >
-      <VAvatar
-        size="36"
-        color="primary"
-        variant="tonal"
-        rounded
-      >
-        <VIcon
-          icon="tabler-building-estate"
-          size="18"
-        />
-      </VAvatar>
-      <div class="min-w-0 flex-grow-1 text-start">
-        <div class="text-body-2 font-weight-semibold">
-          {{ $t('All Facility') }}
-        </div>
-        <div class="text-caption text-medium-emphasis">
-          {{ siteEquipmentCount }} {{ $t('assets') }}
-        </div>
-      </div>
-    </button>
-
-    <div
-      ref="treeRef"
-      class="explorer-tree"
-      role="tree"
-      :aria-label="$t('Locations')"
-    >
-      <div
-        v-for="area in visibleAreas"
-        :key="`explorer-${area.id}`"
-        role="treeitem"
-        class="explorer-node"
-        :class="{ 'is-active': selectedLocationAreaId === area.id }"
-        :style="{ '--depth': area.depth }"
-        :data-depth="area.depth"
-        :tabindex="area.id === tabStopId ? 0 : -1"
-        :aria-selected="selectedLocationAreaId === area.id"
-        :aria-level="area.depth + 1"
-        :aria-expanded="area.hasChildren && !isSearching ? area.isExpanded : undefined"
-        @click="toggleSelect(area)"
-        @focus="focusedAreaId = area.id"
-        @keydown="onNodeKeydown($event, area)"
-      >
-        <span class="explorer-rail" />
-        <IconBtn
-          v-if="area.hasChildren && !isSearching"
-          size="x-small"
-          variant="text"
-          class="explorer-chevron"
-          tabindex="-1"
-          :aria-label="area.isExpanded ? $t('Collapse') : $t('Expand')"
-          @click.stop="emit('toggleExpand', area.id)"
-        >
-          <VIcon
-            :icon="area.isExpanded ? 'tabler-chevron-down' : 'tabler-chevron-right'"
-            size="16"
-            class="flip-in-rtl"
+      <div class="location-explorer">
+        <div class="explorer-head">
+          <AppTextField
+            v-model="locationQuery"
+            :placeholder="$t('Search zones...')"
+            :aria-label="$t('Search zones...')"
+            prepend-inner-icon="tabler-search"
+            clearable
+            density="compact"
+            variant="outlined"
+            hide-details
+            class="mb-2"
           />
-        </IconBtn>
-        <span
-          v-else
-          class="explorer-chevron-spacer"
-        />
-        <VIcon
-          :icon="resolveAreaTypeIcon(area.area_type)"
-          size="18"
-          :color="selectedLocationAreaId === area.id ? 'primary' : 'medium-emphasis'"
-        />
-        <div class="min-w-0 flex-grow-1 text-start">
-          <div class="text-body-2 font-weight-medium text-truncate">
-            {{ localizedValue(area.name) }}
-          </div>
-          <div class="text-caption text-medium-emphasis text-truncate text-capitalize">
-            {{ area.area_type || t('Area') }}
-            <template v-if="area.code">
-              · {{ area.code }}
-            </template>
-          </div>
-          <div
-            v-if="isSearching && area.parentPath"
-            class="text-caption text-disabled text-truncate"
+
+          <VSwitch
+            :model-value="includeSubAreas"
+            density="compact"
+            hide-details
+            color="primary"
+            inset
+            class="explorer-switch mb-2"
+            :label="includeSubAreas ? $t('Including nested sub-areas') : $t('Exact location only')"
+            :title="$t('Include Sub-areas')"
+            @update:model-value="emit('update:includeSubAreas', $event)"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="explorer-facility"
+          :class="{ 'is-active': !selectedLocationAreaId }"
+          :aria-pressed="!selectedLocationAreaId"
+          @click="selectArea(null)"
+        >
+          <VAvatar
+            size="36"
+            color="primary"
+            variant="tonal"
+            rounded
           >
-            {{ area.parentPath }}
+            <VIcon
+              icon="tabler-building-estate"
+              size="18"
+            />
+          </VAvatar>
+          <div class="min-w-0 flex-grow-1 text-start">
+            <div class="text-body-2 font-weight-semibold">
+              {{ $t('All Facility') }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              {{ siteEquipmentCount }} {{ $t('assets') }}
+            </div>
+          </div>
+        </button>
+
+        <div
+          ref="treeRef"
+          class="explorer-tree"
+          role="tree"
+          :aria-label="$t('Locations')"
+        >
+          <div
+            v-for="area in visibleAreas"
+            :key="`explorer-${area.id}`"
+            role="treeitem"
+            class="explorer-node"
+            :class="{ 'is-active': selectedLocationAreaId === area.id }"
+            :style="{ '--depth': area.depth }"
+            :data-depth="area.depth"
+            :tabindex="area.id === tabStopId ? 0 : -1"
+            :aria-selected="selectedLocationAreaId === area.id"
+            :aria-level="area.depth + 1"
+            :aria-expanded="area.hasChildren && !isSearching ? area.isExpanded : undefined"
+            @click="toggleSelect(area)"
+            @focus="focusedAreaId = area.id"
+            @keydown="onNodeKeydown($event, area)"
+          >
+            <span class="explorer-rail" />
+            <IconBtn
+              v-if="area.hasChildren && !isSearching"
+              size="x-small"
+              variant="text"
+              class="explorer-chevron"
+              tabindex="-1"
+              :aria-label="area.isExpanded ? $t('Collapse') : $t('Expand')"
+              @click.stop="emit('toggleExpand', area.id)"
+            >
+              <VIcon
+                :icon="area.isExpanded ? 'tabler-chevron-down' : 'tabler-chevron-right'"
+                size="16"
+                class="flip-in-rtl"
+              />
+            </IconBtn>
+            <span
+              v-else
+              class="explorer-chevron-spacer"
+            />
+            <VIcon
+              :icon="resolveAreaTypeIcon(area.area_type)"
+              size="18"
+              :color="selectedLocationAreaId === area.id ? 'primary' : 'medium-emphasis'"
+            />
+            <div class="min-w-0 flex-grow-1 text-start">
+              <div class="text-body-2 font-weight-medium text-truncate">
+                {{ localizedValue(area.name) }}
+              </div>
+              <div class="text-caption text-medium-emphasis text-truncate text-capitalize">
+                {{ area.area_type || t('Area') }}
+                <template v-if="area.code">
+                  · {{ area.code }}
+                </template>
+              </div>
+              <div
+                v-if="isSearching && area.parentPath"
+                class="text-caption text-disabled text-truncate"
+              >
+                {{ area.parentPath }}
+              </div>
+            </div>
+            <span
+              class="explorer-count"
+              :class="{ 'is-empty': !areaCount(area) }"
+            >{{ areaCount(area) }}</span>
+            <div
+              v-if="$slots['node-actions']"
+              class="explorer-node-actions"
+              @click.stop
+              @keydown.stop
+            >
+              <slot
+                name="node-actions"
+                :area="area"
+              />
+            </div>
+          </div>
+
+          <div
+            v-if="!visibleAreas.length"
+            class="text-center text-medium-emphasis py-6"
+            role="status"
+          >
+            <VIcon
+              icon="tabler-map-off"
+              size="28"
+              class="mb-2 opacity-50"
+            />
+            <div class="text-caption">
+              {{ $t('No matching locations') }}
+            </div>
           </div>
         </div>
-        <span
-          class="explorer-count"
-          :class="{ 'is-empty': !areaCount(area) }"
-        >{{ areaCount(area) }}</span>
-        <div
-          v-if="$slots['node-actions']"
-          class="explorer-node-actions"
-          @click.stop
-          @keydown.stop
-        >
-          <slot
-            name="node-actions"
-            :area="area"
-          />
-        </div>
       </div>
-
-      <div
-        v-if="!visibleAreas.length"
-        class="text-center text-medium-emphasis py-6"
-        role="status"
-      >
-        <VIcon
-          icon="tabler-map-off"
-          size="28"
-          class="mb-2 opacity-50"
-        />
-        <div class="text-caption">
-          {{ $t('No matching locations') }}
-        </div>
-      </div>
-    </div>
+    </WpSectionCard>
   </div>
 </template>
 

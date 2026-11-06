@@ -4,7 +4,7 @@ import { localizedValue } from '@/composables/useLocaleField'
 import { useCatalogSupportStore } from '@/stores/useCatalogSupportStore'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import { useClientStore } from '@/stores/useClientStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,7 +13,7 @@ export function useEquipmentEdit(targetEquipmentId) {
   const store = useClientAssetStore()
   const clientStore = useClientStore()
   const catalogSupportStore = useCatalogSupportStore()
-  const snackbarStore = useSnackbarStore()
+  const { showSuccess, showError } = useAppSnackbar()
   const route = useRoute()
   const router = useRouter()
   const { t } = useI18n()
@@ -491,7 +491,7 @@ export function useEquipmentEdit(targetEquipmentId) {
         const newId = created?.data?.id || created?.id
 
         originalEquipment.value = JSON.parse(JSON.stringify(form.value))
-        snackbarStore.showMessage(t('Equipment created successfully'), 'success')
+        showSuccess(t('Equipment created successfully'))
         if (newId) {
           await router.replace({ name: 'client-assets-equipment-edit-id', params: { id: newId } })
         }
@@ -501,7 +501,7 @@ export function useEquipmentEdit(targetEquipmentId) {
 
       await store.updateEquipment(eqId, payload)
       originalEquipment.value = JSON.parse(JSON.stringify(form.value))
-      snackbarStore.showMessage(t('Equipment updated successfully'), 'success')
+      showSuccess(t('Equipment updated successfully'))
       await fetchEquipment()
 
       return true
@@ -511,7 +511,7 @@ export function useEquipmentEdit(targetEquipmentId) {
 
       const apiError = err?.data?.message || (err?.data?.errors ? Object.values(err.data.errors)[0][0] : t('Error saving equipment'))
 
-      snackbarStore.showMessage(apiError, 'error')
+      showError(apiError)
 
       return false
     }
@@ -526,14 +526,14 @@ export function useEquipmentEdit(targetEquipmentId) {
 
     try {
       await store.deleteEquipment(eqId)
-      snackbarStore.showMessage(t('Equipment deleted successfully'), 'success')
+      showSuccess(t('Equipment deleted successfully'))
       await router.push({ name: 'client-assets-equipment-list' })
 
       return true
     }
     catch (err) {
       console.error('Error deleting equipment:', err)
-      snackbarStore.showMessage(t('Failed to delete equipment'), 'error')
+      showError(t('Failed to delete equipment'))
 
       return false
     }
@@ -548,7 +548,7 @@ export function useEquipmentEdit(targetEquipmentId) {
       await store.downloadEquipmentQr(eqId, `${code}-qr.svg`)
     }
     catch (err) {
-      snackbarStore.showMessage(t('Failed to download QR code'), 'error')
+      showError(t('Failed to download QR code'))
     }
   }
 

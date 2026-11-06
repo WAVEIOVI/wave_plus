@@ -1,10 +1,9 @@
 <script setup>
 /* eslint-disable camelcase */
-import { $api } from '@/utils/api'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
-import { useI18n } from 'vue-i18n'
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
@@ -13,7 +12,7 @@ const props = defineProps({
 const emit = defineEmits(['update:isDialogVisible', 'employeesCreated'])
 
 const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
+const { showSuccess, showError, showWarning } = useAppSnackbar()
 const { t } = useI18n()
 
 const isSubmitting = ref(false)
@@ -27,9 +26,7 @@ const employeeRows = ref([
 
 const fetchClients = async () => {
   try {
-    const res = await $api('/bp/clients/options', { params: { limit: 100 } })
-
-    clientOptions.value = (res.data || []).map(c => ({ title: c.legal_name, value: c.id }))
+    clientOptions.value = await store.fetchClientOptions({ limit: 100 })
   } catch (err) {
     console.error('Failed to fetch clients:', err)
   }
@@ -53,15 +50,15 @@ const removeRow = index => {
 
 const onSubmit = async () => {
   if (!selectedClientId.value) {
-    snackbarStore.showMessage(t('Please select a client'), 'warning')
-    
+    showWarning(t('Please select a client'))
+
     return
   }
 
   const validRows = employeeRows.value.filter(r => r.first_name.trim() && r.last_name.trim())
   if (!validRows.length) {
-    snackbarStore.showMessage(t('Please enter at least one employee with first and last name'), 'warning')
-    
+    showWarning(t('Please enter at least one employee with first and last name'))
+
     return
   }
 
@@ -79,9 +76,8 @@ const onSubmit = async () => {
       })),
     })
 
-    snackbarStore.showMessage(
+    showSuccess(
       t('Successfully enrolled {count} employees', { count: res.data?.length || validRows.length }),
-      'success',
     )
     emit('employeesCreated')
     emit('update:isDialogVisible', false)
@@ -91,7 +87,7 @@ const onSubmit = async () => {
   } catch (err) {
     const msg = err?.data?.message || err?.message || t('Batch enrollment failed')
 
-    snackbarStore.showMessage(msg, 'error')
+    showError(msg)
   } finally {
     isSubmitting.value = false
   }
@@ -103,166 +99,135 @@ const closeDialog = () => {
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     :model-value="props.isDialogVisible"
-    max-width="800"
+    :title="$t('Batch Employee Enrollment')"
+    :subtitle="$t('Enroll multiple staff members for workwear tracking in one quick operation.')"
+    icon="tabler-users-plus"
+    icon-color="primary"
+    size="large"
+    :loading="isSubmitting"
+    :submit-disabled="!selectedClientId"
+    :submit-label="$t('Enroll Employees')"
+    @submit="onSubmit"
+    @cancel="closeDialog"
     @update:model-value="val => emit('update:isDialogVisible', val)"
   >
-    <VCard :title="$t('Batch Employee Enrollment')">
-      <VCardText>
-        <VAlert
-          color="primary"
-          variant="tonal"
-          density="compact"
-          class="mb-4"
-          icon="tabler-users"
-        >
-          {{ $t('Enroll multiple staff members for workwear tracking in one quick operation.') }}
-        </VAlert>
+    <VRow>
+      <VCol cols="12">
+        <AppAutocomplete
+          v-model="selectedClientId"
+          :items="clientOptions"
+          :label="$t('Client / Employer')"
+          :placeholder="$t('Select client')"
+          variant="outlined"
+        />
+      </VCol>
 
-        <VRow>
-          <VCol cols="12">
-            <AppAutocomplete
-              v-model="selectedClientId"
-              :items="clientOptions"
-              :label="$t('Client / Employer')"
-              :placeholder="$t('Select client')"
-              variant="outlined"
-            />
-          </VCol>
-
-          <VCol cols="12">
-            <div class="d-flex justify-space-between align-center my-2">
-              <span class="font-weight-bold text-subtitle-2">
-                {{ $t('Staff List') }}
-              </span>
-              <VBtn
-                size="small"
-                variant="tonal"
-                prepend-icon="tabler-plus"
-                @click="addRow"
-              >
-                {{ $t('Add Row') }}
-              </VBtn>
-            </div>
-
-            <VTable
-              density="compact"
-              class="border rounded"
-            >
-              <thead>
-                <tr>
-                  <th>{{ $t('First Name *') }}</th>
-                  <th>{{ $t('Last Name *') }}</th>
-                  <th style="inline-size: 130px;">
-                    {{ $t('Badge / Ref') }}
-                  </th>
-                  <th style="inline-size: 140px;">
-                    {{ $t('Department') }}
-                  </th>
-                  <th style="inline-size: 140px;">
-                    {{ $t('Position') }}
-                  </th>
-                  <th style="inline-size: 45px;" />
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, idx) in employeeRows"
-                  :key="idx"
-                >
-                  <td>
-                    <AppTextField
-                      v-model="row.first_name"
-                      placeholder="John"
-                      density="compact"
-                      variant="plain"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <AppTextField
-                      v-model="row.last_name"
-                      placeholder="Doe"
-                      density="compact"
-                      variant="plain"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <AppTextField
-                      v-model="row.employee_ref"
-                      placeholder="EMP-01"
-                      density="compact"
-                      variant="plain"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <AppTextField
-                      v-model="row.department"
-                      placeholder="Maintenance"
-                      density="compact"
-                      variant="plain"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <AppTextField
-                      v-model="row.position"
-                      placeholder="Technician"
-                      density="compact"
-                      variant="plain"
-                      hide-details
-                    />
-                  </td>
-                  <td class="text-center">
-                    <VBtn
-                      icon
-                      size="x-small"
-                      variant="text"
-                      color="error"
-                      :disabled="employeeRows.length <= 1"
-                      @click="removeRow(idx)"
-                    >
-                      <VIcon
-                        icon="tabler-trash"
-                        size="16"
-                      />
-                    </VBtn>
-                  </td>
-                </tr>
-              </tbody>
-            </VTable>
-          </VCol>
-
-          <VCol
-            cols="12"
-            class="d-flex justify-end gap-3 pt-4"
+      <VCol cols="12">
+        <div class="d-flex justify-space-between align-center my-2">
+          <span class="font-weight-bold text-subtitle-2">
+            {{ $t('Staff List') }}
+          </span>
+          <VBtn
+            size="small"
+            variant="tonal"
+            prepend-icon="tabler-plus"
+            @click="addRow"
           >
-            <VBtn
-              variant="tonal"
-              color="secondary"
-              :disabled="isSubmitting"
-              @click="closeDialog"
+            {{ $t('Add Row') }}
+          </VBtn>
+        </div>
+
+        <VTable
+          density="compact"
+          class="border rounded"
+        >
+          <thead>
+            <tr>
+              <th>{{ $t('First Name *') }}</th>
+              <th>{{ $t('Last Name *') }}</th>
+              <th style="inline-size: 130px;">
+                {{ $t('Badge / Ref') }}
+              </th>
+              <th style="inline-size: 140px;">
+                {{ $t('Department') }}
+              </th>
+              <th style="inline-size: 140px;">
+                {{ $t('Position') }}
+              </th>
+              <th style="inline-size: 45px;" />
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(row, idx) in employeeRows"
+              :key="idx"
             >
-              {{ $t('Cancel') }}
-            </VBtn>
-            <VBtn
-              color="primary"
-              :loading="isSubmitting"
-              :disabled="!selectedClientId"
-              @click="onSubmit"
-            >
-              <VIcon
-                start
-                icon="tabler-check"
-              />
-              {{ $t('Enroll Employees') }}
-            </VBtn>
-          </VCol>
-        </VRow>
-      </VCardText>
-    </VCard>
-  </VDialog>
+              <td>
+                <AppTextField
+                  v-model="row.first_name"
+                  placeholder="John"
+                  density="compact"
+                  variant="plain"
+                  hide-details
+                />
+              </td>
+              <td>
+                <AppTextField
+                  v-model="row.last_name"
+                  placeholder="Doe"
+                  density="compact"
+                  variant="plain"
+                  hide-details
+                />
+              </td>
+              <td>
+                <AppTextField
+                  v-model="row.employee_ref"
+                  placeholder="EMP-01"
+                  density="compact"
+                  variant="plain"
+                  hide-details
+                />
+              </td>
+              <td>
+                <AppTextField
+                  v-model="row.department"
+                  placeholder="Maintenance"
+                  density="compact"
+                  variant="plain"
+                  hide-details
+                />
+              </td>
+              <td>
+                <AppTextField
+                  v-model="row.position"
+                  placeholder="Technician"
+                  density="compact"
+                  variant="plain"
+                  hide-details
+                />
+              </td>
+              <td class="text-center">
+                <VBtn
+                  icon
+                  size="x-small"
+                  variant="text"
+                  color="error"
+                  :disabled="employeeRows.length <= 1"
+                  @click="removeRow(idx)"
+                >
+                  <VIcon
+                    icon="tabler-trash"
+                    size="16"
+                  />
+                </VBtn>
+              </td>
+            </tr>
+          </tbody>
+        </VTable>
+      </VCol>
+    </VRow>
+  </WpFormDialog>
 </template>

@@ -31,7 +31,8 @@ class SalesInvoiceService
                 $q->where('invoice_number', 'like', "%{$search}%")
                     ->orWhere('source_reference', 'like', "%{$search}%")
                     ->orWhereHas('client', function ($cq) use ($search) {
-                        $cq->where('company_name', 'like', "%{$search}%");
+                        $cq->where('legal_name', 'like', "%{$search}%")
+                            ->orWhere('commercial_name', 'like', "%{$search}%");
                     });
             });
         }
@@ -193,7 +194,7 @@ class SalesInvoiceService
                 'source_id' => $invoice->id,
                 'party_type' => 'client',
                 'party_id' => $invoice->client_id,
-                'party_name' => $invoice->client?->company_name,
+                'party_name' => $invoice->client?->commercial_name ?: $invoice->client?->legal_name,
                 'cost_center_id' => $invoice->cost_center_id,
                 'reference' => $invoice->invoice_number,
                 'description' => "Sales Invoice {$invoice->invoice_number}",

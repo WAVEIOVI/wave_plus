@@ -2,7 +2,7 @@
 /* eslint-disable camelcase */
 import { WpSearchSelectDialog } from '@/components/shared'
 import { localizedValue } from '@/composables/useLocaleField'
-import { $api } from '@/utils/api'
+import { useCatalogItemStore } from '@/stores/useCatalogItemStore'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -21,6 +21,7 @@ const emit = defineEmits([
 ])
 
 const { t, locale } = useI18n()
+const catalogStore = useCatalogItemStore()
 
 const isSearchDialogOpen = ref(false)
 
@@ -33,22 +34,19 @@ const catalogSearchConfig = computed(() => ({
   entityLabel: t('Catalog Product'),
   icon: 'tabler-package',
   fetcher: async ({ page, perPage, search, sortBy, sortDir, signal }) => {
-    const res = await $api('/catalog/items', {
-      signal,
-      params: {
-        'filter[item_type]': 'product',
-        'filter[product_type]': 'physical',
-        'include': 'product,category,brand,preferredSupplier,suppliers,options.values,variants.optionValues',
-        page,
-        per_page: perPage,
-        search: search || undefined,
-        sort: sortBy ? `${sortDir === 'desc' ? '-' : ''}${sortBy}` : undefined,
-      },
-    })
+    const res = await catalogStore.fetchItems({
+      'filter[item_type]': 'product',
+      'filter[product_type]': 'physical',
+      'include': 'product,category,brand,preferredSupplier,suppliers,options.values,variants.optionValues',
+      page,
+      per_page: perPage,
+      search: search || undefined,
+      sort: sortBy ? `${sortDir === 'desc' ? '-' : ''}${sortBy}` : undefined,
+    }, { signal })
 
     return {
-      items: res.data || [],
-      total: res.total || res.meta?.total || 0,
+      items: res?.data || [],
+      total: res?.total || res?.meta?.total || 0,
     }
   },
   columns: [

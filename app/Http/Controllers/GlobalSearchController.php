@@ -19,6 +19,11 @@ class GlobalSearchController extends Controller
      */
     public function search(Request $request): JsonResponse
     {
+        // Authenticated users only
+        if (! $request->user()) {
+            return response()->json([], 401);
+        }
+
         $query = trim($request->input('q', ''));
 
         // Require at least 2 characters
@@ -61,7 +66,7 @@ class GlobalSearchController extends Controller
                     'title' => $c->legal_name,
                     'subtitle' => 'Client · '.($c->primary_email ?? $c->client_id),
                     'icon' => 'tabler-users',
-                    'url' => ['name' => 'business-partners-clients-id', 'params' => ['id' => $c->id]],
+                    'url' => ['name' => 'business-partners-clients-edit-id', 'params' => ['id' => $c->id]],
                 ])->values()->all(),
             ];
         }
@@ -76,7 +81,7 @@ class GlobalSearchController extends Controller
                     'title' => $s->legal_name,
                     'subtitle' => 'Supplier · '.($s->primary_email ?? $s->supplier_id),
                     'icon' => 'tabler-truck',
-                    'url' => ['name' => 'business-partners-suppliers-id', 'params' => ['id' => $s->id]],
+                    'url' => ['name' => 'business-partners-suppliers-edit-id', 'params' => ['id' => $s->id]],
                 ])->values()->all(),
             ];
         }

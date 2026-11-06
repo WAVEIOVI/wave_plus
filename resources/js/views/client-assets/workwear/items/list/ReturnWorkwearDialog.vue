@@ -1,9 +1,11 @@
 <script setup>
 /* eslint-disable camelcase */
+import { WpFormDialog } from '@/components/shared'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
+import { requiredValidator } from '@core/utils/validators'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ref, computed } from 'vue'
 
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
@@ -13,12 +15,10 @@ const props = defineProps({
 const emit = defineEmits(['update:isDialogVisible', 'returned'])
 
 const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
+const { showMessage } = useAppSnackbar()
 const { t } = useI18n()
 
-const isFormValid = ref(false)
 const isSubmitting = ref(false)
-const refForm = ref()
 
 const formData = ref({
   return_action: 'restock',
@@ -27,11 +27,11 @@ const formData = ref({
 })
 
 const actionOptions = [
-  { title: t('Restock (Available for Reissue)'), value: 'restock', icon: 'tabler-refresh', color: 'success' },
-  { title: t('Repair / Laundry Needed'), value: 'repair', icon: 'tabler-tools', color: 'warning' },
-  { title: t('Retire / Scrap Garment'), value: 'retire', icon: 'tabler-trash', color: 'secondary' },
-  { title: t('Flag as Lost'), value: 'lost', icon: 'tabler-help', color: 'error' },
-  { title: t('Report as Stolen'), value: 'stolen', icon: 'tabler-shield-alert', color: 'error' },
+  { title: t('Restock (Available for Reissue)'), value: 'restock' },
+  { title: t('Repair / Laundry Needed'), value: 'repair' },
+  { title: t('Retire / Scrap Garment'), value: 'retire' },
+  { title: t('Flag as Lost'), value: 'lost' },
+  { title: t('Report as Stolen'), value: 'stolen' },
 ]
 
 const conditionOptions = ['new', 'good', 'fair', 'worn', 'damaged'].map(c => ({
@@ -48,12 +48,9 @@ const assignedStaffName = computed(() => {
 })
 
 const onSubmit = async () => {
-  const { valid } = await refForm.value?.validate()
-  if (!valid) return
-
   if (!currentAssignmentId.value) {
-    snackbarStore.showMessage(t('No active assignment found for this item'), 'error')
-    
+    showMessage(t('No active assignment found for this item'), 'error')
+
     return
   }
 
@@ -65,14 +62,14 @@ const onSubmit = async () => {
       notes: formData.value.notes || null,
     })
 
-    snackbarStore.showMessage(t('Item return processed successfully'), 'success')
+    showMessage(t('Item return processed successfully'), 'success')
     emit('returned')
     emit('update:isDialogVisible', false)
     formData.value = { return_action: 'restock', condition_at_return: 'good', notes: '' }
   } catch (err) {
     const msg = err?.data?.message || err?.message || t('Failed to process return')
 
-    snackbarStore.showMessage(msg, 'error')
+    showMessage(msg, 'error')
   } finally {
     isSubmitting.value = false
   }
@@ -85,105 +82,78 @@ const closeDialog = () => {
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     :model-value="props.isDialogVisible"
-    max-width="550"
+    :title="$t('Return & Inspection Workflow')"
+    :subtitle="$t('Record garment return, assess condition, and determine return disposition.')"
+    icon="tabler-clipboard-check"
+    icon-color="warning"
+    size="small"
+    :loading="isSubmitting"
+    :submit-label="$t('Complete Return')"
     @update:model-value="val => emit('update:isDialogVisible', val)"
+    @submit="onSubmit"
+    @cancel="closeDialog"
   >
-    <VCard :title="$t('Return & Inspection Workflow')">
-      <VCardText>
-        <!-- Item & Employee Context Banner -->
-        <VAlert
-          color="info"
-          variant="tonal"
-          density="compact"
-          class="mb-4"
-        >
-          <div class="d-flex justify-space-between align-center">
-            <div>
-              <div class="font-weight-bold">
-                {{ props.item?.item_code }} — {{ props.item?.workwear_model?.name || props.item?.garment_type }}
-              </div>
-              <div class="text-caption">
-                {{ $t('Returning from:') }} <strong>{{ assignedStaffName }}</strong>
-              </div>
-            </div>
-            <VChip
-              size="small"
-              color="info"
-              label
-            >
-              {{ props.item?.size || 'Standard' }}
-            </VChip>
+    <!-- Item & Employee Context Banner -->
+    <VAlert
+      color="info"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+    >
+      <div class="d-flex justify-space-between align-center">
+        <div>
+          <div class="font-weight-bold">
+            {{ props.item?.item_code }} — {{ props.item?.workwear_model?.name || props.item?.garment_type }}
           </div>
-        </VAlert>
-
-        <VForm
-          ref="refForm"
-          v-model="isFormValid"
-          @submit.prevent="onSubmit"
+          <div class="text-caption">
+            {{ $t('Returning from:') }} <strong>{{ assignedStaffName }}</strong>
+          </div>
+        </div>
+        <VChip
+          size="small"
+          color="info"
+          label
         >
-          <VRow>
-            <!-- Return Action -->
-            <VCol cols="12">
-              <AppSelect
-                v-model="formData.return_action"
-                :rules="[requiredValidator]"
-                :items="actionOptions"
-                :label="$t('Return Disposition / Action')"
-                variant="outlined"
-              />
-            </VCol>
+          {{ props.item?.size || 'Standard' }}
+        </VChip>
+      </div>
+    </VAlert>
 
-            <!-- Condition at Return -->
-            <VCol cols="12">
-              <AppSelect
-                v-model="formData.condition_at_return"
-                :items="conditionOptions"
-                :label="$t('Condition Inspection')"
-                variant="outlined"
-              />
-            </VCol>
+    <VRow>
+      <!-- Return Action -->
+      <VCol cols="12">
+        <AppSelect
+          v-model="formData.return_action"
+          :rules="[requiredValidator]"
+          :items="actionOptions"
+          :label="$t('Return Disposition / Action')"
+          variant="outlined"
+          autofocus
+        />
+      </VCol>
 
-            <!-- Notes -->
-            <VCol cols="12">
-              <AppTextarea
-                v-model="formData.notes"
-                :label="$t('Inspection Notes / Observations')"
-                :placeholder="$t('Observations, wear and tear details, repairs needed...')"
-                rows="3"
-                variant="outlined"
-              />
-            </VCol>
+      <!-- Condition at Return -->
+      <VCol cols="12">
+        <AppSelect
+          v-model="formData.condition_at_return"
+          :items="conditionOptions"
+          :label="$t('Condition Inspection')"
+          variant="outlined"
+        />
+      </VCol>
 
-            <!-- Actions -->
-            <VCol
-              cols="12"
-              class="d-flex gap-4 justify-end pt-4"
-            >
-              <VBtn
-                variant="tonal"
-                color="secondary"
-                :disabled="isSubmitting"
-                @click="closeDialog"
-              >
-                {{ $t('Cancel') }}
-              </VBtn>
-              <VBtn
-                type="submit"
-                :loading="isSubmitting"
-                color="primary"
-              >
-                <VIcon
-                  start
-                  icon="tabler-clipboard-check"
-                />
-                {{ $t('Complete Return') }}
-              </VBtn>
-            </VCol>
-          </VRow>
-        </VForm>
-      </VCardText>
-    </VCard>
-  </VDialog>
+      <!-- Notes -->
+      <VCol cols="12">
+        <AppTextarea
+          v-model="formData.notes"
+          :label="$t('Inspection Notes / Observations')"
+          :placeholder="$t('Observations, wear and tear details, repairs needed...')"
+          rows="3"
+          variant="outlined"
+        />
+      </VCol>
+    </VRow>
+  </WpFormDialog>
 </template>

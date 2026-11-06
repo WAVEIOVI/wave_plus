@@ -83,8 +83,10 @@ class MobileWarehouseAssignment extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereNull('assigned_until')
-            ->orWhere('is_current', true);
+        return $query->where(function ($q) {
+            $q->whereNull('assigned_until')
+                ->orWhere('is_current', true);
+        });
     }
 
     public function scopeByWarehouse($query, string $warehouseId)

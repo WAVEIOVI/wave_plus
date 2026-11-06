@@ -21,8 +21,26 @@ class FinancialCenterApiTest extends TestCase
     {
         parent::setUp();
 
+        // Create the permissions first
+        \App\Models\Permission::create(['name' => 'finance.view', 'guard_name' => 'web']);
+        \App\Models\Permission::create(['name' => 'finance.create', 'guard_name' => 'web']);
+        \App\Models\Permission::create(['name' => 'finance.edit', 'guard_name' => 'web']);
+        \App\Models\Permission::create(['name' => 'finance.delete', 'guard_name' => 'web']);
+        \App\Models\Permission::create(['name' => 'finance.post', 'guard_name' => 'web']);
+        \App\Models\Permission::create(['name' => 'finance.manage', 'guard_name' => 'web']);
+
         $this->user = User::factory()->create([
             'email' => 'finance_api_test@waveplus.local',
+        ]);
+
+        // Give finance permissions to the test user
+        $this->user->givePermissionTo([
+            'finance.view',
+            'finance.create',
+            'finance.edit',
+            'finance.delete',
+            'finance.post',
+            'finance.manage',
         ]);
     }
 

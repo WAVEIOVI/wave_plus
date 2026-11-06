@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable vue/no-mutating-props */
-import WorkwearSectionCard from '@/views/client-assets/workwear/models/components/WorkwearSectionCard.vue'
+import { WpSectionCard } from '@/components/shared'
 
 defineProps({
   modelData: { type: Object, required: true },
@@ -8,18 +8,22 @@ defineProps({
 </script>
 
 <template>
-  <WorkwearSectionCard
-    id="notes"
-    icon="tabler-notes"
-    :title="$t('Internal Notes')"
+  <section
+    id="section-notes"
+    class="journal-section mb-6"
   >
-    <AppTextarea
-      v-model="modelData.notes"
-      :label="$t('Internal Engineering & Client Notes')"
-      :placeholder="$t('Enter notes about fabric care, client delivery commitments, or embroidery specifications...')"
-      rows="4"
-      auto-grow
-      variant="outlined"
-    />
-  </WorkwearSectionCard>
+    <WpSectionCard
+      icon="tabler-notes"
+      :title="$t('Internal Notes')"
+    >
+      <AppTextarea
+        v-model="modelData.notes"
+        :label="$t('Internal Engineering & Client Notes')"
+        :placeholder="$t('Enter notes about fabric care, client delivery commitments, or embroidery specifications...')"
+        rows="4"
+        auto-grow
+        variant="outlined"
+      />
+    </WpSectionCard>
+  </section>
 </template>

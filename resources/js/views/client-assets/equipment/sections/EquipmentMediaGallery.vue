@@ -2,12 +2,13 @@
 import {
   WpDocumentList,
   WpMediaGallery,
+  WpSectionCard,
 } from '@/components/shared'
 import {
   equipmentDocumentCategories as documentCategories,
 } from '@/composables/client-assets/equipment/useEquipmentConstants'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -24,7 +25,7 @@ const emit = defineEmits(['refresh'])
 
 const { t } = useI18n()
 const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
+const { showSuccess, showError, showWarning } = useAppSnackbar()
 
 const uploadingPhoto = ref(false)
 const uploadingDocument = ref(false)
@@ -83,11 +84,11 @@ const handleSetMainPhoto = async itemOrId => {
 
   try {
     await store.setEquipmentMainPhoto(props.equipmentId, mediaId)
-    snackbarStore.showMessage(t('Main photo updated'), 'success')
+    showSuccess(t('Main photo updated'))
     emit('refresh')
   }
   catch (err) {
-    snackbarStore.showMessage(t('Failed to update main photo'), 'error')
+    showError(t('Failed to update main photo'))
   }
 }
 
@@ -97,13 +98,12 @@ const handleDeleteMedia = async (kind, itemOrId) => {
 
   try {
     await store.deleteEquipmentMedia(props.equipmentId, mediaId)
-    snackbarStore.showMessage(kind === 'photo' ? t('Photo deleted') : t('Document deleted'), 'success')
+    showSuccess(kind === 'photo' ? t('Photo deleted') : t('Document deleted'))
     emit('refresh')
   }
   catch (err) {
-    snackbarStore.showMessage(
+    showError(
       kind === 'photo' ? t('Failed to delete photo') : t('Failed to delete document'),
-      'error',
     )
   }
 }
@@ -111,7 +111,7 @@ const handleDeleteMedia = async (kind, itemOrId) => {
 const handleUploadDocumentFromDialog = async payload => {
   const items = payload?.files?.length ? payload.files : (payload?.file ? [payload] : [])
   if (!items.length || !props.equipmentId) {
-    snackbarStore.showMessage(t('Please select a file to upload'), 'warning')
+    showWarning(t('Please select a file to upload'))
 
     return
   }
@@ -135,16 +135,15 @@ const handleUploadDocumentFromDialog = async payload => {
       await store.uploadEquipmentMedia(props.equipmentId, formData)
     }
 
-    snackbarStore.showMessage(
+    showSuccess(
       items.length > 1 ? t('Documents uploaded successfully') : t('Document uploaded successfully'),
-      'success',
     )
     docListRef.value?.closeDialog()
     emit('refresh')
   }
   catch (err) {
     console.error(err)
-    snackbarStore.showMessage(t('Failed to upload document'), 'error')
+    showError(t('Failed to upload document'))
   }
   finally {
     uploadingDocument.value = false
@@ -157,7 +156,7 @@ const handleDownloadDocument = async doc => {
     await store.downloadEquipmentMedia(props.equipmentId, doc.id, doc.file_name || doc.title || 'document')
   }
   catch (err) {
-    snackbarStore.showMessage(t('Failed to download document'), 'error')
+    showError(t('Failed to download document'))
   }
 }
 
@@ -171,12 +170,17 @@ defineExpose({
 </script>
 
 <template>
-  <div>
+  <WpSectionCard
+    :title="t('Equipment Media & Documents')"
+    :subtitle="t('Photos, inspection captures, compliance certificates, and technical attachments')"
+    icon="tabler-photo"
+    icon-color="primary"
+  >
     <VAlert
       v-if="isNew"
       type="info"
       variant="tonal"
-      class="mb-4"
+      class="mb-0"
     >
       {{ t('Save the equipment first to upload photos and documents.') }}
     </VAlert>
@@ -224,5 +228,5 @@ defineExpose({
         @delete="docId => handleDeleteMedia('document', docId)"
       />
     </template>
-  </div>
+  </WpSectionCard>
 </template>

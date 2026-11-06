@@ -33,6 +33,7 @@ class EnsureAccountIsActive
 
             return response()->json([
                 'message' => 'Your account is deactivated or suspended. Please contact an administrator.',
+                'code' => 'ACCOUNT_DEACTIVATED',
             ], 403);
         }
 

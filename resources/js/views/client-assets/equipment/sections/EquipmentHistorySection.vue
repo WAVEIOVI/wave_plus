@@ -1,5 +1,5 @@
 <script setup>
-import { WpSectionCard } from '@/components/shared'
+import { WpEmptyState, WpSectionCard } from '@/components/shared'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -285,19 +285,12 @@ const filteredAuditEvents = computed(() => {
       </div>
     </div>
 
-    <div
+    <WpEmptyState
       v-else
-      class="py-6 text-center text-medium-emphasis border rounded-lg"
-    >
-      <VIcon
-        icon="tabler-history-off"
-        size="36"
-        class="mb-2 opacity-50"
-      />
-      <p class="text-body-2 mb-0">
-        {{ $t('No movement or audit history recorded for this category.') }}
-      </p>
-    </div>
+      icon="tabler-history-off"
+      :title="$t('No History Recorded')"
+      :description="$t('No movement or audit history recorded for this category.')"
+    />
   </WpSectionCard>
 </template>
 

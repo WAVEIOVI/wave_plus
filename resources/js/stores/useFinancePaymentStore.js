@@ -11,7 +11,7 @@ export const useFinancePaymentStore = defineStore('financePayments', () => {
   const fetchPayments = async (params = {}) => {
     isPaymentsLoading.value = true
     try {
-      const res = await $api('/api/finance/payments', { params })
+      const res = await $api('/finance/payments', { params })
       payments.value = res.data?.data || []
       paymentsTotal.value = res.data?.total || 0
       return res.data
@@ -21,7 +21,7 @@ export const useFinancePaymentStore = defineStore('financePayments', () => {
   }
 
   const createPayment = async data => {
-    const res = await $api('/api/finance/payments', {
+    const res = await $api('/finance/payments', {
       method: 'POST',
       body: data,
     })
@@ -30,13 +30,13 @@ export const useFinancePaymentStore = defineStore('financePayments', () => {
   }
 
   const confirmPayment = async paymentId => {
-    const res = await $api(`/api/finance/payments/${paymentId}/confirm`, { method: 'POST' })
+    const res = await $api(`/finance/payments/${paymentId}/confirm`, { method: 'POST' })
     await fetchPayments()
     return res.data
   }
 
   const allocatePayment = async (paymentId, allocations) => {
-    const res = await $api(`/api/finance/payments/${paymentId}/allocate`, {
+    const res = await $api(`/finance/payments/${paymentId}/allocate`, {
       method: 'POST',
       body: { allocations },
     })
@@ -52,7 +52,7 @@ export const useFinancePaymentStore = defineStore('financePayments', () => {
   const fetchExpenses = async (params = {}) => {
     isExpensesLoading.value = true
     try {
-      const res = await $api('/api/finance/expenses', { params })
+      const res = await $api('/finance/expenses', { params })
       expenses.value = res.data?.data || []
       expensesTotal.value = res.data?.total || 0
       return res.data
@@ -62,7 +62,7 @@ export const useFinancePaymentStore = defineStore('financePayments', () => {
   }
 
   const createExpense = async data => {
-    const res = await $api('/api/finance/expenses', {
+    const res = await $api('/finance/expenses', {
       method: 'POST',
       body: data,
     })
@@ -71,13 +71,13 @@ export const useFinancePaymentStore = defineStore('financePayments', () => {
   }
 
   const postExpense = async expenseId => {
-    const res = await $api(`/api/finance/expenses/${expenseId}/post`, { method: 'POST' })
+    const res = await $api(`/finance/expenses/${expenseId}/post`, { method: 'POST' })
     await fetchExpenses()
     return res.data
   }
 
   const cancelExpense = async expenseId => {
-    const res = await $api(`/api/finance/expenses/${expenseId}/cancel`, { method: 'POST' })
+    const res = await $api(`/finance/expenses/${expenseId}/cancel`, { method: 'POST' })
     await fetchExpenses()
     return res.data
   }

@@ -1,3 +1,5 @@
+import { useClientStore } from '@/stores/useClientStore'
+import { useSupplierStore } from '@/stores/useSupplierStore'
 import { $api } from '@/utils/api'
 import { defineStore } from 'pinia'
 
@@ -90,6 +92,10 @@ export const useClientAssetStore = defineStore('clientAsset', {
     // ── Workwear Employees ──────────────────────────────────────
     workwearEmployees: [],
     totalWorkwearEmployees: 0,
+
+    // ── Lookup Options Cache ────────────────────────────────────
+    clientOptionsCache: null,
+    supplierOptionsCache: null,
 
     // ── UI ──────────────────────────────────────────────────────
     loading: false,
@@ -680,8 +686,61 @@ export const useClientAssetStore = defineStore('clientAsset', {
       return await this.flagItemStolen(id, data)
     },
 
+    // ═══════════════════════════════════════════════════════════
+    //  PARTNER OPTIONS LOOKUP CACHE
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Cached client lookup options normalized for select/autocomplete:
+     * [{ title: item.legal_name, value: item.id, raw: item }]
+     */
+    async fetchClientOptions(params = { limit: 150 }) {
+      const isDefault = (!params || (params.limit === 150 && Object.keys(params).length === 1))
+      if (isDefault && this.clientOptionsCache) {
+        return this.clientOptionsCache
+      }
+
+      const clientStore = useClientStore()
+      const normalized = await clientStore.fetchClientOptions(params)
+
+      if (isDefault) {
+        this.clientOptionsCache = normalized
+      }
+
+      return normalized
+    },
+
+    /**
+     * Cached supplier lookup options normalized for select/autocomplete:
+     * [{ title: item.legal_name, value: item.id, raw: item }]
+     */
+    async fetchSupplierOptions(params = { limit: 150 }) {
+      const isDefault = (!params || (params.limit === 150 && Object.keys(params).length === 1))
+      if (isDefault && this.supplierOptionsCache) {
+        return this.supplierOptionsCache
+      }
+
+      const supplierStore = useSupplierStore()
+      const normalized = await supplierStore.fetchSupplierOptions(params)
+
+      if (isDefault) {
+        this.supplierOptionsCache = normalized
+      }
+
+      return normalized
+    },
+
     async assignItem(id, data) {
-      return await $api(`/client-assets/workwear-items/${id}/assign`, { method: 'POST', body: data })
+      return await $api('/client-assets/workwear-items/assign', { 
+        method: 'POST', 
+        body: { 
+          ...data, 
+          // eslint-disable-next-line camelcase
+          workwear_item_id: id,
+          // eslint-disable-next-line camelcase
+          item_ids: data?.item_ids || [id],
+        }, 
+      })
     },
 
     async assignWorkwearItem(id, data) {

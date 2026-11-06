@@ -18,9 +18,8 @@ import { useEquipmentActions } from '@/composables/client-assets/equipment/useEq
 import { useEquipmentDialogs } from '@/composables/client-assets/equipment/useEquipmentDialogs'
 import { useEquipmentList } from '@/composables/client-assets/equipment/useEquipmentList'
 import { localizedValue } from '@/composables/useLocaleField'
-import AddNewEquipmentDialog from '@/views/client-assets/equipment/list/AddNewEquipmentDialog.vue'
-import DeleteEquipmentDialog from '@/views/client-assets/equipment/list/DeleteEquipmentDialog.vue'
-import ViewEquipmentDialog from '@/views/client-assets/equipment/list/ViewEquipmentDialog.vue'
+import EquipmentWizardDialog from '@/views/client-assets/equipment/dialogs/EquipmentWizardDialog.vue'
+import EquipmentViewModal from '@/views/client-assets/equipment/EquipmentViewModal.vue'
 import EquipmentReplaceQrDialog from '@/views/client-assets/equipment/EquipmentReplaceQrDialog.vue'
 import EquipmentTransferDialog from '@/views/client-assets/equipment/EquipmentTransferDialog.vue'
 import { computed, ref } from 'vue'
@@ -625,7 +624,7 @@ const mobileFabActions = computed(() => [
     </WpFilterDialog>
 
     <!-- 👉 View Equipment Dialog -->
-    <ViewEquipmentDialog
+    <EquipmentViewModal
       v-model:is-dialog-visible="dialogs.viewDialog.isOpen.value"
       :equipment-id="dialogs.activeEquipment.value?.id"
       :equipment="dialogs.activeEquipment.value"
@@ -633,9 +632,10 @@ const mobileFabActions = computed(() => [
     />
 
     <!-- 👉 Quick Add Equipment Dialog -->
-    <AddNewEquipmentDialog
+    <EquipmentWizardDialog
       v-model:is-dialog-visible="dialogs.addDialog.isOpen.value"
-      @add-equipment="refresh"
+      is-new
+      @created="refresh"
     />
 
     <!-- 👉 Transfer Equipment Dialog -->

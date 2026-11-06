@@ -1,96 +1,75 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
+  WpActiveFilters,
+  WpBulkActions,
+  WpDeleteDialog,
+  WpFilterDialog,
   WpMobileCard,
   WpPageToolbar,
   WpResponsiveList,
   WpRowActions,
 } from '@/components/shared'
+import { useWorkwearActions } from '@/composables/client-assets/workwear/useWorkwearActions'
+import { useWorkwearDialogs } from '@/composables/client-assets/workwear/useWorkwearDialogs'
+import { useWorkwearModelList } from '@/composables/client-assets/workwear/useWorkwearModelList'
 import {
   resolveColorHex,
   resolveSilhouetteDisplay,
 } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
-import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
-import { $api } from '@/utils/api'
 import AddNewModelDialog from '@/views/client-assets/workwear/models/list/AddNewModelDialog.vue'
-import DeleteModelDialog from '@/views/client-assets/workwear/models/list/DeleteModelDialog.vue'
 import ViewModelDialog from '@/views/client-assets/workwear/models/list/ViewModelDialog.vue'
-import { refDebounced } from '@vueuse/core'
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
 const { t } = useI18n()
 const router = useRouter()
 
-// ── Search & Filter ────────────────────────────────────────────────────────
-const searchQuery = ref('')
-const debouncedSearch = refDebounced(searchQuery, 500)
-const selectedStatus = ref()
-const selectedClientId = ref()
-const clientOptions = ref([])
+// ── Model List Orchestration ───────────────────────────────────────────────
+const {
+  items,
+  totalItems,
+  loading,
+  error,
+  searchQuery,
+  filters,
+  stagedFilters,
+  activeFilters,
+  activeFilterCount,
+  setFilter,
+  removeFilter,
+  resetFilters,
+  applyStaged,
+  resetStaged,
+  page,
+  itemsPerPage,
+  sortBy,
+  refresh,
+  headers,
+  clientOptions,
+  statusOptions,
+  statusMap,
+  selectedIds,
+  clearSelection,
+  loadFilterOptions,
+} = useWorkwearModelList()
 
-const itemsPerPage = ref(10)
-const page = ref(1)
-const sortBy = ref()
+const isFilterDialogOpen = ref(false)
 
-const headers = computed(() => [
-  { title: t('Model Ref'), key: 'model_ref', sortable: true },
-  { title: t('Name & Spec'), key: 'name', sortable: true },
-  { title: t('Client'), key: 'client', sortable: false },
-  { title: t('Silhouette & Colors'), key: 'garment_types', sortable: false },
-  { title: t('Customizations'), key: 'placements', sortable: false, align: 'center' },
-  { title: t('Stock / Items'), key: 'items_count', sortable: false, align: 'center' },
-  { title: t('Status'), key: 'status', sortable: true },
-  { title: t('Actions'), key: 'actions', sortable: false, align: 'end' },
-])
-
-const statusMap = {
-  draft: 'secondary',
-  active: 'success',
-  discontinued: 'error',
-}
-
-const statusOptions = Object.keys(statusMap).map(s => ({
-  title: s.replace(/\b\w/g, l => l.toUpperCase()),
-  value: s,
-}))
-
-onMounted(async () => {
-  try {
-    const res = await $api('/bp/clients/options', { params: { limit: 150 } })
-
-    clientOptions.value = (res.data || []).map(c => ({ title: c.legal_name, value: c.id }))
-  } catch (err) {
-    console.error('Failed to fetch clients filter:', err)
-  }
+onMounted(() => {
+  loadFilterOptions()
 })
 
-const fetchData = async () => {
-  await store.fetchWorkwearModels({
-    q: debouncedSearch.value,
-    'filter[status]': selectedStatus.value || undefined,
-    'filter[client_id]': selectedClientId.value || undefined,
-    itemsPerPage: itemsPerPage.value,
-    page: page.value,
-    sortBy: sortBy.value,
-  })
-}
+// ── Dialogs & Actions ──────────────────────────────────────────────────────
+const dialogs = useWorkwearDialogs()
 
-watch([debouncedSearch, selectedStatus, selectedClientId, itemsPerPage, page, sortBy], () => fetchData(), { immediate: true })
-
-// ── Dialogs ────────────────────────────────────────────────────────────────
-const isAddNewDialogOpen = ref(false)
-const isViewDialogOpen = ref(false)
-const isDeleteDialogOpen = ref(false)
-const selectedModel = ref(null)
+const actions = useWorkwearActions({
+  onRefresh: refresh,
+})
 
 const handleView = model => {
-  selectedModel.value = model
-  isViewDialogOpen.value = true
+  dialogs.openView(model, 'model')
 }
 
 const handleEdit = model => {
@@ -98,19 +77,23 @@ const handleEdit = model => {
 }
 
 const handleDelete = model => {
-  selectedModel.value = model
-  isDeleteDialogOpen.value = true
+  dialogs.openDelete(model, 'model')
 }
 
-const confirmDelete = async () => {
-  if (!selectedModel.value?.id) return
-  try {
-    await store.deleteWorkwearModel(selectedModel.value.id)
-    snackbarStore.showMessage(t('Workwear model deleted successfully'), 'success')
-    fetchData()
-  } catch (e) {
-    snackbarStore.showMessage(t('Failed to delete model'), 'error')
+const handleConfirmDelete = async () => {
+  if (dialogs.activeEntity.value?.id) {
+    const success = await actions.deleteModel(dialogs.activeEntity.value.id)
+    if (success) {
+      dialogs.closeDelete()
+    }
   }
+}
+
+const handleBulkDelete = async () => {
+  for (const id of selectedIds.value) {
+    await actions.deleteModel(id)
+  }
+  clearSelection()
 }
 
 // ── Row Actions Standard Contract ──────────────────────────────────────────
@@ -121,8 +104,8 @@ const getRowActions = () => [
 ]
 
 defineExpose({
-  openAdd: () => { isAddNewDialogOpen.value = true },
-  refresh: fetchData,
+  openAdd: () => dialogs.openAdd('model'),
+  refresh,
 })
 </script>
 
@@ -133,44 +116,74 @@ defineExpose({
     :search-placeholder="$t('Search models by ref, name...')"
     :create-label="$t('New Model')"
     hide-create-on-mobile
-    :total-items="store.totalWorkwearModels"
-    :loading="store.loading"
-    @create="isAddNewDialogOpen = true"
-    @refresh="fetchData"
+    show-filter
+    hide-filter-on-mobile
+    :active-filter-count="activeFilterCount"
+    :total-items="totalItems"
+    :loading="loading"
+    @create="dialogs.openAdd('model')"
+    @open-filters="isFilterDialogOpen = true"
+    @refresh="refresh"
   >
     <template #prepend>
       <VAutocomplete
-        v-model="selectedClientId"
+        :model-value="filters.client_id"
         :label="$t('Filter by Client')"
         :items="clientOptions"
         density="compact"
         clearable
         style="inline-size: 210px;"
         class="me-2"
+        @update:model-value="val => setFilter('client_id', val)"
       />
       <VSelect
-        v-model="selectedStatus"
+        :model-value="filters.status"
         :label="$t('Filter by Status')"
         :items="statusOptions"
         density="compact"
         clearable
         style="inline-size: 170px;"
         class="me-2"
+        @update:model-value="val => setFilter('status', val)"
+      />
+    </template>
+
+    <template #filter-chips>
+      <WpActiveFilters
+        v-if="activeFilters.length"
+        :filters="activeFilters"
+        @remove="removeFilter"
+        @clear-all="resetFilters"
       />
     </template>
   </WpPageToolbar>
+
+  <!-- 👉 Bulk Actions Bar -->
+  <div
+    v-if="selectedIds?.length"
+    class="px-4 pb-2"
+  >
+    <WpBulkActions
+      :selected-count="selectedIds?.length || 0"
+      @clear="clearSelection"
+      @delete="handleBulkDelete"
+    />
+  </div>
 
   <!-- 👉 Responsive List -->
   <WpResponsiveList
     v-model:page="page"
     v-model:items-per-page="itemsPerPage"
     v-model:sort-by="sortBy"
+    v-model:selected="selectedIds"
     :headers="headers"
-    :items="store.workwearModels"
-    :total-items="store.totalWorkwearModels"
-    :loading="store.loading"
+    :items="items"
+    :total-items="totalItems"
+    :loading="loading"
+    :error="error"
+    show-select
     item-value="id"
-    @retry="fetchData"
+    @retry="refresh"
   >
     <!-- Model Ref column -->
     <template #item.model_ref="{ item }">
@@ -370,18 +383,57 @@ defineExpose({
     </template>
   </WpResponsiveList>
 
+  <!-- 👉 Filter Dialog -->
+  <WpFilterDialog
+    v-model:is-open="isFilterDialogOpen"
+    :active-count="activeFilterCount"
+    @apply="applyStaged"
+    @reset="resetStaged"
+  >
+    <VRow>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <VAutocomplete
+          v-model="stagedFilters.client_id"
+          :label="$t('Client')"
+          :items="clientOptions"
+          clearable
+        />
+      </VCol>
+      <VCol
+        cols="12"
+        sm="6"
+      >
+        <VSelect
+          v-model="stagedFilters.status"
+          :label="$t('Status')"
+          :items="statusOptions"
+          clearable
+        />
+      </VCol>
+    </VRow>
+  </WpFilterDialog>
+
   <!-- 👉 Dialogs -->
   <AddNewModelDialog
-    v-model:is-dialog-visible="isAddNewDialogOpen"
-    @model-created="fetchData"
-    @add-model="fetchData"
+    v-model:is-dialog-visible="dialogs.addDialog.isOpen.value"
+    @model-created="refresh"
+    @add-model="refresh"
   />
+
   <ViewModelDialog
-    v-model:is-dialog-visible="isViewDialogOpen"
-    :model="selectedModel"
+    v-model:is-dialog-visible="dialogs.viewDialog.isOpen.value"
+    :model="dialogs.activeEntity.value"
+    :model-id="dialogs.activeEntity.value?.id"
   />
-  <DeleteModelDialog
-    v-model:is-dialog-visible="isDeleteDialogOpen"
-    @delete-model="confirmDelete"
+
+  <WpDeleteDialog
+    v-model:is-open="dialogs.deleteDialog.isOpen.value"
+    :title="$t('Delete Workwear Model')"
+    :message="$t('Are you sure you want to delete model {name}? All associated inventory items and specs will be affected.', { name: dialogs.activeEntity.value?.name || dialogs.activeEntity.value?.model_ref || '' })"
+    :loading="actions.isDeleting.value"
+    @confirm="handleConfirmDelete"
   />
 </template>

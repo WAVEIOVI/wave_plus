@@ -2,6 +2,7 @@
 /* eslint-disable camelcase */
 import {
   AppBreadcrumb,
+  WpDeleteDialog,
   WpEmptyState,
   WpErrorBanner,
   WpKpiCard,
@@ -24,7 +25,6 @@ import EquipmentWizardDialog from '@/views/client-assets/equipment/dialogs/Equip
 import EquipmentReplaceQrDialog from '@/views/client-assets/equipment/EquipmentReplaceQrDialog.vue'
 import EquipmentTransferDialog from '@/views/client-assets/equipment/EquipmentTransferDialog.vue'
 import EquipmentViewModal from '@/views/client-assets/equipment/EquipmentViewModal.vue'
-import DeleteEquipmentDialog from '@/views/client-assets/equipment/list/DeleteEquipmentDialog.vue'
 import SiteEquipmentCard from '@/views/client-assets/sites/components/SiteEquipmentCard.vue'
 import SiteEquipmentFilterBar from '@/views/client-assets/sites/components/SiteEquipmentFilterBar.vue'
 import SiteEquipmentTable from '@/views/client-assets/sites/components/SiteEquipmentTable.vue'
@@ -297,9 +297,30 @@ const openTransfer = eq => {
   isTransferDialogOpen.value = true
 }
 
+const isDeletingEquipment = ref(false)
+
 const openDeleteEquipment = eq => {
   selectedEquipmentItem.value = eq
   isDeleteEquipmentDialogOpen.value = true
+}
+
+const confirmDeleteEquipment = async () => {
+  if (!selectedEquipmentItem.value?.id) return
+  isDeletingEquipment.value = true
+  try {
+    await clientAssetStore.deleteEquipment(selectedEquipmentItem.value.id)
+    snackbarStore.showMessage(t('Equipment deleted successfully'), 'success')
+    isDeleteEquipmentDialogOpen.value = false
+    selectedEquipmentItem.value = null
+    fetchEquipment()
+    fetchAreas()
+  }
+  catch (err) {
+    snackbarStore.showMessage(err?.message || t('Failed to delete equipment'), 'error')
+  }
+  finally {
+    isDeletingEquipment.value = false
+  }
 }
 
 const openAreaDialog = (area = null, parentId = null) => {
@@ -900,12 +921,13 @@ const handleDeleteArea = async area => {
       @saved="() => { isTransferDialogOpen = false; fetchEquipment(); fetchAreas(); }"
     />
 
-    <DeleteEquipmentDialog
+    <WpDeleteDialog
       v-if="selectedEquipmentItem"
-      v-model:is-dialog-visible="isDeleteEquipmentDialogOpen"
-      :equipment-id="selectedEquipmentItem.id"
-      :equipment-name="selectedEquipmentItem.equipment_code || localizedValue(selectedEquipmentItem.model_name)"
-      @deleted="() => { isDeleteEquipmentDialogOpen = false; fetchEquipment(); fetchAreas(); }"
+      v-model:is-open="isDeleteEquipmentDialogOpen"
+      :title="$t('Delete Equipment')"
+      :message="$t('Are you sure you want to delete equipment {code}? This action cannot be undone.', { code: selectedEquipmentItem.equipment_code || localizedValue(selectedEquipmentItem.model_name) || '' })"
+      :loading="isDeletingEquipment"
+      @confirm="confirmDeleteEquipment"
     />
   </div>
 </template>

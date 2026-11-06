@@ -1,5 +1,6 @@
 <script setup>
 /* eslint-disable camelcase */
+import { WpSectionCard } from '@/components/shared'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -179,29 +180,14 @@ const clearClosedDate = () => {
 
 <template>
   <div class="site-lifecycle-dates-card-wrapper h-100">
-    <VCard
-      variant="outlined"
-      rounded="lg"
-      class="site-dates-card h-100 pa-4 d-flex flex-column justify-space-between bg-surface"
+    <WpSectionCard
+      :title="$t('Commissioning & Timing')"
+      icon="tabler-calendar"
+      icon-color="primary"
+      class="site-dates-card h-100 bg-surface"
     >
-      <div>
-        <!-- Header -->
-        <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3">
-          <div class="d-flex align-center gap-2">
-            <VAvatar
-              size="32"
-              rounded
-              variant="tonal"
-              color="primary"
-            >
-              <VIcon
-                icon="tabler-calendar"
-                size="18"
-              />
-            </VAvatar>
-            <span class="text-subtitle-2 font-weight-bold">{{ $t('Commissioning & Timing') }}</span>
-          </div>
-
+      <template #actions>
+        <div class="d-flex align-center gap-2">
           <VChip
             :color="phaseMeta.color"
             size="small"
@@ -211,109 +197,103 @@ const clearClosedDate = () => {
           >
             {{ $t(phaseMeta.label) }}
           </VChip>
-        </div>
-
-        <!-- Dates Display -->
-        <VRow
-          dense
-          class="mb-1"
-        >
-          <VCol
-            cols="12"
-            sm="6"
+          <VBtn
+            v-if="!readonly"
+            size="small"
+            variant="tonal"
+            color="primary"
+            prepend-icon="tabler-calendar-event"
+            @click="openDialog"
           >
-            <div class="date-tile pa-3 rounded-lg border subtle-box h-100">
-              <div class="d-flex align-center gap-2 mb-1">
-                <VIcon
-                  icon="tabler-calendar-plus"
-                  size="16"
-                  color="success"
-                />
-                <span class="text-caption text-medium-emphasis">{{ $t('Commissioned / Opening Date') }}</span>
-              </div>
-              <div
-                class="date-value text-body-1 font-weight-bold"
-                :class="openedDate ? 'text-high-emphasis' : 'text-medium-emphasis'"
-              >
-                {{ openedDate || $t('Not Set') }}
-              </div>
-              <div
-                v-if="openedDate"
-                class="text-caption text-medium-emphasis text-capitalize-first"
-              >
-                {{ relativeLabel(openedDate) }}
-              </div>
-            </div>
-          </VCol>
-
-          <VCol
-            cols="12"
-            sm="6"
-          >
-            <div class="date-tile pa-3 rounded-lg border subtle-box h-100">
-              <div class="d-flex align-center gap-2 mb-1">
-                <VIcon
-                  icon="tabler-calendar-minus"
-                  size="16"
-                  :color="closedDate ? 'error' : 'disabled'"
-                />
-                <span class="text-caption text-medium-emphasis">{{ $t('Decommission / Closing Date') }}</span>
-              </div>
-              <div
-                class="date-value text-body-1 font-weight-bold"
-                :class="closedDate ? 'text-error' : 'text-medium-emphasis'"
-              >
-                {{ closedDate || $t('Active (No End Date)') }}
-              </div>
-              <div
-                v-if="closedDate"
-                class="text-caption text-medium-emphasis text-capitalize-first"
-              >
-                {{ relativeLabel(closedDate) }}
-              </div>
-            </div>
-          </VCol>
-        </VRow>
-
-        <!-- Service-life progress (only when both dates are set) -->
-        <div
-          v-if="lifespanPct !== null"
-          class="mt-3"
-        >
-          <div class="d-flex align-center justify-space-between mb-1">
-            <span class="text-caption text-medium-emphasis">{{ $t('Service life elapsed') }}</span>
-            <span class="text-caption font-weight-bold date-value">{{ lifespanPct }}%</span>
-          </div>
-          <VProgressLinear
-            :model-value="lifespanPct"
-            :color="lifespanColor"
-            height="6"
-            rounded
-            :aria-label="$t('Service life elapsed')"
-          />
+            {{ $t('Update Dates') }}
+          </VBtn>
         </div>
+      </template>
 
-        <p class="text-caption text-medium-emphasis mt-3 mb-0">
-          {{ $t('Tracks the legal and operational service lifecycle lifespan of the physical facility.') }}
-        </p>
-      </div>
-
-      <!-- Action Button -->
-      <div
-        v-if="!readonly"
-        class="pt-3 d-flex justify-end"
+      <!-- Dates Display -->
+      <VRow
+        dense
+        class="mb-1"
       >
-        <VBtn
-          size="small"
-          variant="tonal"
-          color="primary"
-          prepend-icon="tabler-calendar-event"
-          @click="openDialog"
+        <VCol
+          cols="12"
+          sm="6"
         >
-          {{ $t('Update Dates') }}
-        </VBtn>
+          <div class="date-tile pa-3 rounded-lg border subtle-box h-100">
+            <div class="d-flex align-center gap-2 mb-1">
+              <VIcon
+                icon="tabler-calendar-plus"
+                size="16"
+                color="success"
+              />
+              <span class="text-caption text-medium-emphasis">{{ $t('Commissioned / Opening Date') }}</span>
+            </div>
+            <div
+              class="date-value text-body-1 font-weight-bold"
+              :class="openedDate ? 'text-high-emphasis' : 'text-medium-emphasis'"
+            >
+              {{ openedDate || $t('Not Set') }}
+            </div>
+            <div
+              v-if="openedDate"
+              class="text-caption text-medium-emphasis text-capitalize-first"
+            >
+              {{ relativeLabel(openedDate) }}
+            </div>
+          </div>
+        </VCol>
+
+        <VCol
+          cols="12"
+          sm="6"
+        >
+          <div class="date-tile pa-3 rounded-lg border subtle-box h-100">
+            <div class="d-flex align-center gap-2 mb-1">
+              <VIcon
+                icon="tabler-calendar-minus"
+                size="16"
+                :color="closedDate ? 'error' : 'disabled'"
+              />
+              <span class="text-caption text-medium-emphasis">{{ $t('Decommission / Closing Date') }}</span>
+            </div>
+            <div
+              class="date-value text-body-1 font-weight-bold"
+              :class="closedDate ? 'text-error' : 'text-medium-emphasis'"
+            >
+              {{ closedDate || $t('Active (No End Date)') }}
+            </div>
+            <div
+              v-if="closedDate"
+              class="text-caption text-medium-emphasis text-capitalize-first"
+            >
+              {{ relativeLabel(closedDate) }}
+            </div>
+          </div>
+        </VCol>
+      </VRow>
+
+      <!-- Service-life progress (only when both dates are set) -->
+      <div
+        v-if="lifespanPct !== null"
+        class="mt-3"
+      >
+        <div class="d-flex align-center justify-space-between mb-1">
+          <span class="text-caption text-medium-emphasis">{{ $t('Service life elapsed') }}</span>
+          <span class="text-caption font-weight-bold date-value">{{ lifespanPct }}%</span>
+        </div>
+        <VProgressLinear
+          :model-value="lifespanPct"
+          :color="lifespanColor"
+          height="6"
+          rounded
+          :aria-label="$t('Service life elapsed')"
+        />
       </div>
-    </VCard>
+
+      <p class="text-caption text-medium-emphasis mt-3 mb-0">
+        {{ $t('Tracks the legal and operational service lifecycle lifespan of the physical facility.') }}
+      </p>
+    </WpSectionCard>
 
     <!-- ━━━ Dialog ━━━ -->
     <VDialog

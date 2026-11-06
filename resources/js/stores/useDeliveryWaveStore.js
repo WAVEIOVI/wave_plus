@@ -139,7 +139,7 @@ export const useDeliveryWaveStore = defineStore('deliveryWave', () => {
   const reorderStops = async (waveId, stops) => {
     try {
       const response = await $api(`/logistics/waves/${waveId}/reorder-stops`, {
-        method: 'PATCH',
+        method: 'POST',
         body: { stops: deepClone(stops) },
       })
 

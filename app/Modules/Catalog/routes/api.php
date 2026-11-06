@@ -97,6 +97,7 @@ Route::prefix('catalog')
         Route::post('guideline-steps', [GuidelineController::class, 'storeStep']);
         Route::put('guideline-steps/{step}', [GuidelineController::class, 'updateStep']);
         Route::delete('guideline-steps/{step}', [GuidelineController::class, 'destroyStep']);
+        Route::post('guidelines/{guideline}/reorder-steps', [GuidelineController::class, 'reorderSteps']);
 
         // Blueprint ↔ Guideline (attach/detach)
         Route::get('blueprints/{blueprintId}/guidelines', [GuidelineController::class, 'blueprintGuidelines']);

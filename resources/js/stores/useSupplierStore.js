@@ -34,11 +34,25 @@ export const useSupplierStore = defineStore('supplier', {
     },
 
     // 👉 Fetch paginated/filtered supplier list
-    async fetchSupplierOptions(params = {}) {
-      return await $api('/bp/suppliers/options', {
+    async fetchSupplierOptions(params = { limit: 150 }) {
+      const res = await $api('/bp/suppliers/options', {
         method: 'GET',
         params,
       })
+
+      const rawList = res?.data || (Array.isArray(res) ? res : [])
+
+      const normalized = rawList.map(item => ({
+        title: item.legal_name || item.name || `Supplier #${item.id}`,
+        value: item.id,
+        raw: item,
+        name: item.legal_name,
+        ...item,
+      }))
+
+      normalized.data = normalized
+
+      return normalized
     },
 
     async fetchSuppliers(params) {

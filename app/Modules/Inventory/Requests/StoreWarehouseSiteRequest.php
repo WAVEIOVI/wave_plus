@@ -27,6 +27,11 @@ class StoreWarehouseSiteRequest extends FormRequest
             'manager_id' => ['ulid', 'nullable', 'exists:users,id'],
             'status' => ['nullable', 'in:active,inactive,maintenance'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'site_type' => ['nullable', 'in:fixed,mobile'],
+            'vehicle_id' => ['nullable', 'ulid', 'exists:vehicles,id'],
+            'mobile_status' => ['nullable', 'string', 'max:50'],
+            'current_location' => ['nullable', 'string', 'max:255'],
+            'location_notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

@@ -12,7 +12,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   const fetchSalesInvoices = async (params = {}) => {
     isSalesInvoicesLoading.value = true
     try {
-      const res = await $api('/api/finance/sales-invoices', { params })
+      const res = await $api('/finance/sales-invoices', { params })
       salesInvoices.value = res.data?.data || []
       salesInvoicesTotal.value = res.data?.total || 0
       return res.data
@@ -22,7 +22,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   }
 
   const fetchSalesInvoiceAging = async (clientId = null) => {
-    const res = await $api('/api/finance/sales-invoices/aging', {
+    const res = await $api('/finance/sales-invoices/aging', {
       params: clientId ? { client_id: clientId } : {},
     })
     salesInvoiceAging.value = res.data
@@ -30,7 +30,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   }
 
   const createSalesInvoice = async data => {
-    const res = await $api('/api/finance/sales-invoices', {
+    const res = await $api('/finance/sales-invoices', {
       method: 'POST',
       body: data,
     })
@@ -39,13 +39,13 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   }
 
   const issueSalesInvoice = async invoiceId => {
-    const res = await $api(`/api/finance/sales-invoices/${invoiceId}/issue`, { method: 'POST' })
+    const res = await $api(`/finance/sales-invoices/${invoiceId}/issue`, { method: 'POST' })
     await fetchSalesInvoices()
     return res.data
   }
 
   const voidSalesInvoice = async (invoiceId, reason) => {
-    const res = await $api(`/api/finance/sales-invoices/${invoiceId}/void`, {
+    const res = await $api(`/finance/sales-invoices/${invoiceId}/void`, {
       method: 'POST',
       body: { reason },
     })
@@ -62,7 +62,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   const fetchSupplierInvoices = async (params = {}) => {
     isSupplierInvoicesLoading.value = true
     try {
-      const res = await $api('/api/finance/supplier-invoices', { params })
+      const res = await $api('/finance/supplier-invoices', { params })
       supplierInvoices.value = res.data?.data || []
       supplierInvoicesTotal.value = res.data?.total || 0
       return res.data
@@ -72,7 +72,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   }
 
   const fetchSupplierInvoiceAging = async (supplierId = null) => {
-    const res = await $api('/api/finance/supplier-invoices/aging', {
+    const res = await $api('/finance/supplier-invoices/aging', {
       params: supplierId ? { supplier_id: supplierId } : {},
     })
     supplierInvoiceAging.value = res.data
@@ -80,7 +80,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   }
 
   const createSupplierInvoice = async data => {
-    const res = await $api('/api/finance/supplier-invoices', {
+    const res = await $api('/finance/supplier-invoices', {
       method: 'POST',
       body: data,
     })
@@ -89,7 +89,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   }
 
   const approveSupplierInvoice = async invoiceId => {
-    const res = await $api(`/api/finance/supplier-invoices/${invoiceId}/approve`, { method: 'POST' })
+    const res = await $api(`/finance/supplier-invoices/${invoiceId}/approve`, { method: 'POST' })
     await fetchSupplierInvoices()
     return res.data
   }
@@ -103,7 +103,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   const fetchCustomers = async (params = {}) => {
     isCustomersLoading.value = true
     try {
-      const res = await $api('/api/finance/customers', { params })
+      const res = await $api('/finance/customers', { params })
       customers.value = res.data?.data || []
       customersTotal.value = res.data?.total || 0
       return res.data
@@ -115,7 +115,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   const fetchCustomerAccount = async clientId => {
     isCustomersLoading.value = true
     try {
-      const res = await $api(`/api/finance/customers/${clientId}`)
+      const res = await $api(`/finance/customers/${clientId}`)
       customerAccount.value = res.data
       return res.data
     } finally {
@@ -132,7 +132,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   const fetchSuppliers = async (params = {}) => {
     isSuppliersLoading.value = true
     try {
-      const res = await $api('/api/finance/suppliers', { params })
+      const res = await $api('/finance/suppliers', { params })
       suppliers.value = res.data?.data || []
       suppliersTotal.value = res.data?.total || 0
       return res.data
@@ -144,7 +144,7 @@ export const useFinanceInvoiceStore = defineStore('financeInvoices', () => {
   const fetchSupplierAccount = async supplierId => {
     isSuppliersLoading.value = true
     try {
-      const res = await $api(`/api/finance/suppliers/${supplierId}`)
+      const res = await $api(`/finance/suppliers/${supplierId}`)
       supplierAccount.value = res.data
       return res.data
     } finally {

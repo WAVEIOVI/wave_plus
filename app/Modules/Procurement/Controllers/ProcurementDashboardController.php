@@ -8,7 +8,6 @@ use App\Modules\Procurement\Models\GoodsReceiptNote;
 use App\Modules\Procurement\Models\InternalPurchaseRequest;
 use App\Modules\Procurement\Models\PurchaseOrder;
 use App\Modules\Procurement\Models\RfqHeader;
-use App\Modules\Procurement\Models\RfqResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -111,22 +110,27 @@ class ProcurementDashboardController extends Controller
             ->groupBy('purchase_orders.supplier_id')
             ->orderByDesc('total_value_ht')
             ->limit(10)
-            ->get()
-            ->map(function ($row) {
-                $total = $row->po_count;
-                $onTimeRate = $total > 0 ? round((($row->closed_count + $row->fulfilled_count) / $total) * 100, 1) : 0;
-                $partialRate = $total > 0 ? round(($row->partial_count / $total) * 100, 1) : 0;
+            ->get();
 
-                return [
-                    'supplier_id' => $row->supplier_id,
-                    'supplier_name' => \App\Modules\BusinessPartners\Models\Supplier::find($row->supplier_id)?->legal_name ?? 'Unknown',
-                    'po_count' => $row->po_count,
-                    'total_value_ht' => (float) $row->total_value_ht,
-                    'fulfillment_rate' => $onTimeRate,
-                    'partial_rate' => $partialRate,
-                    'avg_days_late' => 0, // Would need GRN data to calculate
-                ];
-            });
+        // Eager load suppliers to avoid N+1
+        $supplierIds = $supplierPerformance->pluck('supplier_id')->unique();
+        $suppliers = \App\Modules\BusinessPartners\Models\Supplier::whereIn('id', $supplierIds)->get()->keyBy('id');
+
+        $supplierPerformance = $supplierPerformance->map(function ($row) use ($suppliers) {
+            $total = $row->po_count;
+            $onTimeRate = $total > 0 ? round((($row->closed_count + $row->fulfilled_count) / $total) * 100, 1) : 0;
+            $partialRate = $total > 0 ? round(($row->partial_count / $total) * 100, 1) : 0;
+
+            return [
+                'supplier_id' => $row->supplier_id,
+                'supplier_name' => $suppliers->get($row->supplier_id)?->legal_name ?? 'Unknown',
+                'po_count' => $row->po_count,
+                'total_value_ht' => (float) $row->total_value_ht,
+                'fulfillment_rate' => $onTimeRate,
+                'partial_rate' => $partialRate,
+                'avg_days_late' => 0, // Would need GRN data to calculate
+            ];
+        });
 
         // ── Attention Items ───────────────────────────────────────────────────
         $attentionItems = [

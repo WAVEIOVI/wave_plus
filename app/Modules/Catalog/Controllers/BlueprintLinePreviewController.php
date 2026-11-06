@@ -18,6 +18,8 @@ class BlueprintLinePreviewController extends Controller
 
     public function resolveLines(Request $request, EquipmentBlueprint $blueprint): JsonResponse
     {
+        $this->authorize('view', $blueprint);
+
         $validated = $request->validate([
             'selected_option_values' => ['nullable', 'array'],
             'selected_option_values.*' => ['string'],

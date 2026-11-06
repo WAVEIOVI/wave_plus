@@ -1,4 +1,5 @@
 <script setup>
+import { WpSectionCard } from '@/components/shared'
 import TechnicalSpecsEditor from '@/views/catalog/shared/TechnicalSpecsEditor.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -123,70 +124,26 @@ const rawNotes = computed(() => {
 <template>
   <div class="equipment-specs-editor d-flex flex-column gap-6">
     <!-- ═══ 1. Technical Specifications Card (Point 5.2) ═══ -->
-    <VCard
-      variant="outlined"
-      rounded="lg"
-      class="pa-4 bg-surface"
+    <WpSectionCard
+      :title="t('Technical Specifications')"
+      :subtitle="t('Key/value parameter matrix matching catalog item standard')"
+      icon="tabler-list-details"
+      icon-color="info"
     >
-      <div class="d-flex align-center justify-space-between mb-3">
-        <div class="d-flex align-center gap-2">
-          <VAvatar
-            color="info"
-            variant="tonal"
-            size="32"
-            rounded="md"
-          >
-            <VIcon
-              icon="tabler-list-details"
-              size="18"
-            />
-          </VAvatar>
-          <div>
-            <span class="text-subtitle-2 font-weight-bold d-block">
-              {{ t('Technical Specifications') }}
-            </span>
-            <span class="text-caption text-disabled">
-              {{ t('Key/value parameter matrix matching catalog item standard') }}
-            </span>
-          </div>
-        </div>
-      </div>
-
       <TechnicalSpecsEditor
         v-model="localSpecs"
         :readonly="isEditorReadOnly"
       />
-    </VCard>
+    </WpSectionCard>
 
     <!-- ═══ 2. Certifications & Standards Card (Point 5.3) ═══ -->
-    <VCard
-      variant="outlined"
-      rounded="lg"
-      class="pa-4 bg-surface"
+    <WpSectionCard
+      :title="t('Certifications & Compliance Standards')"
+      :subtitle="t('Regulatory accreditations, fire safety certifications, and test reports')"
+      icon="tabler-certificate"
+      icon-color="success"
     >
-      <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3">
-        <div class="d-flex align-center gap-2">
-          <VAvatar
-            color="success"
-            variant="tonal"
-            size="32"
-            rounded="md"
-          >
-            <VIcon
-              icon="tabler-certificate"
-              size="18"
-            />
-          </VAvatar>
-          <div>
-            <span class="text-subtitle-2 font-weight-bold d-block">
-              {{ t('Certifications & Compliance Standards') }}
-            </span>
-            <span class="text-caption text-disabled">
-              {{ t('Regulatory accreditations, fire safety certifications, and test reports') }}
-            </span>
-          </div>
-        </div>
-
+      <template #actions>
         <VBtn
           v-if="!isEditorReadOnly"
           size="small"
@@ -197,7 +154,7 @@ const rawNotes = computed(() => {
         >
           {{ isAddCertFormOpen ? t('Close') : t('Add Certificate') }}
         </VBtn>
-      </div>
+      </template>
 
       <!-- Quick Preset Suggestions -->
       <div
@@ -348,36 +305,15 @@ const rawNotes = computed(() => {
           {{ t('No certifications registered for this asset yet.') }}
         </div>
       </div>
-    </VCard>
+    </WpSectionCard>
 
     <!-- ═══ 3. Description / Functional Role & Service Notes (Point 5.1) ═══ -->
-    <VCard
-      variant="outlined"
-      rounded="lg"
-      class="pa-4 bg-surface"
+    <WpSectionCard
+      :title="t('Description & Service Remarks')"
+      :subtitle="t('Functional role, operational instructions, and technician notes')"
+      icon="tabler-notes"
+      icon-color="warning"
     >
-      <div class="d-flex align-center gap-2 mb-3">
-        <VAvatar
-          color="warning"
-          variant="tonal"
-          size="32"
-          rounded="md"
-        >
-          <VIcon
-            icon="tabler-notes"
-            size="18"
-          />
-        </VAvatar>
-        <div>
-          <span class="text-subtitle-2 font-weight-bold d-block">
-            {{ t('Description & Service Remarks') }}
-          </span>
-          <span class="text-caption text-disabled">
-            {{ t('Functional role, operational instructions, and technician notes') }}
-          </span>
-        </div>
-      </div>
-
       <VRow>
         <!-- Moved Description / Functional Role (Point 5.1) -->
         <VCol
@@ -413,7 +349,7 @@ const rawNotes = computed(() => {
           />
         </VCol>
       </VRow>
-    </VCard>
+    </WpSectionCard>
   </div>
 </template>
 

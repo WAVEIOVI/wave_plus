@@ -1,4 +1,6 @@
 <script setup>
+/* eslint-disable camelcase */
+import { WpFormDialog } from '@/components/shared'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -61,82 +63,47 @@ const handleSave = () => {
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     v-model="visible"
-    max-width="500"
-    :persistent="loading"
+    :title="$t('Add Configurable Option')"
+    icon="tabler-adjustments"
+    size="small"
+    :loading="loading"
+    :submit-label="$t('Save Option')"
+    :submit-disabled="!canSave"
+    @submit="handleSave"
+    @cancel="visible = false"
   >
-    <VCard>
-      <VCardItem class="pa-5 pb-3">
-        <template #prepend>
-          <VAvatar
-            color="primary"
-            variant="tonal"
-            rounded
-            size="40"
-          >
-            <VIcon
-              icon="tabler-adjustments"
-              size="22"
-            />
-          </VAvatar>
-        </template>
-        <VCardTitle>{{ $t('Add Configurable Option') }}</VCardTitle>
-      </VCardItem>
-
-      <VCardText class="px-5">
-        <VRow>
-          <VCol cols="12">
-            <AppTextField
-              v-model="form.name"
-              :label="$t('Option Name')"
-              :placeholder="$t('e.g. Size, Color, Reflector Width')"
-              variant="outlined"
-              autofocus
-              @keydown.enter="handleSave"
-            />
-          </VCol>
-          <VCol cols="12">
-            <AppSelect
-              v-model="form.ui_control"
-              :items="controlItems"
-              :label="$t('UI Control Type')"
-              variant="outlined"
-            />
-          </VCol>
-          <VCol cols="12">
-            <AppCombobox
-              v-model="form.values"
-              :label="$t('Initial Values (Comma-Separated)')"
-              :placeholder="$t('e.g. S, M, L, XL, XXL')"
-              multiple
-              chips
-              closable-chips
-              variant="outlined"
-            />
-          </VCol>
-        </VRow>
-      </VCardText>
-
-      <VCardActions class="pa-5 pt-2">
-        <VSpacer />
-        <VBtn
-          variant="tonal"
-          color="secondary"
-          :disabled="loading"
-          @click="visible = false"
-        >
-          {{ $t('Cancel') }}
-        </VBtn>
-        <VBtn
-          color="primary"
-          :loading="loading"
-          :disabled="!canSave"
-          @click="handleSave"
-        >
-          {{ $t('Save Option') }}
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
+    <VRow>
+      <VCol cols="12">
+        <AppTextField
+          v-model="form.name"
+          :label="$t('Option Name')"
+          :placeholder="$t('e.g. Size, Color, Reflector Width')"
+          variant="outlined"
+          autofocus
+          @keydown.enter="handleSave"
+        />
+      </VCol>
+      <VCol cols="12">
+        <AppSelect
+          v-model="form.ui_control"
+          :items="controlItems"
+          :label="$t('UI Control Type')"
+          variant="outlined"
+        />
+      </VCol>
+      <VCol cols="12">
+        <AppCombobox
+          v-model="form.values"
+          :label="$t('Initial Values (Comma-Separated)')"
+          :placeholder="$t('e.g. S, M, L, XL, XXL')"
+          multiple
+          chips
+          closable-chips
+          variant="outlined"
+        />
+      </VCol>
+    </VRow>
+  </WpFormDialog>
 </template>

@@ -562,6 +562,7 @@ declare global {
   const useAppraisalActions: typeof import('./resources/js/composables/people-skills/appraisals/useAppraisalActions.js')['useAppraisalActions']
   const useAppraisalDialogs: typeof import('./resources/js/composables/people-skills/appraisals/useAppraisalDialogs.js')['useAppraisalDialogs']
   const useAppraisalList: typeof import('./resources/js/composables/people-skills/appraisals/useAppraisalList.js')['useAppraisalList']
+  const useApprovedDriverListPage: typeof import('./resources/js/composables/fleet/useApprovedDriverListPage.js')['useApprovedDriverListPage']
   const useArrayDifference: typeof import('@vueuse/core')['useArrayDifference']
   const useArrayEvery: typeof import('@vueuse/core')['useArrayEvery']
   const useArrayFilter: typeof import('@vueuse/core')['useArrayFilter']
@@ -634,6 +635,8 @@ declare global {
   const useDocumentScanner: typeof import('./resources/js/composables/documents/useDocumentScanner.js')['useDocumentScanner']
   const useDocumentVisibility: typeof import('@vueuse/core')['useDocumentVisibility']
   const useDraggable: typeof import('@vueuse/core')['useDraggable']
+  const useDriverDialogs: typeof import('./resources/js/composables/fleet/useDriverDialogs.js')['useDriverDialogs']
+  const useDriverForm: typeof import('./resources/js/composables/fleet/useDriverForm.js')['useDriverForm']
   const useDropZone: typeof import('@vueuse/core')['useDropZone']
   const useElementBounding: typeof import('@vueuse/core')['useElementBounding']
   const useElementByPoint: typeof import('@vueuse/core')['useElementByPoint']
@@ -674,6 +677,7 @@ declare global {
   const useFileDialog: typeof import('@vueuse/core')['useFileDialog']
   const useFileSystemAccess: typeof import('@vueuse/core')['useFileSystemAccess']
   const useFilters: typeof import('./resources/js/composables/list/useFilters.js')['useFilters']
+  const useFleetVehicleListPage: typeof import('./resources/js/composables/fleet/useFleetVehicleListPage.js')['useFleetVehicleListPage']
   const useFloor: typeof import('@vueuse/math')['useFloor']
   const useFocus: typeof import('@vueuse/core')['useFocus']
   const useFocusWithin: typeof import('@vueuse/core')['useFocusWithin']
@@ -693,6 +697,7 @@ declare global {
   const useIntersectionObserver: typeof import('@vueuse/core')['useIntersectionObserver']
   const useInterval: typeof import('@vueuse/core')['useInterval']
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
+  const useInventoryDashboard: typeof import('./resources/js/composables/inventory/dashboard/useInventoryDashboard.js')['useInventoryDashboard']
   const useJournalNav: typeof import('./resources/js/composables/useJournalNav.js')['useJournalNav']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
   const useLastChanged: typeof import('@vueuse/core')['useLastChanged']
@@ -784,6 +789,14 @@ declare global {
   const useSpeechRecognition: typeof import('@vueuse/core')['useSpeechRecognition']
   const useSpeechSynthesis: typeof import('@vueuse/core')['useSpeechSynthesis']
   const useStepper: typeof import('@vueuse/core')['useStepper']
+  const useStockItemDialogs: typeof import('./resources/js/composables/inventory/stock-items/useStockItemDialogs.js')['useStockItemDialogs']
+  const useStockItemList: typeof import('./resources/js/composables/inventory/stock-items/useStockItemList.js')['useStockItemList']
+  const useStockLotActions: typeof import('./resources/js/composables/inventory/lots/useStockLotActions.js')['useStockLotActions']
+  const useStockLotDialogs: typeof import('./resources/js/composables/inventory/lots/useStockLotDialogs.js')['useStockLotDialogs']
+  const useStockLotList: typeof import('./resources/js/composables/inventory/lots/useStockLotList.js')['useStockLotList']
+  const useStockMovementActions: typeof import('./resources/js/composables/inventory/movements/useStockMovementActions.js')['useStockMovementActions']
+  const useStockMovementDialogs: typeof import('./resources/js/composables/inventory/movements/useStockMovementDialogs.js')['useStockMovementDialogs']
+  const useStockMovementList: typeof import('./resources/js/composables/inventory/movements/useStockMovementList.js')['useStockMovementList']
   const useStorageAsync: typeof import('@vueuse/core')['useStorageAsync']
   const useStyleTag: typeof import('@vueuse/core')['useStyleTag']
   const useSum: typeof import('@vueuse/math')['useSum']
@@ -820,10 +833,16 @@ declare global {
   const useUserMedia: typeof import('@vueuse/core')['useUserMedia']
   const useVModel: typeof import('@vueuse/core')['useVModel']
   const useVModels: typeof import('@vueuse/core')['useVModels']
+  const useVehicleDialogs: typeof import('./resources/js/composables/fleet/useVehicleDialogs.js')['useVehicleDialogs']
+  const useVehicleForm: typeof import('./resources/js/composables/fleet/useVehicleForm.js')['useVehicleForm']
   const useVehicleWorkflow: typeof import('./resources/js/composables/fleet/useVehicleWorkflow.js')['useVehicleWorkflow']
   const useVibrate: typeof import('@vueuse/core')['useVibrate']
   const useVirtualList: typeof import('@vueuse/core')['useVirtualList']
   const useWakeLock: typeof import('@vueuse/core')['useWakeLock']
+  const useWarehouseSiteActions: typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteActions.js')['useWarehouseSiteActions']
+  const useWarehouseSiteDialogs: typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteDialogs.js')['useWarehouseSiteDialogs']
+  const useWarehouseSiteEdit: typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteEdit.js')['useWarehouseSiteEdit']
+  const useWarehouseSiteList: typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteList.js')['useWarehouseSiteList']
   const useWebNotification: typeof import('@vueuse/core')['useWebNotification']
   const useWebSocket: typeof import('@vueuse/core')['useWebSocket']
   const useWebWorker: typeof import('@vueuse/core')['useWebWorker']
@@ -835,8 +854,13 @@ declare global {
   const useWorkwearActions: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearActions.js')['useWorkwearActions']
   const useWorkwearDialogs: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearDialogs.js')['useWorkwearDialogs']
   const useWorkwearDocumentOptions: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearDocumentOptions.js')['useWorkwearDocumentOptions']
+  const useWorkwearEmployeeEdit: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearEmployeeEdit.js')['useWorkwearEmployeeEdit']
+  const useWorkwearEmployeeList: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearEmployeeList.js')['useWorkwearEmployeeList']
+  const useWorkwearItemEdit: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearItemEdit.js')['useWorkwearItemEdit']
+  const useWorkwearItemList: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearItemList.js')['useWorkwearItemList']
   const useWorkwearList: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearList.js')['useWorkwearList']
   const useWorkwearModelEdit: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearModelEdit.js')['useWorkwearModelEdit']
+  const useWorkwearModelList: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearModelList.js')['useWorkwearModelList']
   const useWorkwearStudioConstants: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['useWorkwearStudioConstants']
   const validateFile: typeof import('./resources/js/composables/media/mediaFieldUtils.js')['validateFile']
   const warpDocument: typeof import('./resources/js/composables/documents/scanEngine.js')['warpDocument']
@@ -1423,6 +1447,7 @@ declare module 'vue' {
     readonly useAppraisalActions: UnwrapRef<typeof import('./resources/js/composables/people-skills/appraisals/useAppraisalActions.js')['useAppraisalActions']>
     readonly useAppraisalDialogs: UnwrapRef<typeof import('./resources/js/composables/people-skills/appraisals/useAppraisalDialogs.js')['useAppraisalDialogs']>
     readonly useAppraisalList: UnwrapRef<typeof import('./resources/js/composables/people-skills/appraisals/useAppraisalList.js')['useAppraisalList']>
+    readonly useApprovedDriverListPage: UnwrapRef<typeof import('./resources/js/composables/fleet/useApprovedDriverListPage.js')['useApprovedDriverListPage']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
     readonly useArrayEvery: UnwrapRef<typeof import('@vueuse/core')['useArrayEvery']>
     readonly useArrayFilter: UnwrapRef<typeof import('@vueuse/core')['useArrayFilter']>
@@ -1494,6 +1519,8 @@ declare module 'vue' {
     readonly useDocumentScanner: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentScanner.js')['useDocumentScanner']>
     readonly useDocumentVisibility: UnwrapRef<typeof import('@vueuse/core')['useDocumentVisibility']>
     readonly useDraggable: UnwrapRef<typeof import('@vueuse/core')['useDraggable']>
+    readonly useDriverDialogs: UnwrapRef<typeof import('./resources/js/composables/fleet/useDriverDialogs.js')['useDriverDialogs']>
+    readonly useDriverForm: UnwrapRef<typeof import('./resources/js/composables/fleet/useDriverForm.js')['useDriverForm']>
     readonly useDropZone: UnwrapRef<typeof import('@vueuse/core')['useDropZone']>
     readonly useElementBounding: UnwrapRef<typeof import('@vueuse/core')['useElementBounding']>
     readonly useElementByPoint: UnwrapRef<typeof import('@vueuse/core')['useElementByPoint']>
@@ -1534,6 +1561,7 @@ declare module 'vue' {
     readonly useFileDialog: UnwrapRef<typeof import('@vueuse/core')['useFileDialog']>
     readonly useFileSystemAccess: UnwrapRef<typeof import('@vueuse/core')['useFileSystemAccess']>
     readonly useFilters: UnwrapRef<typeof import('./resources/js/composables/list/useFilters.js')['useFilters']>
+    readonly useFleetVehicleListPage: UnwrapRef<typeof import('./resources/js/composables/fleet/useFleetVehicleListPage.js')['useFleetVehicleListPage']>
     readonly useFloor: UnwrapRef<typeof import('@vueuse/math')['useFloor']>
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
@@ -1553,6 +1581,7 @@ declare module 'vue' {
     readonly useIntersectionObserver: UnwrapRef<typeof import('@vueuse/core')['useIntersectionObserver']>
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
+    readonly useInventoryDashboard: UnwrapRef<typeof import('./resources/js/composables/inventory/dashboard/useInventoryDashboard.js')['useInventoryDashboard']>
     readonly useJournalNav: UnwrapRef<typeof import('./resources/js/composables/useJournalNav.js')['useJournalNav']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
@@ -1644,6 +1673,14 @@ declare module 'vue' {
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
     readonly useStepper: UnwrapRef<typeof import('@vueuse/core')['useStepper']>
+    readonly useStockItemDialogs: UnwrapRef<typeof import('./resources/js/composables/inventory/stock-items/useStockItemDialogs.js')['useStockItemDialogs']>
+    readonly useStockItemList: UnwrapRef<typeof import('./resources/js/composables/inventory/stock-items/useStockItemList.js')['useStockItemList']>
+    readonly useStockLotActions: UnwrapRef<typeof import('./resources/js/composables/inventory/lots/useStockLotActions.js')['useStockLotActions']>
+    readonly useStockLotDialogs: UnwrapRef<typeof import('./resources/js/composables/inventory/lots/useStockLotDialogs.js')['useStockLotDialogs']>
+    readonly useStockLotList: UnwrapRef<typeof import('./resources/js/composables/inventory/lots/useStockLotList.js')['useStockLotList']>
+    readonly useStockMovementActions: UnwrapRef<typeof import('./resources/js/composables/inventory/movements/useStockMovementActions.js')['useStockMovementActions']>
+    readonly useStockMovementDialogs: UnwrapRef<typeof import('./resources/js/composables/inventory/movements/useStockMovementDialogs.js')['useStockMovementDialogs']>
+    readonly useStockMovementList: UnwrapRef<typeof import('./resources/js/composables/inventory/movements/useStockMovementList.js')['useStockMovementList']>
     readonly useStorageAsync: UnwrapRef<typeof import('@vueuse/core')['useStorageAsync']>
     readonly useStyleTag: UnwrapRef<typeof import('@vueuse/core')['useStyleTag']>
     readonly useSum: UnwrapRef<typeof import('@vueuse/math')['useSum']>
@@ -1680,10 +1717,16 @@ declare module 'vue' {
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
     readonly useVModel: UnwrapRef<typeof import('@vueuse/core')['useVModel']>
     readonly useVModels: UnwrapRef<typeof import('@vueuse/core')['useVModels']>
+    readonly useVehicleDialogs: UnwrapRef<typeof import('./resources/js/composables/fleet/useVehicleDialogs.js')['useVehicleDialogs']>
+    readonly useVehicleForm: UnwrapRef<typeof import('./resources/js/composables/fleet/useVehicleForm.js')['useVehicleForm']>
     readonly useVehicleWorkflow: UnwrapRef<typeof import('./resources/js/composables/fleet/useVehicleWorkflow.js')['useVehicleWorkflow']>
     readonly useVibrate: UnwrapRef<typeof import('@vueuse/core')['useVibrate']>
     readonly useVirtualList: UnwrapRef<typeof import('@vueuse/core')['useVirtualList']>
     readonly useWakeLock: UnwrapRef<typeof import('@vueuse/core')['useWakeLock']>
+    readonly useWarehouseSiteActions: UnwrapRef<typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteActions.js')['useWarehouseSiteActions']>
+    readonly useWarehouseSiteDialogs: UnwrapRef<typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteDialogs.js')['useWarehouseSiteDialogs']>
+    readonly useWarehouseSiteEdit: UnwrapRef<typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteEdit.js')['useWarehouseSiteEdit']>
+    readonly useWarehouseSiteList: UnwrapRef<typeof import('./resources/js/composables/inventory/sites/useWarehouseSiteList.js')['useWarehouseSiteList']>
     readonly useWebNotification: UnwrapRef<typeof import('@vueuse/core')['useWebNotification']>
     readonly useWebSocket: UnwrapRef<typeof import('@vueuse/core')['useWebSocket']>
     readonly useWebWorker: UnwrapRef<typeof import('@vueuse/core')['useWebWorker']>
@@ -1695,8 +1738,13 @@ declare module 'vue' {
     readonly useWorkwearActions: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearActions.js')['useWorkwearActions']>
     readonly useWorkwearDialogs: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearDialogs.js')['useWorkwearDialogs']>
     readonly useWorkwearDocumentOptions: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearDocumentOptions.js')['useWorkwearDocumentOptions']>
+    readonly useWorkwearEmployeeEdit: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearEmployeeEdit.js')['useWorkwearEmployeeEdit']>
+    readonly useWorkwearEmployeeList: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearEmployeeList.js')['useWorkwearEmployeeList']>
+    readonly useWorkwearItemEdit: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearItemEdit.js')['useWorkwearItemEdit']>
+    readonly useWorkwearItemList: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearItemList.js')['useWorkwearItemList']>
     readonly useWorkwearList: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearList.js')['useWorkwearList']>
     readonly useWorkwearModelEdit: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearModelEdit.js')['useWorkwearModelEdit']>
+    readonly useWorkwearModelList: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearModelList.js')['useWorkwearModelList']>
     readonly useWorkwearStudioConstants: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['useWorkwearStudioConstants']>
     readonly validateFile: UnwrapRef<typeof import('./resources/js/composables/media/mediaFieldUtils.js')['validateFile']>
     readonly warpDocument: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['warpDocument']>

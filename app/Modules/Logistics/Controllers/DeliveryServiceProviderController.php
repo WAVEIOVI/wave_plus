@@ -20,6 +20,8 @@ class DeliveryServiceProviderController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', DeliveryServiceProvider::class);
+
         $query = DeliveryServiceProvider::query()
             ->with(['serviceProvider']);
 
@@ -59,8 +61,13 @@ class DeliveryServiceProviderController extends Controller
         }
 
         // Sorting
+        $allowedSortFields = ['created_at', 'operational_status', 'provider_code', 'performance_score', 'on_time_rate'];
         $sortBy = $request->input('sort_by', 'created_at');
+        $sortBy = in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'created_at';
+        
         $sortOrder = $request->input('sort_order', 'desc');
+        $sortOrder = in_array($sortOrder, ['asc', 'desc'], true) ? $sortOrder : 'desc';
+        
         $query->orderBy($sortBy, $sortOrder);
 
         $providers = $request->boolean('paginate', true)
@@ -81,6 +88,8 @@ class DeliveryServiceProviderController extends Controller
             'dwos' => fn ($q) => $q->latest()->limit(10),
         ])->findOrFail($id);
 
+        $this->authorize('view', $provider);
+
         return response()->json($provider);
     }
 
@@ -89,6 +98,8 @@ class DeliveryServiceProviderController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', DeliveryServiceProvider::class);
+
         $validated = $request->validate([
             'service_provider_id' => 'required|ulid|exists:service_providers,id|unique:delivery_service_providers,service_provider_id',
             'operational_status' => 'nullable|in:active,inactive,suspended,under_review,probation',
@@ -133,6 +144,8 @@ class DeliveryServiceProviderController extends Controller
     {
         $provider = DeliveryServiceProvider::findOrFail($id);
 
+        $this->authorize('update', $provider);
+
         $validated = $request->validate([
             'service_areas' => 'nullable|array',
             'delivery_modes' => 'nullable|array',
@@ -170,6 +183,10 @@ class DeliveryServiceProviderController extends Controller
      */
     public function updateStatus(Request $request, string $id): JsonResponse
     {
+        $provider = DeliveryServiceProvider::findOrFail($id);
+        
+        $this->authorize('update', $provider);
+
         $validated = $request->validate([
             'operational_status' => 'required|in:active,inactive,suspended,under_review,probation',
             'reason' => 'nullable|string',
@@ -190,6 +207,10 @@ class DeliveryServiceProviderController extends Controller
      */
     public function updateCapacity(Request $request, string $id): JsonResponse
     {
+        $provider = DeliveryServiceProvider::findOrFail($id);
+        
+        $this->authorize('update', $provider);
+
         $validated = $request->validate([
             'daily_capacity' => 'required|integer|min:0',
             'accepts_new_orders' => 'required|boolean',
@@ -210,6 +231,10 @@ class DeliveryServiceProviderController extends Controller
      */
     public function resetDailyLoad(string $id): JsonResponse
     {
+        $provider = DeliveryServiceProvider::findOrFail($id);
+        
+        $this->authorize('update', $provider);
+
         $provider = $this->providerService->resetDailyLoad($id, Auth::id());
 
         return response()->json($provider);
@@ -220,6 +245,10 @@ class DeliveryServiceProviderController extends Controller
      */
     public function recordIncident(Request $request, string $id): JsonResponse
     {
+        $provider = DeliveryServiceProvider::findOrFail($id);
+        
+        $this->authorize('update', $provider);
+
         $validated = $request->validate([
             'incident_description' => 'required|string',
             'dwo_id' => 'nullable|ulid|exists:delivery_work_orders,id',
@@ -241,6 +270,8 @@ class DeliveryServiceProviderController extends Controller
     public function activityLog(string $id): JsonResponse
     {
         $provider = DeliveryServiceProvider::findOrFail($id);
+        
+        $this->authorize('view', $provider);
 
         $activities = $provider->activityLog()
             ->with('recordedBy')
@@ -255,6 +286,10 @@ class DeliveryServiceProviderController extends Controller
      */
     public function performanceReport(Request $request, string $id): JsonResponse
     {
+        $provider = DeliveryServiceProvider::findOrFail($id);
+        
+        $this->authorize('view', $provider);
+
         $validated = $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
@@ -274,6 +309,8 @@ class DeliveryServiceProviderController extends Controller
      */
     public function available(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', DeliveryServiceProvider::class);
+
         $validated = $request->validate([
             'city' => 'required|string',
             'weight' => 'nullable|numeric|min:0',
@@ -305,6 +342,9 @@ class DeliveryServiceProviderController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $provider = DeliveryServiceProvider::findOrFail($id);
+        
+        $this->authorize('delete', $provider);
+        
         $provider->delete();
 
         return response()->json(['message' => 'Delivery service provider deleted successfully']);

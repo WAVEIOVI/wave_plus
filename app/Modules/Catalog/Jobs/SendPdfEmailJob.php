@@ -100,6 +100,7 @@ class SendPdfEmailJob implements ShouldQueue
 
         $records = $model::with(['category', 'brand', 'uom'])
             ->orderBy('created_at', 'desc')
+            ->limit(1000)
             ->get();
 
         $html = view($config['listView'], [$config['listVar'] => $records])->render();

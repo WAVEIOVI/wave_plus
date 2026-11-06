@@ -239,6 +239,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'read-SettingsAdministration',
             'read-UserManagement',
 
+            // ── Finance Module Permissions ───────────────────────────
+            'finance.view',
+            'finance.create',
+            'finance.edit',
+            'finance.delete',
+            'finance.post',
+            'finance.manage',
+
             // ── Client Assets Module CRUD ────────────────────────────
             'read-client-sites',
             'create-client-sites',
@@ -475,7 +483,21 @@ class RolesAndPermissionsSeeder extends Seeder
             'read-ReportingAnalytics',
         ]);
 
-        // ── 12. Business Partner Role Templates ───────────────────
+        // ── 12. Finance Manager ───────────────────────────────────
+        $financeManagerRole = Role::firstOrCreate(['name' => 'Finance Manager', 'guard_name' => 'web']);
+        $financeManagerRole->syncPermissions([
+            'read-dashboard',
+            'read-FinancialCenter',
+            'read-ReportingAnalytics',
+            'finance.view',
+            'finance.create',
+            'finance.edit',
+            'finance.delete',
+            'finance.post',
+            'finance.manage',
+        ]);
+
+        // ── 13. Business Partner Role Templates ───────────────────
         $bpRoleTemplates = [
             'BP Manager' => [
                 'read-BusinessPartners',

@@ -17,6 +17,11 @@ class ResourceValidationController extends Controller
      */
     public function validateDwo(Request $request): JsonResponse
     {
+        // Require authentication for resource validation
+        if (!$request->user()) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
         $validated = $request->validate([
             'vehicle_id' => 'nullable|ulid|exists:vehicles,id',
             'approved_driver_id' => 'nullable|ulid|exists:hr_approved_drivers,id',

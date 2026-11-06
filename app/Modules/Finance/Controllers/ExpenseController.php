@@ -18,6 +18,8 @@ class ExpenseController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Expense::class);
+
         $expenses = $this->expenseService->list($request->all());
 
         return response()->json([
@@ -29,6 +31,7 @@ class ExpenseController extends Controller
     public function show(string $id): JsonResponse
     {
         $expense = $this->expenseService->find($id);
+        $this->authorize('view', $expense);
 
         return response()->json([
             'success' => true,
@@ -38,6 +41,8 @@ class ExpenseController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Expense::class);
+
         $validated = $request->validate([
             'expense_date' => 'required|date',
             'category' => 'required|string|max:100',
@@ -74,6 +79,8 @@ class ExpenseController extends Controller
 
     public function postExpense(Expense $expense, Request $request): JsonResponse
     {
+        $this->authorize('post', $expense);
+
         $posted = $this->expenseService->postExpense($expense, $request->user()?->id);
 
         return response()->json([
@@ -85,6 +92,8 @@ class ExpenseController extends Controller
 
     public function cancel(Expense $expense, Request $request): JsonResponse
     {
+        $this->authorize('delete', $expense);
+
         $cancelled = $this->expenseService->cancel($expense, $request->user()?->id);
 
         return response()->json([

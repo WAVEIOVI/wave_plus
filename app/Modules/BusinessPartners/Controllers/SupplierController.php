@@ -188,4 +188,31 @@ class SupplierController extends Controller
             'message' => 'Supplier deleted successfully.',
         ]);
     }
+
+    /**
+     * Get supplier procurement scorecard metrics.
+     */
+    public function scorecard(string $id): JsonResponse
+    {
+        $supplier = Supplier::findOrFail($id);
+        
+        $this->authorize('view', $supplier);
+
+        // Placeholder implementation - replace with actual metrics calculation
+        $scorecard = [
+            'overall_score' => 0,
+            'quality_score' => 0,
+            'on_time_score' => 0,
+            'price_score' => 0,
+            'responsiveness' => 0,
+            'total_pos' => 0,
+            'total_grns' => 0,
+            'total_rejected_qty' => 0,
+            'avg_days_late' => 0,
+            'last_evaluated_at' => null,
+        ];
+
+        return response()->json(['data' => $scorecard]);
+    }
+
 }

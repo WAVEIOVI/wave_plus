@@ -121,8 +121,13 @@ class DeliveryWorkOrderController extends Controller
         }
 
         // Sorting
+        $allowedSortFields = ['created_at', 'scheduled_date', 'dwo_number', 'priority', 'status'];
         $sortBy = $request->input('sortBy', 'created_at');
+        $sortBy = in_array($sortBy, $allowedSortFields, true) ? $sortBy : 'created_at';
+        
         $orderBy = $request->input('orderBy', 'desc');
+        $orderBy = in_array($orderBy, ['asc', 'desc'], true) ? $orderBy : 'desc';
+        
         $query->orderBy($sortBy, $orderBy);
 
         $perPage = (int) $request->input('itemsPerPage', $request->input('per_page', 15));

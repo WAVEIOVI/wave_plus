@@ -1,8 +1,8 @@
 <script setup>
-import { localizedValue } from '@/composables/useLocaleField'
-import { resolveAreaTypeIcon } from '@/composables/client-assets/sites/useSiteConstants'
+import { WpSectionCard } from '@/components/shared'
 import { resolveAreaDescription, resolveAreaName } from '@/composables/client-assets/sites/useSiteAreaTree'
-import EquipmentStepCard from './EquipmentStepCard.vue'
+import { resolveAreaTypeIcon } from '@/composables/client-assets/sites/useSiteConstants'
+import { localizedValue } from '@/composables/useLocaleField'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -67,14 +67,11 @@ const { t } = useI18n()
 <template>
   <div class="d-flex flex-column gap-4">
     <!-- Facility Location & Assigned Zone Card -->
-    <EquipmentStepCard
+    <WpSectionCard
       icon="tabler-map-pin"
-      color="info"
+      icon-color="info"
       :title="t('Facility Location & Assigned Zone')"
       :subtitle="t('Assign equipment to a specific building level, wing, or functional area')"
-      :error="Boolean(props.errors.site_id)"
-      :loading="props.loading"
-      :style="{ '--i': 1 }"
     >
       <!-- ═══ SCENARIO 1: Adding new equipment inside client site ═══ -->
       <template v-if="props.isInsideClientSite && props.isModeNew">
@@ -621,7 +618,7 @@ const { t } = useI18n()
           {{ props.errors.site_id }}
         </div>
       </Transition>
-    </EquipmentStepCard>
+    </WpSectionCard>
   </div>
 </template>
 

@@ -17,6 +17,8 @@ class SupplierFinancialController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', \App\Modules\Finance\Models\SupplierInvoice::class);
+
         $suppliers = $this->supplierFinancialService->listSuppliers($request->all());
 
         return response()->json([
@@ -27,6 +29,8 @@ class SupplierFinancialController extends Controller
 
     public function show(string $id): JsonResponse
     {
+        $this->authorize('view', \App\Modules\Finance\Models\SupplierInvoice::class);
+
         $account = $this->supplierFinancialService->getAccountDetails($id);
 
         return response()->json([

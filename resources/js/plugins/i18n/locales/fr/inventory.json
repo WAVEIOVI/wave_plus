@@ -1,0 +1,279 @@
+{
+  "inventory": {
+    "nav": {
+      "title": "Inventaire & Entrepôt",
+      "dashboard": "Tableau de bord Inventaire",
+      "stock_items": "Articles en stock",
+      "movements": "Mouvements de stock",
+      "lots": "Lots de stock",
+      "sites": "Sites d'entrepôt",
+      "locations": "Emplacements"
+    },
+    "dashboard": {
+      "title": "Tableau de bord Inventaire",
+      "subtitle": "Vue unifiée du stock, des entrepôts et des mouvements pour tous vos emplacements.",
+      "kpi": {
+        "stock_items": "Articles en stock",
+        "stock_items_sub": "Lignes d'inventaire suivies",
+        "inventory_value": "Valeur de l'inventaire",
+        "inventory_value_sub": "Valeur totale estimée du stock",
+        "below_reorder": "Sous le seuil",
+        "below_reorder_sub": "Articles nécessitant un réapprovisionnement",
+        "active_locations": "Emplacements actifs",
+        "active_locations_sub": "Emplacements de bacs en service",
+        "active_sites": "Sites d'entrepôt",
+        "active_sites_sub": "Sites fixes et mobiles actifs"
+      },
+      "condition_distribution": "Répartition par état",
+      "condition_distribution_sub": "Articles regroupés par état physique",
+      "warehouse_distribution": "Stock par entrepôt",
+      "warehouse_distribution_sub": "Répartition de la valeur du stock",
+      "recent_movements": "Mouvements récents",
+      "recent_movements_sub": "Derniers ajustements et transferts",
+      "low_stock_alerts": "Alertes de faible stock",
+      "low_stock_alerts_sub": "Articles en dessous du seuil de réapprovisionnement",
+      "no_movements": "Aucun mouvement récent",
+      "no_alerts": "Aucune alerte de faible stock",
+      "view_all_movements": "Voir tous les mouvements",
+      "view_all_stock": "Voir tout le stock"
+    },
+    "conditions": {
+      "new": "Neuf",
+      "good": "Bon",
+      "fair": "Correct",
+      "poor": "Mauvais",
+      "damaged": "Endommagé"
+    },
+    "stock_items": {
+      "title": "Articles en stock",
+      "subtitle": "Toutes les lignes d'inventaire suivies dans vos entrepôts.",
+      "add": "Ajouter un article",
+      "columns": {
+        "item": "Article",
+        "location": "Emplacement",
+        "qty_on_hand": "En stock",
+        "qty_available": "Disponible",
+        "qty_reserved": "Réservé",
+        "unit_cost": "Coût unitaire",
+        "condition": "État",
+        "status": "Statut",
+        "updated_at": "Dernière mise à jour"
+      },
+      "statuses": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "reserved": "Réservé",
+        "quarantined": "En quarantaine"
+      },
+      "filters": {
+        "status": "Statut",
+        "condition": "État",
+        "site": "Site",
+        "below_reorder": "Sous le seuil"
+      },
+      "messages": {
+        "created": "Article en stock créé avec succès.",
+        "updated": "Article en stock mis à jour avec succès.",
+        "deleted": "Article en stock supprimé avec succès.",
+        "create_failed": "Échec de la création de l'article en stock.",
+        "update_failed": "Échec de la mise à jour de l'article en stock.",
+        "delete_failed": "Échec de la suppression de l'article en stock."
+      },
+      "empty": "Aucun article en stock trouvé.",
+      "empty_sub": "Ajoutez votre premier article pour commencer."
+    },
+    "movements": {
+      "title": "Mouvements de stock",
+      "subtitle": "Piste d'audit complète de tous les ajustements, transferts et réceptions.",
+      "add_adjustment": "Nouvel ajustement",
+      "add_transfer": "Nouveau transfert",
+      "add_initial_load": "Chargement initial",
+      "columns": {
+        "type": "Type",
+        "item": "Article",
+        "quantity": "Quantité",
+        "from_location": "Depuis",
+        "to_location": "Vers",
+        "reference": "Référence",
+        "created_at": "Date"
+      },
+      "types": {
+        "adjustment": "Ajustement",
+        "transfer": "Transfert",
+        "initial_load": "Chargement initial",
+        "grn_receipt": "Bon de réception",
+        "consumption": "Consommation",
+        "return": "Retour"
+      },
+      "filters": {
+        "type": "Type de mouvement",
+        "item": "Article",
+        "date_from": "Date de début",
+        "date_to": "Date de fin"
+      },
+      "messages": {
+        "adjustment_created": "Ajustement de stock créé avec succès.",
+        "adjustment_failed": "Échec de la création de l'ajustement.",
+        "transfer_created": "Transfert de stock créé avec succès.",
+        "transfer_failed": "Échec de la création du transfert.",
+        "initial_load_created": "Chargement initial enregistré avec succès.",
+        "initial_load_failed": "Échec de l'enregistrement du chargement initial."
+      },
+      "empty": "Aucun mouvement enregistré.",
+      "empty_sub": "Les mouvements de stock apparaîtront ici."
+    },
+    "lots": {
+      "title": "Lots de stock",
+      "subtitle": "Gérez le suivi par lot et numéro de série avec contrôle des dates d'expiration.",
+      "add": "Nouveau lot",
+      "columns": {
+        "lot_number": "Numéro de lot",
+        "catalog_item": "Article",
+        "supplier": "Fournisseur",
+        "manufacture_date": "Fabriqué le",
+        "expiry_date": "Expire le",
+        "status": "Statut"
+      },
+      "statuses": {
+        "active": "Actif",
+        "expired": "Expiré",
+        "quarantined": "En quarantaine",
+        "recalled": "Rappelé"
+      },
+      "filters": {
+        "status": "Statut",
+        "item": "Article",
+        "expiry_within_days": "Expiration dans"
+      },
+      "messages": {
+        "created": "Lot créé avec succès.",
+        "updated": "Lot mis à jour avec succès.",
+        "deleted": "Lot supprimé avec succès.",
+        "create_failed": "Échec de la création du lot.",
+        "update_failed": "Échec de la mise à jour du lot.",
+        "delete_failed": "Échec de la suppression du lot."
+      },
+      "empty": "Aucun lot trouvé.",
+      "empty_sub": "Créez votre premier lot pour commencer le suivi."
+    },
+    "sites": {
+      "title": "Sites d'entrepôt",
+      "subtitle": "Gérez les entrepôts fixes et mobiles avec leurs zones et emplacements de bacs.",
+      "add": "Nouveau site",
+      "kpi": {
+        "total_sites": "Total des sites",
+        "fixed_sites": "Entrepôts fixes",
+        "mobile_sites": "Camions mobiles",
+        "zones_and_locations": "Zones et emplacements"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Nom",
+        "type": "Type",
+        "status": "Statut",
+        "zones": "Zones",
+        "locations": "Emplacements",
+        "manager": "Responsable"
+      },
+      "types": {
+        "fixed": "Fixe",
+        "mobile": "Mobile"
+      },
+      "statuses": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "maintenance": "Maintenance"
+      },
+      "filters": {
+        "status": "Statut",
+        "type": "Type de site"
+      },
+      "mobile": {
+        "section_title": "Entrepôt mobile",
+        "vehicle": "Véhicule assigné",
+        "mobile_status": "Statut mobile",
+        "current_location": "Position actuelle",
+        "location_notes": "Notes de localisation",
+        "link_vehicle": "Associer un véhicule",
+        "unlink_vehicle": "Dissocier le véhicule",
+        "assignment_history": "Historique des affectations",
+        "no_vehicle": "Aucun véhicule associé",
+        "assigned_from": "Affecté depuis",
+        "assigned_until": "Affecté jusqu'au",
+        "is_current": "Actuel"
+      },
+      "messages": {
+        "created": "Site d'entrepôt créé avec succès.",
+        "updated": "Site d'entrepôt mis à jour avec succès.",
+        "deleted": "Site d'entrepôt supprimé avec succès.",
+        "load_failed": "Échec du chargement du site.",
+        "create_failed": "Échec de la création du site.",
+        "update_failed": "Échec de la mise à jour du site.",
+        "delete_failed": "Échec de la suppression du site.",
+        "vehicle_linked": "Véhicule associé à l'entrepôt avec succès.",
+        "vehicle_link_failed": "Échec de l'association du véhicule.",
+        "vehicle_unlinked": "Véhicule dissocié de l'entrepôt avec succès.",
+        "vehicle_unlink_failed": "Échec de la dissociation du véhicule.",
+        "history_failed": "Échec du chargement de l'historique."
+      },
+      "empty": "Aucun site d'entrepôt trouvé.",
+      "empty_sub": "Ajoutez votre premier site pour commencer à gérer l'inventaire."
+    },
+    "zones": {
+      "title": "Zones d'entrepôt",
+      "add": "Nouvelle zone",
+      "columns": {
+        "code": "Code",
+        "name": "Nom",
+        "type": "Type",
+        "status": "Statut",
+        "locations": "Emplacements"
+      },
+      "types": {
+        "storage": "Stockage",
+        "receiving": "Réception",
+        "dispatch": "Expédition",
+        "quarantine": "Quarantaine",
+        "staging": "Mise en scène",
+        "returns": "Retours"
+      },
+      "messages": {
+        "created": "Zone créée avec succès.",
+        "updated": "Zone mise à jour avec succès.",
+        "deleted": "Zone supprimée avec succès.",
+        "create_failed": "Échec de la création de la zone.",
+        "update_failed": "Échec de la mise à jour de la zone.",
+        "delete_failed": "Échec de la suppression de la zone."
+      }
+    },
+    "locations": {
+      "title": "Emplacements de bacs",
+      "add": "Nouvel emplacement",
+      "columns": {
+        "code": "Code",
+        "name": "Nom",
+        "type": "Type",
+        "is_active": "Actif",
+        "max_weight": "Poids max (kg)",
+        "max_volume": "Volume max (m³)"
+      },
+      "types": {
+        "shelf": "Étagère",
+        "bin": "Bac",
+        "pallet": "Palette",
+        "floor": "Sol",
+        "mobile": "Mobile"
+      },
+      "messages": {
+        "created": "Emplacement créé avec succès.",
+        "updated": "Emplacement mis à jour avec succès.",
+        "deleted": "Emplacement supprimé avec succès.",
+        "toggled": "Statut de l'emplacement modifié.",
+        "create_failed": "Échec de la création de l'emplacement.",
+        "update_failed": "Échec de la mise à jour de l'emplacement.",
+        "delete_failed": "Échec de la suppression de l'emplacement.",
+        "toggle_failed": "Échec du changement de statut."
+      }
+    }
+  }
+}

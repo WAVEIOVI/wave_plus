@@ -1,0 +1,279 @@
+{
+  "inventory": {
+    "nav": {
+      "title": "Inventory & Warehouse",
+      "dashboard": "Inventory Dashboard",
+      "stock_items": "Stock Items",
+      "movements": "Stock Movements",
+      "lots": "Stock Lots",
+      "sites": "Warehouse Sites",
+      "locations": "Bin Locations"
+    },
+    "dashboard": {
+      "title": "Inventory Dashboard",
+      "subtitle": "Unified stock, warehouse, and movement overview for all your inventory locations.",
+      "kpi": {
+        "stock_items": "Stock Items",
+        "stock_items_sub": "Total tracked inventory lines",
+        "inventory_value": "Inventory Value",
+        "inventory_value_sub": "Estimated total stock value",
+        "below_reorder": "Below Reorder",
+        "below_reorder_sub": "Items requiring replenishment",
+        "active_locations": "Active Locations",
+        "active_locations_sub": "Bin locations in service",
+        "active_sites": "Warehouse Sites",
+        "active_sites_sub": "Active fixed and mobile sites"
+      },
+      "condition_distribution": "Condition Distribution",
+      "condition_distribution_sub": "Stock items grouped by physical condition",
+      "warehouse_distribution": "Stock by Warehouse",
+      "warehouse_distribution_sub": "Inventory value distribution across sites",
+      "recent_movements": "Recent Movements",
+      "recent_movements_sub": "Latest stock adjustments and transfers",
+      "low_stock_alerts": "Low Stock Alerts",
+      "low_stock_alerts_sub": "Items below their reorder threshold",
+      "no_movements": "No recent movements",
+      "no_alerts": "No low-stock alerts",
+      "view_all_movements": "View All Movements",
+      "view_all_stock": "View All Stock"
+    },
+    "conditions": {
+      "new": "New",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "damaged": "Damaged"
+    },
+    "stock_items": {
+      "title": "Stock Items",
+      "subtitle": "All tracked inventory lines across your warehouse locations.",
+      "add": "Add Stock Item",
+      "columns": {
+        "item": "Item",
+        "location": "Location",
+        "qty_on_hand": "On Hand",
+        "qty_available": "Available",
+        "qty_reserved": "Reserved",
+        "unit_cost": "Unit Cost",
+        "condition": "Condition",
+        "status": "Status",
+        "updated_at": "Last Updated"
+      },
+      "statuses": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "reserved": "Reserved",
+        "quarantined": "Quarantined"
+      },
+      "filters": {
+        "status": "Status",
+        "condition": "Condition",
+        "site": "Site",
+        "below_reorder": "Below Reorder"
+      },
+      "messages": {
+        "created": "Stock item created successfully.",
+        "updated": "Stock item updated successfully.",
+        "deleted": "Stock item deleted successfully.",
+        "create_failed": "Failed to create stock item.",
+        "update_failed": "Failed to update stock item.",
+        "delete_failed": "Failed to delete stock item."
+      },
+      "empty": "No stock items found.",
+      "empty_sub": "Add your first stock item to get started."
+    },
+    "movements": {
+      "title": "Stock Movements",
+      "subtitle": "Full audit trail of all stock adjustments, transfers, and receipts.",
+      "add_adjustment": "New Adjustment",
+      "add_transfer": "New Transfer",
+      "add_initial_load": "Initial Load",
+      "columns": {
+        "type": "Type",
+        "item": "Item",
+        "quantity": "Quantity",
+        "from_location": "From",
+        "to_location": "To",
+        "reference": "Reference",
+        "created_at": "Date"
+      },
+      "types": {
+        "adjustment": "Adjustment",
+        "transfer": "Transfer",
+        "initial_load": "Initial Load",
+        "grn_receipt": "GRN Receipt",
+        "consumption": "Consumption",
+        "return": "Return"
+      },
+      "filters": {
+        "type": "Movement Type",
+        "item": "Item",
+        "date_from": "From Date",
+        "date_to": "To Date"
+      },
+      "messages": {
+        "adjustment_created": "Stock adjustment created successfully.",
+        "adjustment_failed": "Failed to create stock adjustment.",
+        "transfer_created": "Stock transfer created successfully.",
+        "transfer_failed": "Failed to create stock transfer.",
+        "initial_load_created": "Initial stock load recorded successfully.",
+        "initial_load_failed": "Failed to record initial stock load."
+      },
+      "empty": "No movements recorded.",
+      "empty_sub": "Stock movements will appear here as items are adjusted or transferred."
+    },
+    "lots": {
+      "title": "Stock Lots",
+      "subtitle": "Manage batch and lot tracking for catalog items with expiry control.",
+      "add": "New Lot",
+      "columns": {
+        "lot_number": "Lot Number",
+        "catalog_item": "Item",
+        "supplier": "Supplier",
+        "manufacture_date": "Manufactured",
+        "expiry_date": "Expires",
+        "status": "Status"
+      },
+      "statuses": {
+        "active": "Active",
+        "expired": "Expired",
+        "quarantined": "Quarantined",
+        "recalled": "Recalled"
+      },
+      "filters": {
+        "status": "Status",
+        "item": "Item",
+        "expiry_within_days": "Expiring Within"
+      },
+      "messages": {
+        "created": "Stock lot created successfully.",
+        "updated": "Stock lot updated successfully.",
+        "deleted": "Stock lot deleted successfully.",
+        "create_failed": "Failed to create stock lot.",
+        "update_failed": "Failed to update stock lot.",
+        "delete_failed": "Failed to delete stock lot."
+      },
+      "empty": "No stock lots found.",
+      "empty_sub": "Create your first lot to start tracking batch inventory."
+    },
+    "sites": {
+      "title": "Warehouse Sites",
+      "subtitle": "Manage fixed and mobile warehouse locations with zones and bin locations.",
+      "add": "New Site",
+      "kpi": {
+        "total_sites": "Total Sites",
+        "fixed_sites": "Fixed Warehouses",
+        "mobile_sites": "Mobile Vans",
+        "zones_and_locations": "Zones & Locations"
+      },
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "type": "Type",
+        "status": "Status",
+        "zones": "Zones",
+        "locations": "Locations",
+        "manager": "Manager"
+      },
+      "types": {
+        "fixed": "Fixed",
+        "mobile": "Mobile"
+      },
+      "statuses": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "maintenance": "Maintenance"
+      },
+      "filters": {
+        "status": "Status",
+        "type": "Site Type"
+      },
+      "mobile": {
+        "section_title": "Mobile Warehouse",
+        "vehicle": "Assigned Vehicle",
+        "mobile_status": "Mobile Status",
+        "current_location": "Current Location",
+        "location_notes": "Location Notes",
+        "link_vehicle": "Link Vehicle",
+        "unlink_vehicle": "Unlink Vehicle",
+        "assignment_history": "Assignment History",
+        "no_vehicle": "No vehicle currently linked",
+        "assigned_from": "Assigned From",
+        "assigned_until": "Assigned Until",
+        "is_current": "Current"
+      },
+      "messages": {
+        "created": "Warehouse site created successfully.",
+        "updated": "Warehouse site updated successfully.",
+        "deleted": "Warehouse site deleted successfully.",
+        "load_failed": "Failed to load warehouse site.",
+        "create_failed": "Failed to create warehouse site.",
+        "update_failed": "Failed to update warehouse site.",
+        "delete_failed": "Failed to delete warehouse site.",
+        "vehicle_linked": "Vehicle linked to warehouse successfully.",
+        "vehicle_link_failed": "Failed to link vehicle.",
+        "vehicle_unlinked": "Vehicle unlinked from warehouse successfully.",
+        "vehicle_unlink_failed": "Failed to unlink vehicle.",
+        "history_failed": "Failed to load assignment history."
+      },
+      "empty": "No warehouse sites found.",
+      "empty_sub": "Add your first warehouse site to begin managing inventory locations."
+    },
+    "zones": {
+      "title": "Warehouse Zones",
+      "add": "New Zone",
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "type": "Type",
+        "status": "Status",
+        "locations": "Locations"
+      },
+      "types": {
+        "storage": "Storage",
+        "receiving": "Receiving",
+        "dispatch": "Dispatch",
+        "quarantine": "Quarantine",
+        "staging": "Staging",
+        "returns": "Returns"
+      },
+      "messages": {
+        "created": "Zone created successfully.",
+        "updated": "Zone updated successfully.",
+        "deleted": "Zone deleted successfully.",
+        "create_failed": "Failed to create zone.",
+        "update_failed": "Failed to update zone.",
+        "delete_failed": "Failed to delete zone."
+      }
+    },
+    "locations": {
+      "title": "Bin Locations",
+      "add": "New Location",
+      "columns": {
+        "code": "Code",
+        "name": "Name",
+        "type": "Type",
+        "is_active": "Active",
+        "max_weight": "Max Weight (kg)",
+        "max_volume": "Max Volume (m³)"
+      },
+      "types": {
+        "shelf": "Shelf",
+        "bin": "Bin",
+        "pallet": "Pallet",
+        "floor": "Floor",
+        "mobile": "Mobile"
+      },
+      "messages": {
+        "created": "Location created successfully.",
+        "updated": "Location updated successfully.",
+        "deleted": "Location deleted successfully.",
+        "toggled": "Location status toggled.",
+        "create_failed": "Failed to create location.",
+        "update_failed": "Failed to update location.",
+        "delete_failed": "Failed to delete location.",
+        "toggle_failed": "Failed to toggle location status."
+      }
+    }
+  }
+}

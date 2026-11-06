@@ -1,4 +1,6 @@
 <script setup>
+import InventoryDashboard from '@/views/inventory/dashboard/InventoryDashboard.vue'
+
 definePage({
   name: 'inventory-warehouse',
   meta: {
@@ -10,10 +12,6 @@ definePage({
 </script>
 
 <template>
-  <div>
-    Inventory Warehouse
-  </div>
+  <InventoryDashboard />
 </template>
 
-<style scoped>
-</style>

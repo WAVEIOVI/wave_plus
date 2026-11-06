@@ -1,25 +1,34 @@
 <script setup>
-import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import { WpJournalNav } from '@/components/shared'
 
 defineProps({
+  modelValue: { type: String, default: 'bio' },
   site: { type: Object, default: null },
   form: { type: Object, required: true },
   sections: { type: Array, required: true },
-  activeSection: { type: String, default: 'bio' },
   saving: { type: Boolean, default: false },
   isDirty: { type: Boolean, default: false },
-  readonly: { type: Boolean, default: false },
+  isReadOnly: { type: Boolean, default: false },
+  canDelete: { type: Boolean, default: false },
+  idPrefix: { type: String, default: 'section-' },
 })
 
-defineEmits(['scrollToSection', 'save', 'delete'])
+const emit = defineEmits(['update:modelValue', 'save', 'delete'])
 </script>
 
 <template>
-  <nav class="journal-nav glass-panel">
-    <div class="d-flex align-center mb-3">
+  <WpJournalNav
+    :model-value="modelValue"
+    :sections="sections"
+    :title="form.name || site?.site_code || ''"
+    :subtitle="site?.site_code || ''"
+    :id-prefix="idPrefix"
+    @update:model-value="emit('update:modelValue', $event)"
+  >
+    <template #avatar>
       <VAvatar
         rounded="lg"
-        :size="38"
+        :size="40"
         color="primary"
         variant="tonal"
       >
@@ -32,119 +41,41 @@ defineEmits(['scrollToSection', 'save', 'delete'])
         <VIcon
           v-else
           icon="tabler-building-estate"
-          size="20"
+          size="22"
         />
       </VAvatar>
-      <div class="ms-3 overflow-hidden">
-        <h6
-          class="text-subtitle-2 font-weight-bold text-truncate mb-0"
-          style="max-inline-size: 135px;"
-        >
-          {{ form.name || site?.site_code }}
-        </h6>
-        <span class="text-caption text-disabled text-truncate d-block">
-          {{ site?.site_code }}
-        </span>
-      </div>
-    </div>
+    </template>
 
-    <VDivider class="mb-3" />
+    <template #footer>
+      <slot name="footer">
+        <div v-if="!isReadOnly">
+          <VBtn
+            block
+            color="primary"
+            :disabled="saving || !isDirty"
+            :loading="saving"
+            prepend-icon="tabler-device-floppy"
+            :aria-label="$t('Save Changes')"
+            class="mb-2 font-weight-semibold"
+            @click="emit('save')"
+          >
+            {{ $t('Save Changes') }}
+          </VBtn>
 
-    <PerfectScrollbar
-      :options="{ wheelPropagation: false }"
-      class="nav-scroll-area"
-    >
-      <VList
-        density="compact"
-        nav
-        class="bg-transparent pa-0"
-      >
-        <VListItem
-          v-for="s in sections"
-          :key="s.id"
-          :active="activeSection === s.id"
-          color="primary"
-          rounded="lg"
-          class="mb-1"
-          @click="$emit('scrollToSection', s.id)"
-        >
-          <template #prepend>
-            <VIcon
-              :icon="s.icon"
-              size="18"
-            />
-          </template>
-          <VListItemTitle class="text-body-2 font-weight-medium">
-            {{ $t(s.label) }}
-          </VListItemTitle>
-        </VListItem>
-      </VList>
-    </PerfectScrollbar>
-
-    <div
-      v-if="!readonly"
-      class="mt-auto pt-4 border-t"
-    >
-      <VBtn
-        block
-        color="primary"
-        :disabled="saving || !isDirty"
-        :loading="saving"
-        prepend-icon="tabler-device-floppy"
-        :aria-label="$t('Save Changes')"
-        class="mb-2 font-weight-semibold"
-        @click="$emit('save')"
-      >
-        {{ $t('Save Changes') }}
-      </VBtn>
-      <VBtn
-        block
-        variant="tonal"
-        color="error"
-        prepend-icon="tabler-trash"
-        :aria-label="$t('Delete Site')"
-        class="font-weight-medium"
-        @click="$emit('delete')"
-      >
-        {{ $t('Delete Site') }}
-      </VBtn>
-    </div>
-  </nav>
+          <VBtn
+            v-if="canDelete"
+            block
+            variant="tonal"
+            color="error"
+            prepend-icon="tabler-trash"
+            :aria-label="$t('Delete Site')"
+            class="font-weight-medium"
+            @click="emit('delete')"
+          >
+            {{ $t('Delete Site') }}
+          </VBtn>
+        </div>
+      </slot>
+    </template>
+  </WpJournalNav>
 </template>
-
-<style lang="scss" scoped>
-.journal-nav {
-  position: sticky;
-  display: flex;
-  flex: 0 0 240px;
-  flex-direction: column;
-  inline-size: 240px;
-  inset-block-start: 72px;
-  max-block-size: calc(100vh - 92px);
-  padding-block: 1rem;
-  padding-inline: 0.75rem;
-}
-
-@media (min-width: 1920px) {
-  .journal-nav {
-    flex-basis: 260px;
-    inline-size: 260px;
-  }
-}
-
-.nav-scroll-area {
-  flex: 1;
-  max-block-size: calc(100vh - 300px);
-  overflow-y: auto;
-}
-
-.glass-panel {
-  border: 1px solid rgba(var(--v-border-color), 0.08);
-  border-radius: 16px !important;
-  backdrop-filter: blur(20px) saturate(1.8);
-  background: rgba(var(--v-theme-surface), 0.7) !important;
-  box-shadow:
-    0 4px 32px rgba(0, 0, 0, 6%),
-    0 1px 4px rgba(0, 0, 0, 4%);
-}
-</style>

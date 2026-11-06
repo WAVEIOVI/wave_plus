@@ -18,6 +18,8 @@ class PaymentController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Payment::class);
+
         $query = Payment::with(['financialAccount', 'period'])
             ->orderByDesc('payment_date')
             ->orderByDesc('id');
@@ -62,6 +64,7 @@ class PaymentController extends Controller
     public function show(string $id): JsonResponse
     {
         $payment = Payment::with(['financialAccount', 'period', 'allocations'])->findOrFail($id);
+        $this->authorize('view', $payment);
 
         return response()->json([
             'success' => true,
@@ -71,6 +74,8 @@ class PaymentController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Payment::class);
+
         $validated = $request->validate([
             'direction' => 'required|in:in,out',
             'type' => 'nullable|string',
@@ -99,6 +104,8 @@ class PaymentController extends Controller
 
     public function confirm(Payment $payment, Request $request): JsonResponse
     {
+        $this->authorize('post', $payment);
+
         $confirmed = $this->paymentService->confirm($payment, $request->user()?->id);
 
         return response()->json([
@@ -110,6 +117,8 @@ class PaymentController extends Controller
 
     public function allocate(Payment $payment, Request $request): JsonResponse
     {
+        $this->authorize('update', $payment);
+
         $validated = $request->validate([
             'allocations' => 'required|array|min:1',
             'allocations.*.invoice_type' => 'required|in:sales_invoice,supplier_invoice',

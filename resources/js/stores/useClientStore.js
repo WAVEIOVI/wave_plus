@@ -35,20 +35,37 @@ export const useClientStore = defineStore('client', {
     },
 
     // 👉 Lightweight lookup for other modules
-    async fetchClientOptions(params = {}) {
-      return await $api('/bp/clients/options', {
+    async fetchClientOptions(params = { limit: 150 }) {
+      const res = await $api('/bp/clients/options', {
         method: 'GET',
         params,
       })
+
+      const rawList = res?.data || (Array.isArray(res) ? res : [])
+
+      const normalized = rawList.map(item => ({
+        title: item.legal_name || item.commercial_name || item.name || `Client #${item.id}`,
+        value: item.id,
+        raw: item,
+        name: item.legal_name,
+        // eslint-disable-next-line camelcase
+        company_name: item.commercial_name,
+        ...item,
+      }))
+
+      normalized.data = normalized
+
+      return normalized
     },
 
     // 👉 Fetch paginated/filtered client list
-    async fetchClients(params) {
+    async fetchClients(params, options = {}) {
       this.loading = true
       try {
         const response = await $api('/bp/clients', {
           method: 'GET',
           params,
+          signal: options?.signal,
         })
 
         this.clients = response.data || []

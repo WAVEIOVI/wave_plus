@@ -1,8 +1,8 @@
 <script setup>
+import { WpSectionCard } from '@/components/shared'
 import WpEntityLogo from '@/components/shared/branding/WpEntityLogo.vue'
 import { useCatalogSupportStore } from '@/stores/useCatalogSupportStore'
 import CatalogBrandSelectModal from '@/views/catalog/shared/CatalogBrandSelectModal.vue'
-import EquipmentStepCard from './EquipmentStepCard.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -69,12 +69,11 @@ const handleBrandSelect = brand => {
 </script>
 
 <template>
-  <EquipmentStepCard
+  <WpSectionCard
     icon="tabler-numbers"
-    color="primary"
+    icon-color="primary"
     :title="t('Physical Identification & Brand')"
     :subtitle="t('Brand manufacturer, serial numbers, ERP references, and client asset tags')"
-    :loading="props.loading"
   >
     <!-- Brand Selector Card (Point 3.1) -->
     <div class="mb-4">
@@ -217,7 +216,7 @@ const handleBrandSelect = brand => {
       :loading="supportStore.loadingBrands"
       @select="handleBrandSelect"
     />
-  </EquipmentStepCard>
+  </WpSectionCard>
 </template>
 
 <style lang="scss" scoped>

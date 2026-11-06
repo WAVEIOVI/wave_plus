@@ -162,7 +162,7 @@ class BusinessPartnerContextualEmailService
                 $contactFirst = $this->formatTranslatable($contact->first_name);
                 $contactLast = $this->formatTranslatable($contact->last_name);
                 $contactName = trim("{$contactFirst} {$contactLast}") ?: "Contact #{$contact->id}";
-                $position = $this->formatTranslatable($contact->position) ?: 'Contact';
+                $position = $this->formatTranslatable($contact->job_title) ?: 'Contact';
 
                 $recipientsList[] = [
                     'id' => "contact-{$contact->id}",
@@ -185,7 +185,7 @@ class BusinessPartnerContextualEmailService
                 if (empty($address->email)) {
                     continue;
                 }
-                $addrTitle = $this->formatTranslatable($address->title) ?: ($address->city ?? 'Filiale');
+                $addrTitle = $this->formatTranslatable($address->label) ?: ($address->city ?? 'Filiale');
 
                 $recipientsList[] = [
                     'id' => "address-{$address->id}",

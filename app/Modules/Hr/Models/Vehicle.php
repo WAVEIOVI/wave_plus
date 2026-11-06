@@ -107,6 +107,9 @@ class Vehicle extends Model
         'client_vehicle_status',
         'odometer_km',
         'odometer_last_updated',
+        'odometer_history',
+        'allow_odometer_decrease',
+        'has_operational_history',
         'tracker_device_id',
         'tracker_imei',
         'tracker_provider',
@@ -125,6 +128,8 @@ class Vehicle extends Model
         'default_driver_id',
         'last_service_date',
         'next_service_date',
+        'archived_at',
+        'archived_by',
         'created_by',
         'updated_by',
     ];
@@ -138,6 +143,9 @@ class Vehicle extends Model
             'battery_capacity_kwh' => 'decimal:2',
             'rental_daily_rate' => 'decimal:3',
             'client_supplies_driver' => 'boolean',
+            'allow_odometer_decrease' => 'boolean',
+            'has_operational_history' => 'boolean',
+            'odometer_history' => 'array',
             'registration_date' => 'date',
             'rental_start_date' => 'date',
             'rental_end_date' => 'date',
@@ -156,6 +164,7 @@ class Vehicle extends Model
             'next_inspection_date' => 'date',
             'insurance_expiry_date' => 'date',
             'registration_expiry_date' => 'date',
+            'archived_at' => 'datetime',
         ];
     }
 

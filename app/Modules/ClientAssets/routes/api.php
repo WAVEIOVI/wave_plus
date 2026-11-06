@@ -100,6 +100,7 @@ Route::prefix('client-assets')
         Route::get('workwear-items/{item}', [WorkwearItemController::class, 'show']);
         Route::put('workwear-items/{item}', [WorkwearItemController::class, 'update']);
         Route::delete('workwear-items/{item}', [WorkwearItemController::class, 'destroy']);
+        Route::post('workwear-items/{item}/assign', [WorkwearItemController::class, 'assignSingle']);
         Route::post('workwear-items/{item}/media', [WorkwearItemController::class, 'storeMedia']);
         Route::delete('workwear-items/{item}/media/{media}', [WorkwearItemController::class, 'destroyMedia']);
         Route::post('workwear-items/{item}/flag-stolen', [WorkwearItemController::class, 'flagStolen']);
@@ -109,7 +110,7 @@ Route::prefix('client-assets')
     });
 
 // ── Public QR Scan Routes (No Auth) ─────────────────────────────────────
-Route::prefix('ca/scan')->group(function () {
-    Route::get('eq/{uuid}', [ClientEquipmentController::class, 'publicScan']);
-    Route::get('ww/{uuid}', [WorkwearItemController::class, 'publicScan']);
+Route::prefix('ca/scan')->middleware('throttle:30,1')->group(function () {
+    Route::get('eq/{uuid}', [ClientEquipmentController::class, 'publicScan'])->middleware('throttle:30,1');
+    Route::get('ww/{uuid}', [WorkwearItemController::class, 'publicScan'])->middleware('throttle:30,1');
 });

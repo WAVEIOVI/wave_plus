@@ -265,7 +265,7 @@ export const useDeliveryProviderStore = defineStore('deliveryProvider', () => {
     error.value = null
 
     try {
-      const response = await $api(`/logistics/delivery-providers/${id}/performance`, {
+      const response = await $api(`/logistics/delivery-providers/${id}/performance-report`, {
         method: 'GET',
         params,
       })

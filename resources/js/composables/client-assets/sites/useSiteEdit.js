@@ -1,14 +1,14 @@
 /* eslint-disable camelcase */
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { localizedValue } from '@/composables/useLocaleField'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
 export function useSiteEdit(targetSiteId) {
   const store = useClientAssetStore()
-  const snackbarStore = useSnackbarStore()
+  const { success: showSuccess, error: showError, showApiError } = useAppSnackbar()
   const router = useRouter()
   const { t } = useI18n()
 
@@ -103,7 +103,7 @@ export function useSiteEdit(targetSiteId) {
 
       await store.updateSite(siteId, payload)
       originalSite.value = JSON.parse(JSON.stringify(form.value))
-      snackbarStore.showMessage(t('Site updated successfully'), 'success')
+      showSuccess(t('Site updated successfully'))
       await fetchSite()
 
       return true
@@ -111,9 +111,7 @@ export function useSiteEdit(targetSiteId) {
     catch (err) {
       console.error('Error saving site:', err)
 
-      const apiError = err?.data?.message || (err?.data?.errors ? Object.values(err.data.errors)[0][0] : t('Error saving site'))
-
-      snackbarStore.showMessage(apiError, 'error')
+      showApiError(err, t('Error saving site'))
 
       return false
     }
@@ -128,14 +126,14 @@ export function useSiteEdit(targetSiteId) {
 
     try {
       await store.deleteSite(siteId)
-      snackbarStore.showMessage(t('Site deleted successfully'), 'success')
+      showSuccess(t('Site deleted successfully'))
       await router.push({ name: 'client-assets-sites-list' })
 
       return true
     }
     catch (err) {
       console.error('Error deleting site:', err)
-      snackbarStore.showMessage(t('Failed to delete site'), 'error')
+      showError(t('Failed to delete site'))
 
       return false
     }

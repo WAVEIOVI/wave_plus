@@ -18,6 +18,8 @@ class CostCenterController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', CostCenter::class);
+
         $costCenters = $this->costCenterService->list($request->all());
 
         return response()->json([
@@ -28,6 +30,8 @@ class CostCenterController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', CostCenter::class);
+
         $validated = $request->validate([
             'code' => 'required|string|max:50|unique:cost_centers,code',
             'name' => 'required|string|max:100',
@@ -48,6 +52,8 @@ class CostCenterController extends Controller
 
     public function update(CostCenter $costCenter, Request $request): JsonResponse
     {
+        $this->authorize('update', $costCenter);
+
         $validated = $request->validate([
             'name' => 'nullable|string|max:100',
             'parent_id' => 'nullable|ulid|exists:cost_centers,id',
@@ -67,6 +73,8 @@ class CostCenterController extends Controller
 
     public function performance(string $id): JsonResponse
     {
+        $this->authorize('viewAny', CostCenter::class);
+
         $perf = $this->costCenterService->getPerformance($id);
 
         return response()->json([

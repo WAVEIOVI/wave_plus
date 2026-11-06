@@ -1,4 +1,5 @@
 <script setup>
+import { WpSectionCard } from '@/components/shared'
 import { ref, watch } from 'vue'
 
 const props = defineProps({
@@ -52,29 +53,14 @@ const selectPreset = val => {
 
 <template>
   <div class="site-operating-hours-card-wrapper h-100">
-    <VCard
-      variant="outlined"
-      rounded="lg"
-      class="site-hours-card h-100 pa-4 d-flex flex-column justify-space-between bg-surface"
+    <WpSectionCard
+      :title="$t('Operating Hours & Shifts')"
+      icon="tabler-clock"
+      icon-color="info"
+      class="site-hours-card h-100 bg-surface"
     >
-      <div>
-        <!-- Header -->
-        <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3">
-          <div class="d-flex align-center gap-2">
-            <VAvatar
-              size="32"
-              rounded
-              variant="tonal"
-              color="info"
-            >
-              <VIcon
-                icon="tabler-clock"
-                size="18"
-              />
-            </VAvatar>
-            <span class="text-subtitle-2 font-weight-bold">{{ $t('Operating Hours') }}</span>
-          </div>
-
+      <template #actions>
+        <div class="d-flex align-center gap-2">
           <VChip
             :color="modelValue ? 'info' : 'secondary'"
             size="small"
@@ -84,8 +70,20 @@ const selectPreset = val => {
           >
             {{ modelValue ? $t('Configured') : $t('Not Specified') }}
           </VChip>
+          <VBtn
+            v-if="!readonly"
+            size="small"
+            variant="tonal"
+            color="info"
+            prepend-icon="tabler-clock-edit"
+            @click="openDialog"
+          >
+            {{ $t('Update Hours') }}
+          </VBtn>
         </div>
+      </template>
 
+      <div>
         <!-- Current Schedule Display -->
         <div class="schedule-tile pa-3 rounded-lg border subtle-box d-flex align-center gap-3 mb-3">
           <VAvatar
@@ -115,23 +113,7 @@ const selectPreset = val => {
           {{ $t('Technicians and inspectors schedule asset interventions and maintenance visits according to these hours.') }}
         </p>
       </div>
-
-      <!-- Action Button -->
-      <div
-        v-if="!readonly"
-        class="pt-3 d-flex justify-end"
-      >
-        <VBtn
-          size="small"
-          variant="tonal"
-          color="info"
-          prepend-icon="tabler-clock-edit"
-          @click="openDialog"
-        >
-          {{ $t('Update Hours') }}
-        </VBtn>
-      </div>
-    </VCard>
+    </WpSectionCard>
 
     <!-- ━━━ Dialog ━━━ -->
     <VDialog

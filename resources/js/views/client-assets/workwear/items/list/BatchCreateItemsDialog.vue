@@ -1,10 +1,10 @@
 <script setup>
 /* eslint-disable camelcase */
 import { useWorkwearDocumentOptions } from '@/composables/client-assets/workwear/useWorkwearDocumentOptions'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ref, watch, computed } from 'vue'
 
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
@@ -13,7 +13,7 @@ const props = defineProps({
 const emit = defineEmits(['update:isDialogVisible', 'itemsCreated'])
 
 const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
+const { showSuccess, showError, showWarning } = useAppSnackbar()
 const { t } = useI18n()
 
 const isSubmitting = ref(false)
@@ -77,7 +77,7 @@ watch(selectedModelId, async id => {
 
   if (!id) {
     selectedModel.value = null
-    
+
     return
   }
   const found = modelsList.value.find(m => m.id === id)
@@ -115,14 +115,14 @@ const totalItemsToCreate = computed(() => {
 
 const onSubmit = async () => {
   if (!selectedModelId.value) {
-    snackbarStore.showMessage(t('Please select a garment model'), 'warning')
-    
+    showWarning(t('Please select a garment model'))
+
     return
   }
 
   if (totalItemsToCreate.value <= 0) {
-    snackbarStore.showMessage(t('Total quantity must be greater than zero'), 'warning')
-    
+    showWarning(t('Total quantity must be greater than zero'))
+
     return
   }
 
@@ -152,9 +152,8 @@ const onSubmit = async () => {
       items,
     })
 
-    snackbarStore.showMessage(
+    showSuccess(
       t('Successfully created {count} workwear items', { count: res.data?.length || items.length }),
-      'success',
     )
     emit('itemsCreated')
     emit('update:isDialogVisible', false)
@@ -163,7 +162,7 @@ const onSubmit = async () => {
 
     const msg = err?.data?.message || err?.message || t('Batch creation failed')
 
-    snackbarStore.showMessage(msg, 'error')
+    showError(msg)
   } finally {
     isSubmitting.value = false
   }
@@ -175,246 +174,224 @@ const closeDialog = () => {
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     :model-value="props.isDialogVisible"
-    max-width="650"
+    :title="$t('Batch Intake / Receive Workwear')"
+    :subtitle="$t('Rapidly generate multiple individual barcoded garments with size breakdown in one operation.')"
+    icon="tabler-packages"
+    icon-color="primary"
+    size="medium"
+    :loading="isSubmitting"
+    :submit-disabled="!selectedModelId || totalItemsToCreate <= 0"
+    :submit-label="$t('Create {count} Items', { count: totalItemsToCreate })"
+    @submit="onSubmit"
+    @cancel="closeDialog"
     @update:model-value="val => emit('update:isDialogVisible', val)"
   >
-    <VCard :title="$t('Batch Intake / Receive Workwear')">
-      <VCardText>
-        <VAlert
-          color="primary"
-          variant="tonal"
-          density="compact"
-          class="mb-4"
-          icon="tabler-packages"
+    <VRow>
+      <!-- Model Selection -->
+      <VCol cols="12">
+        <AppAutocomplete
+          v-model="selectedModelId"
+          :items="modelOptions"
+          :label="$t('Garment Model')"
+          :placeholder="$t('Select model to intake')"
+          variant="outlined"
+        />
+      </VCol>
+
+      <VCol
+        v-if="selectedModel?.client"
+        cols="12"
+      >
+        <div class="text-caption text-medium-emphasis">
+          {{ $t('Client:') }} <strong>{{ selectedModel.client.legal_name }}</strong>
+        </div>
+      </VCol>
+
+      <!-- Optional Documents (scoped to selected model's client) -->
+      <template v-if="selectedModel?.client_id">
+        <VCol
+          cols="12"
+          md="6"
         >
-          {{ $t('Rapidly generate multiple individual barcoded garments with size breakdown in one operation.') }}
-        </VAlert>
+          <AppAutocomplete
+            v-model="salesOrderId"
+            :items="salesOrderItems"
+            :loading="documentsLoading"
+            :error-messages="fieldErrors('sales_order_id')"
+            :label="$t('Sales Order (optional)')"
+            :placeholder="$t('No sales order')"
+            :no-data-text="$t('No sales orders for this client')"
+            clearable
+            density="compact"
+            variant="outlined"
+          />
+        </VCol>
 
-        <VRow>
-          <!-- Model Selection -->
-          <VCol cols="12">
-            <AppAutocomplete
-              v-model="selectedModelId"
-              :items="modelOptions"
-              :label="$t('Garment Model')"
-              :placeholder="$t('Select model to intake')"
-              variant="outlined"
-            />
-          </VCol>
+        <VCol
+          cols="12"
+          md="6"
+        >
+          <AppAutocomplete
+            v-model="deliveryNoteId"
+            :items="deliveryNoteItems"
+            :loading="documentsLoading"
+            :error-messages="fieldErrors('delivery_note_id')"
+            :label="$t('Delivery Note (optional)')"
+            :placeholder="$t('No delivery note')"
+            :no-data-text="$t('No delivery notes for this client')"
+            clearable
+            density="compact"
+            variant="outlined"
+          />
+        </VCol>
+      </template>
 
-          <VCol
-            v-if="selectedModel?.client"
-            cols="12"
+      <!-- Common Properties -->
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppTextField
+          v-model="defaultGarmentType"
+          :label="$t('Garment Type')"
+          :placeholder="$t('e.g. Parka, Vest')"
+          density="compact"
+          variant="outlined"
+        />
+      </VCol>
+
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppTextField
+          v-model="defaultColor"
+          :label="$t('Color')"
+          :placeholder="$t('e.g. Navy')"
+          density="compact"
+          variant="outlined"
+        />
+      </VCol>
+
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppSelect
+          v-model="defaultCondition"
+          :items="conditionOptions"
+          :label="$t('Condition')"
+          density="compact"
+          variant="outlined"
+        />
+      </VCol>
+
+      <VCol
+        cols="12"
+        md="3"
+      >
+        <AppTextField
+          v-model="defaultUnitCost"
+          :label="$t('Unit Cost (TND)')"
+          type="number"
+          step="0.001"
+          density="compact"
+          variant="outlined"
+        />
+      </VCol>
+
+      <!-- Size & Quantity Distribution Table -->
+      <VCol cols="12">
+        <div class="d-flex justify-space-between align-center my-2">
+          <span class="font-weight-bold text-subtitle-2">
+            {{ $t('Size Breakdown & Quantities') }}
+          </span>
+          <VBtn
+            size="small"
+            variant="tonal"
+            prepend-icon="tabler-plus"
+            @click="addRow"
           >
-            <div class="text-caption text-medium-emphasis">
-              {{ $t('Client:') }} <strong>{{ selectedModel.client.legal_name }}</strong>
-            </div>
-          </VCol>
+            {{ $t('Add Size') }}
+          </VBtn>
+        </div>
 
-          <!-- Optional Documents (scoped to selected model's client) -->
-          <template v-if="selectedModel?.client_id">
-            <VCol
-              cols="12"
-              md="6"
+        <VTable
+          density="compact"
+          class="border rounded"
+        >
+          <thead>
+            <tr>
+              <th>{{ $t('Size / Specification') }}</th>
+              <th style="inline-size: 140px;">
+                {{ $t('Quantity') }}
+              </th>
+              <th style="inline-size: 50px;" />
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(row, idx) in sizeRows"
+              :key="idx"
             >
-              <AppAutocomplete
-                v-model="salesOrderId"
-                :items="salesOrderItems"
-                :loading="documentsLoading"
-                :error-messages="fieldErrors('sales_order_id')"
-                :label="$t('Sales Order (optional)')"
-                :placeholder="$t('No sales order')"
-                :no-data-text="$t('No sales orders for this client')"
-                clearable
-                density="compact"
-                variant="outlined"
-              />
-            </VCol>
-
-            <VCol
-              cols="12"
-              md="6"
-            >
-              <AppAutocomplete
-                v-model="deliveryNoteId"
-                :items="deliveryNoteItems"
-                :loading="documentsLoading"
-                :error-messages="fieldErrors('delivery_note_id')"
-                :label="$t('Delivery Note (optional)')"
-                :placeholder="$t('No delivery note')"
-                :no-data-text="$t('No delivery notes for this client')"
-                clearable
-                density="compact"
-                variant="outlined"
-              />
-            </VCol>
-          </template>
-
-          <!-- Common Properties -->
-          <VCol
-            cols="12"
-            md="3"
-          >
-            <AppTextField
-              v-model="defaultGarmentType"
-              :label="$t('Garment Type')"
-              :placeholder="$t('e.g. Parka, Vest')"
-              density="compact"
-              variant="outlined"
-            />
-          </VCol>
-
-          <VCol
-            cols="12"
-            md="3"
-          >
-            <AppTextField
-              v-model="defaultColor"
-              :label="$t('Color')"
-              :placeholder="$t('e.g. Navy')"
-              density="compact"
-              variant="outlined"
-            />
-          </VCol>
-
-          <VCol
-            cols="12"
-            md="3"
-          >
-            <AppSelect
-              v-model="defaultCondition"
-              :items="conditionOptions"
-              :label="$t('Condition')"
-              density="compact"
-              variant="outlined"
-            />
-          </VCol>
-
-          <VCol
-            cols="12"
-            md="3"
-          >
-            <AppTextField
-              v-model="defaultUnitCost"
-              :label="$t('Unit Cost (TND)')"
-              type="number"
-              step="0.001"
-              density="compact"
-              variant="outlined"
-            />
-          </VCol>
-
-          <!-- Size & Quantity Distribution Table -->
-          <VCol cols="12">
-            <div class="d-flex justify-space-between align-center my-2">
-              <span class="font-weight-bold text-subtitle-2">
-                {{ $t('Size Breakdown & Quantities') }}
-              </span>
-              <VBtn
-                size="small"
-                variant="tonal"
-                prepend-icon="tabler-plus"
-                @click="addRow"
-              >
-                {{ $t('Add Size') }}
-              </VBtn>
-            </div>
-
-            <VTable
-              density="compact"
-              class="border rounded"
-            >
-              <thead>
-                <tr>
-                  <th>{{ $t('Size / Specification') }}</th>
-                  <th style="inline-size: 140px;">
-                    {{ $t('Quantity') }}
-                  </th>
-                  <th style="inline-size: 50px;" />
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="(row, idx) in sizeRows"
-                  :key="idx"
-                >
-                  <td>
-                    <AppTextField
-                      v-model="row.size"
-                      :placeholder="$t('e.g. S, M, L, XL, 42...')"
-                      density="compact"
-                      variant="plain"
-                      hide-details
-                    />
-                  </td>
-                  <td>
-                    <AppTextField
-                      v-model="row.quantity"
-                      type="number"
-                      min="1"
-                      max="200"
-                      density="compact"
-                      variant="plain"
-                      hide-details
-                    />
-                  </td>
-                  <td class="text-center">
-                    <VBtn
-                      icon
-                      size="x-small"
-                      variant="text"
-                      color="error"
-                      :disabled="sizeRows.length <= 1"
-                      @click="removeRow(idx)"
-                    >
-                      <VIcon
-                        icon="tabler-trash"
-                        size="16"
-                      />
-                    </VBtn>
-                  </td>
-                </tr>
-              </tbody>
-            </VTable>
-          </VCol>
-
-          <!-- Summary & Actions -->
-          <VCol
-            cols="12"
-            class="d-flex justify-space-between align-center pt-4"
-          >
-            <div>
-              <span class="text-caption text-medium-emphasis">{{ $t('Total garments:') }}</span>
-              <strong class="ms-1 text-primary text-subtitle-1">{{ totalItemsToCreate }}</strong>
-            </div>
-
-            <div class="d-flex gap-3">
-              <VBtn
-                variant="tonal"
-                color="secondary"
-                :disabled="isSubmitting"
-                @click="closeDialog"
-              >
-                {{ $t('Cancel') }}
-              </VBtn>
-              <VBtn
-                color="primary"
-                :loading="isSubmitting"
-                :disabled="!selectedModelId || totalItemsToCreate <= 0"
-                @click="onSubmit"
-              >
-                <VIcon
-                  start
-                  icon="tabler-check"
+              <td>
+                <AppTextField
+                  v-model="row.size"
+                  :placeholder="$t('e.g. S, M, L, XL, 42...')"
+                  density="compact"
+                  variant="plain"
+                  hide-details
                 />
-                {{ $t('Create {count} Items', { count: totalItemsToCreate }) }}
-              </VBtn>
-            </div>
-          </VCol>
-        </VRow>
-      </VCardText>
-    </VCard>
-  </VDialog>
+              </td>
+              <td>
+                <AppTextField
+                  v-model="row.quantity"
+                  type="number"
+                  min="1"
+                  max="200"
+                  density="compact"
+                  variant="plain"
+                  hide-details
+                />
+              </td>
+              <td class="text-center">
+                <VBtn
+                  icon
+                  size="x-small"
+                  variant="text"
+                  color="error"
+                  :disabled="sizeRows.length <= 1"
+                  @click="removeRow(idx)"
+                >
+                  <VIcon
+                    icon="tabler-trash"
+                    size="16"
+                  />
+                </VBtn>
+              </td>
+            </tr>
+          </tbody>
+        </VTable>
+      </VCol>
+
+      <!-- Total Garments Counter -->
+      <VCol
+        cols="12"
+        class="pt-2"
+      >
+        <div class="d-flex align-center">
+          <span class="text-caption text-medium-emphasis">{{ $t('Total garments to generate:') }}</span>
+          <VChip
+            color="primary"
+            size="small"
+            class="ms-2 font-weight-bold"
+          >
+            {{ totalItemsToCreate }}
+          </VChip>
+        </div>
+      </VCol>
+    </VRow>
+  </WpFormDialog>
 </template>

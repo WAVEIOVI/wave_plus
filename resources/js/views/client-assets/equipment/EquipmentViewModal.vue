@@ -1,7 +1,7 @@
 <script setup>
 /* eslint-disable camelcase */
+import { WpJournalNav } from '@/components/shared'
 import WpDetailDialog from '@/components/shared/dialogs/WpDetailDialog.vue'
-import AppHybridTabs from '@/components/shared/layout/AppHybridTabs.vue'
 import WpMediaViewerDialog from '@/components/shared/media/WpMediaViewerDialog.vue'
 import {
   brandLabel,
@@ -20,6 +20,7 @@ import EquipmentViewKpiRibbon from '@/views/client-assets/equipment/view/Equipme
 import EquipmentViewLifecycleTab from '@/views/client-assets/equipment/view/EquipmentViewLifecycleTab.vue'
 import EquipmentViewOverviewTab from '@/views/client-assets/equipment/view/EquipmentViewOverviewTab.vue'
 import EquipmentViewSummaryPanel from '@/views/client-assets/equipment/view/EquipmentViewSummaryPanel.vue'
+import { computed } from 'vue'
 import { useDisplay } from 'vuetify'
 
 const props = defineProps({
@@ -72,6 +73,15 @@ const {
   handleSubDialogSaved,
   equipmentTitle,
 } = useEquipmentViewModal(props, emit)
+
+const navSections = computed(() =>
+  dialogTabs.value.map(t => ({
+    id: t.value,
+    title: t.title,
+    icon: t.icon,
+    badge: t.badge,
+  })),
+)
 </script>
 
 <template>
@@ -203,61 +213,63 @@ const {
         :next-inspection-meta="nextInspectionMeta"
       />
 
-      <VRow>
-        <!-- Left Column: Visual Showcase, QR Tag, Assignment & Health -->
-        <VCol
-          cols="12"
-          lg="4"
-        >
-          <EquipmentViewSummaryPanel
-            :equipment="eq"
-            :main-photo-url="mainPhotoUrl"
-            :active-qr-code="activeQrCode"
-            :copied-qr="copiedQr"
-            :timeline-form-proxy="timelineFormProxy"
-            :calculated-expiry-date="calculatedExpiryDate"
-            :life-progress-percentage="lifeProgressPercentage"
-            :life-remaining-label="lifeRemainingLabel"
-            @open-photo-viewer="openPhotoViewer"
-            @copy-qr-code="copyQrCode"
-            @download-qr="handleDownloadQr"
-            @open-replace-qr="isReplaceQrDialogOpen = true"
-            @view-client="handleViewClient"
-          />
-        </VCol>
+      <div class="dialog-journal-layout">
+        <WpJournalNav
+          v-model="activeTab"
+          :sections="navSections"
+          is-dialog
+          id-prefix="dialog-equipment-tab-"
+          container=".wp-detail-dialog__scroll"
+        />
 
-        <!-- Right Column: AppHybridTabs -->
-        <VCol
-          cols="12"
-          lg="8"
-        >
-          <AppHybridTabs
-            v-model="activeTab"
-            :tabs="dialogTabs"
-          >
-            <!-- TAB 1: Overview & Specifications -->
-            <template #tab-overview>
-              <EquipmentViewOverviewTab
+        <div class="dialog-journal-content flex-grow-1 min-w-0">
+          <VRow>
+            <!-- Left Column: Visual Showcase, QR Tag, Assignment & Health -->
+            <VCol
+              cols="12"
+              lg="4"
+            >
+              <EquipmentViewSummaryPanel
                 :equipment="eq"
-                :hardware-profile-items="hardwareProfileItems"
-                :option-badges="optionBadges"
-                :spec-entries="specEntries"
-                :normalized-certs="normalizedCerts"
-              />
-            </template>
-
-            <!-- TAB 2: Compliance & Lifecycle -->
-            <template #tab-lifecycle>
-              <EquipmentViewLifecycleTab
+                :main-photo-url="mainPhotoUrl"
+                :active-qr-code="activeQrCode"
+                :copied-qr="copiedQr"
                 :timeline-form-proxy="timelineFormProxy"
                 :calculated-expiry-date="calculatedExpiryDate"
-                :timeline-grouped-by-year="timelineGroupedByYear"
+                :life-progress-percentage="lifeProgressPercentage"
+                :life-remaining-label="lifeRemainingLabel"
+                @open-photo-viewer="openPhotoViewer"
+                @copy-qr-code="copyQrCode"
+                @download-qr="handleDownloadQr"
+                @open-replace-qr="isReplaceQrDialogOpen = true"
+                @view-client="handleViewClient"
               />
-            </template>
+            </VCol>
 
-            <!-- TAB 3: Media & Documents -->
-            <template #tab-media>
-              <div class="pt-2">
+            <!-- Right Column: Active Tab Content -->
+            <VCol
+              cols="12"
+              lg="8"
+            >
+              <div v-show="activeTab === 'overview'">
+                <EquipmentViewOverviewTab
+                  :equipment="eq"
+                  :hardware-profile-items="hardwareProfileItems"
+                  :option-badges="optionBadges"
+                  :spec-entries="specEntries"
+                  :normalized-certs="normalizedCerts"
+                />
+              </div>
+
+              <div v-show="activeTab === 'lifecycle'">
+                <EquipmentViewLifecycleTab
+                  :timeline-form-proxy="timelineFormProxy"
+                  :calculated-expiry-date="calculatedExpiryDate"
+                  :timeline-grouped-by-year="timelineGroupedByYear"
+                />
+              </div>
+
+              <div v-show="activeTab === 'media'">
                 <EquipmentMediaGallery
                   :equipment-id="resolvedId"
                   :photos="eq.photos || []"
@@ -267,11 +279,8 @@ const {
                   @refresh="loadEquipment"
                 />
               </div>
-            </template>
 
-            <!-- TAB 4: Service & Audit Trail -->
-            <template #tab-history>
-              <div class="pt-2">
+              <div v-show="activeTab === 'history'">
                 <EquipmentHistorySection
                   :status-histories="eq.status_histories || []"
                   :location-histories="eq.location_histories || []"
@@ -279,10 +288,10 @@ const {
                   :qr-histories="eq.qr_codes || eq.qr_histories || []"
                 />
               </div>
-            </template>
-          </AppHybridTabs>
-        </VCol>
-      </VRow>
+            </VCol>
+          </VRow>
+        </div>
+      </div>
     </div>
 
     <!-- Dialog Footer Slot -->
@@ -354,6 +363,17 @@ const {
 </template>
 
 <style lang="scss" scoped>
+.dialog-journal-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.25rem;
+
+  @media (max-width: 959px) {
+    flex-direction: column;
+  }
+}
+
 .status-dot {
   position: absolute;
   inset-block-end: -2px;

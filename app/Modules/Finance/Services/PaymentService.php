@@ -72,54 +72,58 @@ class PaymentService
             ]);
         }
 
-        $account = FinancialAccount::findOrFail($payment->financial_account_id);
+        return DB::transaction(function () use ($payment, $confirmedBy) {
+            // Lock payment and account for update
+            $payment = Payment::lockForUpdate()->findOrFail($payment->id);
+            $account = FinancialAccount::lockForUpdate()->findOrFail($payment->financial_account_id);
 
-        $newBalance = $payment->direction === 'in'
-            ? $account->current_balance + $payment->amount
-            : $account->current_balance - $payment->amount;
+            $newBalance = $payment->direction === 'in'
+                ? $account->current_balance + $payment->amount
+                : $account->current_balance - $payment->amount;
 
-        // Create account transaction
-        FinancialAccountTransaction::create([
-            'financial_account_id' => $account->id,
-            'transaction_date'     => $payment->payment_date,
-            'type'                 => $payment->direction === 'in' ? 'credit' : 'debit',
-            'amount'               => $payment->amount,
-            'balance_after'        => $newBalance,
-            'reference'            => $payment->payment_number,
-            'description'          => "Payment {$payment->payment_number}",
-            'source_type'          => Payment::class,
-            'source_id'            => $payment->id,
-            'created_by'           => $confirmedBy,
-        ]);
+            // Create account transaction
+            FinancialAccountTransaction::create([
+                'financial_account_id' => $account->id,
+                'transaction_date'     => $payment->payment_date,
+                'type'                 => $payment->direction === 'in' ? 'credit' : 'debit',
+                'amount'               => $payment->amount,
+                'balance_after'        => $newBalance,
+                'reference'            => $payment->payment_number,
+                'description'          => "Payment {$payment->payment_number}",
+                'source_type'          => Payment::class,
+                'source_id'            => $payment->id,
+                'created_by'           => $confirmedBy,
+            ]);
 
-        // Update account balance
-        $account->current_balance = $newBalance;
-        $account->save();
+            // Update account balance
+            $account->current_balance = $newBalance;
+            $account->save();
 
-        // Update payment status
-        $payment->update([
-            'status'       => 'confirmed',
-            'confirmed_at' => now(),
-            'confirmed_by' => $confirmedBy,
-        ]);
+            // Update payment status
+            $payment->update([
+                'status'       => 'confirmed',
+                'confirmed_at' => now(),
+                'confirmed_by' => $confirmedBy,
+            ]);
 
-        // Post to financial transaction log
-        $this->txService->record([
-            'date'        => $payment->payment_date,
-            'type'        => $payment->direction === 'in' ? 'customer_payment' : 'supplier_payment',
-            'direction'   => $payment->direction,
-            'amount'      => $payment->amount,
-            'source_type' => Payment::class,
-            'source_id'   => $payment->id,
-            'party_type'  => $payment->party_type,
-            'party_id'    => $payment->party_id,
-            'party_name'  => $payment->party_name,
-            'reference'   => $payment->payment_number,
-            'description' => "Payment {$payment->payment_number}",
-            'period_id'   => $payment->financial_period_id,
-        ], $confirmedBy);
+            // Post to financial transaction log
+            $this->txService->record([
+                'date'        => $payment->payment_date,
+                'type'        => $payment->direction === 'in' ? 'customer_payment' : 'supplier_payment',
+                'direction'   => $payment->direction,
+                'amount'      => $payment->amount,
+                'source_type' => Payment::class,
+                'source_id'   => $payment->id,
+                'party_type'  => $payment->party_type,
+                'party_id'    => $payment->party_id,
+                'party_name'  => $payment->party_name,
+                'reference'   => $payment->payment_number,
+                'description' => "Payment {$payment->payment_number}",
+                'period_id'   => $payment->financial_period_id,
+            ], $confirmedBy);
 
-        return $payment->fresh();
+            return $payment->fresh();
+        });
     }
 
     /**

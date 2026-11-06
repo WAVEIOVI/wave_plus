@@ -17,6 +17,8 @@ class AccountingController extends Controller
 
     public function chartOfAccounts(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', \App\Modules\Finance\Models\ChartOfAccount::class);
+
         $coa = $this->accountingService->getChartOfAccounts();
 
         return response()->json([
@@ -27,6 +29,8 @@ class AccountingController extends Controller
 
     public function accounts(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', \App\Modules\Finance\Models\ChartOfAccount::class);
+
         $accounts = $this->accountingService->listAccounts();
 
         return response()->json([
@@ -37,6 +41,8 @@ class AccountingController extends Controller
 
     public function storeAccount(Request $request): JsonResponse
     {
+        $this->authorize('create', \App\Modules\Finance\Models\ChartOfAccount::class);
+
         $validated = $request->validate([
             'code' => 'required|string|max:30|unique:chart_of_accounts,code',
             'name' => 'required|string|max:150',
@@ -58,6 +64,8 @@ class AccountingController extends Controller
 
     public function journalEntries(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', \App\Modules\Finance\Models\JournalEntry::class);
+
         $entries = $this->accountingService->listJournalEntries($request->all());
 
         return response()->json([
@@ -68,6 +76,8 @@ class AccountingController extends Controller
 
     public function storeJournalEntry(Request $request): JsonResponse
     {
+        $this->authorize('create', \App\Modules\Finance\Models\JournalEntry::class);
+
         $validated = $request->validate([
             'entry_date' => 'required|date',
             'reference_type' => 'nullable|string|max:50',

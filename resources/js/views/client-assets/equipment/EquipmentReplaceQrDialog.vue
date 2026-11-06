@@ -3,8 +3,8 @@
 import { requiredValidator } from '@/@core/utils/validators'
 import { WpFormDialog, WpQrScannerDialog } from '@/components/shared'
 import { extractEquipmentQrCode } from '@/composables/scanner/useQrScanner'
+import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { useSnackbarStore } from '@/stores/useSnackbarStore'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -31,7 +31,7 @@ const emit = defineEmits(['update:isDialogVisible', 'update:modelValue', 'saved'
 
 const { t } = useI18n()
 const store = useClientAssetStore()
-const snackbarStore = useSnackbarStore()
+const { showSuccess, showError, showWarning } = useAppSnackbar()
 
 const isOpen = computed({
   get: () => (props.isDialogVisible !== undefined ? props.isDialogVisible : props.modelValue),
@@ -103,7 +103,7 @@ const handleQrScanned = result => {
     form.value.qr_code = code
     inputMode.value = 'scan'
     isQrScannerOpen.value = false
-    snackbarStore.showMessage(t('QR Code detected!'), 'success')
+    showSuccess(t('QR Code detected!'))
   }
 }
 
@@ -113,7 +113,7 @@ const onSubmit = async () => {
   if (!eqId) return
 
   if (!form.value.qr_code?.trim()) {
-    snackbarStore.showMessage(t('Please enter or scan a new QR code'), 'warning')
+    showWarning(t('Please enter or scan a new QR code'))
 
     return
   }
@@ -127,13 +127,13 @@ const onSubmit = async () => {
       notes: form.value.notes,
     })
 
-    snackbarStore.showMessage(t('QR Code replaced successfully and recorded in history'), 'success')
+    showSuccess(t('QR Code replaced successfully and recorded in history'))
     emit('saved', result)
     isOpen.value = false
   }
   catch (err) {
     console.error('Failed to replace QR code:', err)
-    snackbarStore.showMessage(err?.response?.data?.message || err?.message || t('Failed to replace QR code'), 'error')
+    showError(err?.response?.data?.message || err?.message || t('Failed to replace QR code'))
   }
   finally {
     isSaving.value = false

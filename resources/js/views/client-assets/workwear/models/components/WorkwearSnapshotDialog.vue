@@ -1,10 +1,12 @@
 <script setup>
+import { WpFormDialog } from '@/components/shared'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   loading: { type: Boolean, default: false },
+
   // Optional: lets the dialog warn when edits have not been saved yet.
   hasUnsavedChanges: { type: Boolean, default: false },
 })
@@ -43,88 +45,52 @@ const handleSave = () => {
 </script>
 
 <template>
-  <VDialog
+  <WpFormDialog
     v-model="visible"
-    max-width="520"
-    :persistent="loading"
+    :title="$t('Record Version Snapshot')"
+    :subtitle="$t('Takes an immutable snapshot of all current specifications, fabric details, and options.')"
+    icon="tabler-camera"
+    icon-color="info"
+    size="small"
+    :loading="loading"
+    :submit-label="$t('Save Snapshot')"
+    @submit="handleSave"
+    @cancel="visible = false"
   >
-    <VCard>
-      <VCardItem class="pa-5 pb-3">
-        <template #prepend>
-          <VAvatar
-            color="info"
-            variant="tonal"
-            rounded
-            size="40"
-          >
-            <VIcon
-              icon="tabler-camera"
-              size="22"
-            />
-          </VAvatar>
-        </template>
-        <VCardTitle>{{ $t('Record Version Snapshot') }}</VCardTitle>
-        <VCardSubtitle class="text-wrap">
-          {{ $t('Takes an immutable snapshot of all current specifications, fabric details, and options.') }}
-        </VCardSubtitle>
-      </VCardItem>
+    <VAlert
+      v-if="hasUnsavedChanges"
+      type="warning"
+      variant="tonal"
+      density="compact"
+      class="mb-4"
+    >
+      {{ $t('You have unsaved changes. Save the model first so they are part of this snapshot.') }}
+    </VAlert>
 
-      <VCardText class="px-5">
-        <VAlert
-          v-if="hasUnsavedChanges"
-          type="warning"
-          variant="tonal"
-          density="compact"
-          class="mb-4"
-        >
-          {{ $t('You have unsaved changes. Save the model first so they are part of this snapshot.') }}
-        </VAlert>
+    <AppTextarea
+      v-model="versionSummary"
+      :label="$t('Change Summary')"
+      :placeholder="$t('Describe what changed in this revision...')"
+      rows="3"
+      auto-grow
+      variant="outlined"
+      autofocus
+      @keydown.ctrl.enter="handleSave"
+      @keydown.meta.enter="handleSave"
+    />
 
-        <AppTextarea
-          v-model="versionSummary"
-          :label="$t('Change Summary')"
-          :placeholder="$t('Describe what changed in this revision...')"
-          rows="3"
-          auto-grow
-          variant="outlined"
-          autofocus
-          @keydown.ctrl.enter="handleSave"
-          @keydown.meta.enter="handleSave"
-        />
-
-        <div class="d-flex flex-wrap gap-2 mt-3">
-          <VChip
-            v-for="text in suggestions"
-            :key="text"
-            size="small"
-            variant="tonal"
-            color="secondary"
-            prepend-icon="tabler-plus"
-            @click="addSuggestion(text)"
-          >
-            {{ text }}
-          </VChip>
-        </div>
-      </VCardText>
-
-      <VCardActions class="pa-5 pt-2">
-        <VSpacer />
-        <VBtn
-          variant="tonal"
-          color="secondary"
-          :disabled="loading"
-          @click="visible = false"
-        >
-          {{ $t('Cancel') }}
-        </VBtn>
-        <VBtn
-          color="primary"
-          :loading="loading"
-          @click="handleSave"
-        >
-          {{ $t('Save Snapshot') }}
-        </VBtn>
-      </VCardActions>
-    </VCard>
-  </VDialog>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <VChip
+        v-for="text in suggestions"
+        :key="text"
+        size="small"
+        variant="tonal"
+        color="secondary"
+        prepend-icon="tabler-plus"
+        @click="addSuggestion(text)"
+      >
+        {{ text }}
+      </VChip>
+    </div>
+  </WpFormDialog>
 </template>

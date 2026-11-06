@@ -1,6 +1,6 @@
 <script setup>
+import { WpSectionCard } from '@/components/shared'
 import { localizedValue } from '@/composables/useLocaleField'
-import EquipmentStepCard from './EquipmentStepCard.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -129,13 +129,11 @@ const displayModelName = computed(() => {
 <template>
   <div class="d-flex flex-column gap-4 w-100 min-w-0">
     <!-- Category Class & Blueprint Card -->
-    <EquipmentStepCard
+    <WpSectionCard
       icon="tabler-category"
-      color="success"
+      icon-color="success"
       :title="t('Category Class & Blueprint')"
       :subtitle="t('Connect catalog specs, maintenance intervals, and standard parameters')"
-      :loading="props.loading"
-      :style="{ '--i': 1 }"
     >
       <Transition
         name="swap"
@@ -442,7 +440,7 @@ const displayModelName = computed(() => {
           </VBtn>
         </div>
       </Transition>
-    </EquipmentStepCard>
+    </WpSectionCard>
   </div>
 </template>
 

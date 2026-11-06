@@ -1,6 +1,6 @@
 <script setup>
+import { WpSectionCard } from '@/components/shared'
 import { useEquipmentTimeline } from '@/composables/client-assets/equipment/useEquipmentTimeline'
-import EquipmentStepCard from './EquipmentStepCard.vue'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -52,18 +52,15 @@ const {
   >
     <div class="dates-flip-inner">
       <!-- ═══ FRONT FACE: Date Settings ═══ -->
-      <EquipmentStepCard
+      <WpSectionCard
         class="dates-flip-front"
         icon="tabler-calendar-event"
-        color="info"
+        icon-color="info"
         :title="t('Important Service & Inspection Dates')"
         :subtitle="t('Track commissioning, scheduled maintenance, and lifetime expiration')"
-        :loading="props.loading"
-        :inert="datesCardView === 'timeline' || undefined"
-        :aria-hidden="datesCardView === 'timeline' ? 'true' : undefined"
       >
         <!-- Point 4.1: Simple button to flip to timeline -->
-        <template #append>
+        <template #actions>
           <VBtn
             size="small"
             variant="tonal"
@@ -303,20 +300,18 @@ const {
             </div>
           </VCard>
         </Transition>
-      </EquipmentStepCard>
+      </WpSectionCard>
 
       <!-- ═══ BACK FACE: Projected Timeline ═══ -->
-      <EquipmentStepCard
+      <WpSectionCard
         class="dates-flip-back"
         icon="tabler-timeline"
-        color="primary"
+        icon-color="primary"
         :title="t('Projected Lifecycle Timeline')"
         :subtitle="t('Visual maintenance intervals, inspections, and expiry milestones')"
-        :inert="datesCardView !== 'timeline' || undefined"
-        :aria-hidden="datesCardView !== 'timeline' ? 'true' : undefined"
       >
         <!-- Point 4.1: Simple back button -->
-        <template #append>
+        <template #actions>
           <VBtn
             variant="tonal"
             color="secondary"
@@ -525,7 +520,7 @@ const {
             </div>
           </PerfectScrollbar>
         </div>
-      </EquipmentStepCard>
+      </WpSectionCard>
     </div>
   </div>
 </template>
