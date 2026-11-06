@@ -29,7 +29,7 @@ const {
 
 const navigateToStockItems = () => router.push({ name: 'inventory-stock-items-list' })
 const navigateToMovements = () => router.push({ name: 'inventory-movements-list' })
-const navigateToSites = () => router.push({ name: 'inventory-sites-list' })
+const navigateToSites = () => router.push({ name: 'inventory-warehouse-sites-list' })
 </script>
 
 <template>

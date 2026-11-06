@@ -59,8 +59,19 @@ class StockMovementController extends Controller
             $query->where('reference', 'like', "%{$search}%");
         }
 
+        // ── Sorting ────────────────────────────────────────────────
+        $sortBy = $request->input('sort_by', $request->input('sortBy', 'performed_at'));
+        $orderBy = $request->input('sort_order', $request->input('orderBy', 'desc'));
+
+        $allowedSorts = ['performed_at', 'movement_type', 'quantity', 'created_at', 'updated_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $orderBy === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->latest('performed_at');
+        }
+
         return StockMovementResource::collection(
-            $query->latest('performed_at')->paginate($this->queryService->cappedPerPage($request))
+            $query->paginate($this->queryService->cappedPerPage($request))
         );
     }
 

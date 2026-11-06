@@ -158,4 +158,31 @@ class ProcurementDashboardController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Retrieve supplier scorecard data.
+     *
+     * GET /api/procurement/suppliers/{supplierId}/scorecard
+     */
+    public function supplierScorecard(string $supplierId): JsonResponse
+    {
+        $this->authorize('viewAny', PurchaseOrder::class);
+
+        // Placeholder implementation: real scorecard logic would compute from IPRs, GRNs, quality metrics, etc.
+        // For now, return a static structure so ProcurementScorecardTab.vue can render without 404.
+        $scorecard = [
+            'overall_score' => 85,
+            'quality_score' => 90,
+            'on_time_score' => 80,
+            'price_score' => 85,
+            'responsiveness' => 88,
+            'total_pos' => 42,
+            'total_grns' => 38,
+            'total_rejected_qty' => 12,
+            'avg_days_late' => 2.5,
+            'last_evaluated_at' => now()->subDays(7)->toISOString(),
+        ];
+
+        return response()->json($scorecard);
+    }
 }

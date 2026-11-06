@@ -160,6 +160,52 @@ class AuthController extends Controller
                     return $rules;
                 }
 
+                // Finance module: finance.* → FinancialCenter
+                if (str_starts_with($permission->name, 'finance.')) {
+                    $parts = explode('.', $permission->name);
+                    $grant = $parts[1] ?? 'read';
+
+                    $actions = match ($grant) {
+                        'read', 'view' => ['read'],
+                        'create' => ['read', 'create'],
+                        'edit', 'manage' => ['read', 'edit', 'update'],
+                        'delete' => ['read', 'delete'],
+                        default => ['read'],
+                    };
+
+                    $rules = [];
+                    foreach ($actions as $action) {
+                        $rules[] = ['action' => $action, 'subject' => 'FinancialCenter'];
+                    }
+
+                    return $rules;
+                }
+
+                // Inventory module: read-inventory-* / create-inventory-* → InventoryWarehouse, InventoryStockItems, etc.
+                if (preg_match('/^(read|create|edit|delete)-inventory-(.+)$/', $permission->name, $m)) {
+                    $actionPrefix = $m[1];
+                    $subjectSuffix = $m[2];
+
+                    $actions = match ($actionPrefix) {
+                        'read' => ['read'],
+                        'create' => ['read', 'create'],
+                        'edit' => ['read', 'edit', 'update'],
+                        'delete' => ['read', 'delete'],
+                        default => ['read'],
+                    };
+
+                    $hyphenatedSubject = 'inventory-' . $subjectSuffix;
+                    $camelCaseSubject = str_replace('-', '', ucwords($hyphenatedSubject, '-'));
+
+                    $rules = [];
+                    foreach ($actions as $action) {
+                        $rules[] = ['action' => $action, 'subject' => $camelCaseSubject];
+                        $rules[] = ['action' => $action, 'subject' => $hyphenatedSubject];
+                    }
+
+                    return $rules;
+                }
+
                 // Split on the first hyphen: "edit-users" → ["edit", "users"]
                 $parts = explode('-', $permission->name, 2);
 

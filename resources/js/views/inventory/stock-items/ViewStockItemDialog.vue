@@ -169,7 +169,7 @@ const formatDate = value => {
             <WpInfoItem
               icon="tabler-report-money"
               :label="t('inventory.stock_items.columns.total_value')"
-              :value="formatCurrency(item.total_value, item.currency)"
+              :value="formatCurrency(item.line_value ?? item.total_value, item.currency)"
             />
           </VCol>
         </VRow>

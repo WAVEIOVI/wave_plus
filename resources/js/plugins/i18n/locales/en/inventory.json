@@ -39,9 +39,8 @@
     },
     "conditions": {
       "new": "New",
-      "good": "Good",
-      "fair": "Fair",
-      "poor": "Poor",
+      "used": "Used",
+      "refurbished": "Refurbished",
       "damaged": "Damaged"
     },
     "stock_items": {
@@ -71,6 +70,17 @@
         "site": "Site",
         "below_reorder": "Below Reorder"
       },
+      "actions": {
+        "view": "View Details",
+        "adjust": "Adjust Stock",
+        "transfer": "Transfer Stock"
+      },
+      "sections": {
+        "basic_info": "Item Details",
+        "stock_levels": "Stock Levels",
+        "location": "Location",
+        "costing": "Costing"
+      },
       "messages": {
         "created": "Stock item created successfully.",
         "updated": "Stock item updated successfully.",
@@ -88,6 +98,32 @@
       "add_adjustment": "New Adjustment",
       "add_transfer": "New Transfer",
       "add_initial_load": "Initial Load",
+      "submit_adjustment": "Submit Adjustment",
+      "submit_transfer": "Submit Transfer",
+      "submit_initial_load": "Submit Initial Load",
+      "item_line": "Item Line {n}",
+      "add_item_line": "Add Another Item",
+      "fields": {
+        "catalog_item_id": "Catalog Item ID",
+        "catalog_variant_id": "Variant ID",
+        "location_id": "Location ID",
+        "from_location_id": "From Location",
+        "to_location_id": "To Location",
+        "stock_lot_id": "Stock Lot (Optional)",
+        "quantity": "Quantity",
+        "unit_cost": "Unit Cost",
+        "currency": "Currency",
+        "condition": "Condition",
+        "adjustment_type": "Adjustment Type",
+        "reason": "Reason"
+      },
+      "adjustment_type": {
+        "plus": "Increase (+)",
+        "minus": "Decrease (-)"
+      },
+      "actions": {
+        "view": "View Details"
+      },
       "columns": {
         "type": "Type",
         "item": "Item",
@@ -95,6 +131,8 @@
         "from_location": "From",
         "to_location": "To",
         "reference": "Reference",
+        "performed_by": "Performed By",
+        "reason": "Reason",
         "created_at": "Date"
       },
       "types": {
@@ -117,7 +155,9 @@
         "transfer_created": "Stock transfer created successfully.",
         "transfer_failed": "Failed to create stock transfer.",
         "initial_load_created": "Initial stock load recorded successfully.",
-        "initial_load_failed": "Failed to record initial stock load."
+        "initial_load_failed": "Failed to record initial stock load.",
+        "quantity_positive": "Quantity must be greater than zero.",
+        "different_locations": "Source and destination locations must be different."
       },
       "empty": "No movements recorded.",
       "empty_sub": "Stock movements will appear here as items are adjusted or transferred."
@@ -144,6 +184,16 @@
         "status": "Status",
         "item": "Item",
         "expiry_within_days": "Expiring Within"
+      },
+      "sections": {
+        "basic_info": "Lot Details",
+        "stock_items": "Stock Items",
+        "serial_numbers": "Serial Numbers"
+      },
+      "actions": {
+        "view": "View Details",
+        "edit": "Edit Lot",
+        "delete": "Delete Lot"
       },
       "messages": {
         "created": "Stock lot created successfully.",
@@ -188,6 +238,12 @@
         "status": "Status",
         "type": "Site Type"
       },
+      "sections": {
+        "basic_info": "Site Details",
+        "zones": "Zones",
+        "locations": "Locations",
+        "mobile": "Mobile Carrier"
+      },
       "mobile": {
         "section_title": "Mobile Warehouse",
         "vehicle": "Assigned Vehicle",
@@ -222,6 +278,7 @@
     "zones": {
       "title": "Warehouse Zones",
       "add": "New Zone",
+      "subtitle": "Functional areas defined within this facility for storage, dispatch, or staging",
       "columns": {
         "code": "Code",
         "name": "Name",
@@ -229,10 +286,13 @@
         "status": "Status",
         "locations": "Locations"
       },
-      "types": {
+      "zones": {
         "storage": "Storage",
         "receiving": "Receiving",
         "dispatch": "Dispatch",
+        "picking": "Picking",
+        "packing": "Packing",
+        "shipping": "Shipping",
         "quarantine": "Quarantine",
         "staging": "Staging",
         "returns": "Returns"

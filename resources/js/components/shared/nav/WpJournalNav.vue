@@ -9,7 +9,7 @@
 import AppBottomNav from '@/components/shared/nav/AppBottomNav.vue'
 import { useJournalNav } from '@/composables/useJournalNav'
 import { avatarText as defaultAvatarText } from '@core/utils/formatters'
-import { computed, toRef, watch } from 'vue'
+import { computed, nextTick, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { useDisplay } from 'vuetify'
@@ -79,6 +79,14 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  mobileObserverRootMargin: {
+    type: String,
+    default: '',
+  },
+  mobileObserverThreshold: {
+    type: Number,
+    default: null,
+  },
   readonly: {
     type: Boolean,
     default: false,
@@ -105,6 +113,12 @@ const {
   defaultSection: props.modelValue || props.active || undefined,
   idPrefix: props.idPrefix,
   container: computed(() => props.container),
+  rootMargin: computed(() => smAndDown.value && props.mobileObserverRootMargin
+    ? props.mobileObserverRootMargin
+    : undefined),
+  threshold: computed(() => smAndDown.value && props.mobileObserverThreshold !== null
+    ? props.mobileObserverThreshold
+    : undefined),
   autoSetupObserver: true,
 })
 
@@ -123,6 +137,11 @@ watch(activeSection, val => {
   emit('update:modelValue', val)
   emit('update:active', val)
   emit('change', val)
+})
+
+watch(smAndDown, async () => {
+  await nextTick()
+  setupObserver()
 })
 
 const resolvedAvatarText = computed(() => {

@@ -175,7 +175,7 @@ const barTitle = computed(() => {
             >
               <VCard
                 variant="outlined"
-                class="h-100"
+                class="h-100 analytics-chart-card"
               >
                 <VCardItem class="client-assets-analytics-header">
                   <VCardTitle class="text-base font-weight-bold d-flex align-center gap-2">
@@ -223,7 +223,7 @@ const barTitle = computed(() => {
             >
               <VCard
                 variant="outlined"
-                class="h-100"
+                class="h-100 analytics-chart-card"
               >
                 <VCardItem>
                   <VCardTitle class="text-base font-weight-bold d-flex align-center gap-2">
@@ -238,7 +238,7 @@ const barTitle = computed(() => {
                 <VCardText>
                   <div
                     v-if="(barCategories?.length ?? 0) > 0"
-                    class="analytics-chart"
+                    class="analytics-chart analytics-chart--bar"
                     role="img"
                     :aria-label="`${barTitle}: ${barSummary}`"
                   >
@@ -547,10 +547,11 @@ const barTitle = computed(() => {
   }
 }
 
-@media (max-width: 425px) {
+/* Small mobile devices: responsive KPI cards */
+@media (max-width: 430px) {
   .kpi-grid {
     gap: 0.5rem;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .kpi-card {
@@ -582,6 +583,434 @@ const barTitle = computed(() => {
         font-size: 16px !important;
       }
     }
+  }
+
+  /* Fix chart cards overflow and sizing */
+  .analytics-chart-card {
+    overflow: hidden;
+
+    :deep(.v-card-text) {
+      padding-inline: 0.75rem !important;
+    }
+
+    :deep(.v-card-item) {
+      padding-inline: 0.75rem !important;
+    }
+  }
+
+  /* Make charts responsive */
+  .analytics-chart {
+    overflow: hidden;
+    min-block-size: auto !important;
+
+    :deep(.apexcharts-canvas) {
+      margin-inline: auto;
+      max-inline-size: 100%;
+    }
+
+    :deep(svg) {
+      max-inline-size: 100% !important;
+      block-size: auto !important;
+    }
+  }
+
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 280px;
+    }
+  }
+
+  .analytics-chart--bar {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 100%;
+    }
+
+    :deep(.apexcharts-bar-area) {
+      max-inline-size: 100%;
+    }
+
+    :deep(.apexcharts-xaxis-label),
+    :deep(.apexcharts-yaxis-label) {
+      font-size: 10px !important;
+    }
+  }
+
+  /* Fix analytics stat cards overflow */
+  .analytics-stat-card {
+    overflow: hidden;
+    min-inline-size: 0;
+
+    &__header {
+      min-inline-size: 0;
+    }
+
+    &__title-wrap {
+      min-inline-size: 0;
+      max-inline-size: calc(100% - 100px);
+    }
+
+    &__title {
+      font-size: 0.8125rem !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-inline-size: 100%;
+    }
+
+    &__chips {
+      flex-shrink: 0;
+    }
+  }
+
+  /* Compliance & Criticality cards: better spacing */
+  .mix-count {
+    font-size: 0.75rem !important;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 414px) {
+  .kpi-card {
+    .kpi-label {
+      font-size: 0.64rem !important;
+    }
+
+    .kpi-value,
+    .text-h5 {
+      font-size: 1.025rem !important;
+    }
+
+    .kpi-hint {
+      font-size: 0.64rem !important;
+    }
+  }
+
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 270px;
+    }
+  }
+}
+
+@media (max-width: 390px) {
+  .kpi-card {
+    .kpi-label {
+      font-size: 0.63rem !important;
+    }
+
+    .kpi-value,
+    .text-h5 {
+      font-size: 1rem !important;
+    }
+
+    .v-avatar {
+      block-size: 27px !important;
+      inline-size: 27px !important;
+
+      .v-icon {
+        font-size: 15.5px !important;
+      }
+    }
+  }
+
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 262px;
+    }
+  }
+
+  .analytics-stat-card {
+    &__title {
+      font-size: 0.8rem !important;
+    }
+  }
+}
+
+@media (max-width: 375px) {
+  .kpi-card {
+    .kpi-label {
+      font-size: 0.625rem !important;
+    }
+
+    .kpi-value,
+    .text-h5 {
+      font-size: 0.975rem !important;
+    }
+
+    .kpi-hint {
+      font-size: 0.625rem !important;
+    }
+
+    .v-avatar {
+      block-size: 26px !important;
+      inline-size: 26px !important;
+
+      .v-icon {
+        font-size: 14px !important;
+      }
+    }
+  }
+
+  /* Further reduce chart sizes */
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 260px;
+    }
+  }
+
+  .analytics-chart--bar {
+    :deep(.apexcharts-xaxis-label),
+    :deep(.apexcharts-yaxis-label) {
+      font-size: 9px !important;
+    }
+  }
+
+  /* Stack analytics stat card elements vertically */
+  .analytics-stat-card {
+    &__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.375rem;
+    }
+
+    &__title-wrap {
+      max-inline-size: 100%;
+      inline-size: 100%;
+    }
+
+    &__chips {
+      flex-wrap: wrap;
+      inline-size: 100%;
+      justify-content: flex-start;
+    }
+  }
+
+  .analytics-stat-breakdown {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+
+    &__item {
+      inline-size: 100%;
+      justify-content: space-between;
+    }
+  }
+
+  .mix-count {
+    font-size: 0.7rem !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .kpi-card {
+    padding-block: 0.4375rem !important;
+    padding-inline: 0.5625rem !important;
+
+    .kpi-label {
+      font-size: 0.615rem !important;
+    }
+
+    .kpi-value,
+    .text-h5 {
+      font-size: 0.95rem !important;
+    }
+
+    .kpi-hint {
+      font-size: 0.615rem !important;
+    }
+
+    .v-avatar {
+      block-size: 25px !important;
+      inline-size: 25px !important;
+
+      .v-icon {
+        font-size: 13.5px !important;
+      }
+    }
+  }
+
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 250px;
+    }
+  }
+
+  .analytics-stat-card {
+    &__title {
+      font-size: 0.765rem !important;
+    }
+  }
+}
+
+@media (max-width: 340px) {
+  .kpi-card {
+    .kpi-label {
+      font-size: 0.61rem !important;
+    }
+
+    .kpi-value,
+    .text-h5 {
+      font-size: 0.925rem !important;
+    }
+
+    .kpi-hint {
+      font-size: 0.61rem !important;
+    }
+
+    .v-avatar {
+      block-size: 24.5px !important;
+      inline-size: 24.5px !important;
+
+      .v-icon {
+        font-size: 13.25px !important;
+      }
+    }
+  }
+
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 245px;
+    }
+  }
+
+  .analytics-stat-card {
+    &__title {
+      font-size: 0.76rem !important;
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .kpi-card {
+    .kpi-label {
+      font-size: 0.6rem !important;
+    }
+
+    .kpi-value,
+    .text-h5 {
+      font-size: 0.9rem !important;
+    }
+
+    .kpi-hint {
+      font-size: 0.6rem !important;
+    }
+
+    .v-avatar {
+      block-size: 24px !important;
+      inline-size: 24px !important;
+
+      .v-icon {
+        font-size: 13px !important;
+      }
+    }
+  }
+
+  /* Minimum chart sizes */
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 240px;
+    }
+  }
+
+  .analytics-chart--bar {
+    :deep(.apexcharts-xaxis-label),
+    :deep(.apexcharts-yaxis-label) {
+      font-size: 8px !important;
+    }
+  }
+
+  .analytics-stat-card {
+    padding-block: 0.625rem !important;
+    padding-inline: 0.625rem !important;
+
+    &__title {
+      font-size: 0.75rem !important;
+    }
+
+    :deep(.v-chip) {
+      font-size: 0.625rem !important;
+      padding-inline: 0.375rem !important;
+    }
+  }
+
+  .analytics-stat-breakdown {
+    &__item {
+      font-size: 0.65rem !important;
+
+      .v-icon {
+        font-size: 12px !important;
+      }
+    }
+  }
+}
+
+@media (max-width: 310px) {
+  .kpi-card {
+    padding-block: 0.375rem !important;
+    padding-inline: 0.4375rem !important;
+
+    .kpi-label {
+      font-size: 0.59rem !important;
+    }
+
+    .kpi-value,
+    .text-h5 {
+      font-size: 0.875rem !important;
+    }
+
+    .kpi-hint {
+      font-size: 0.59rem !important;
+    }
+
+    .v-avatar {
+      block-size: 23px !important;
+      inline-size: 23px !important;
+
+      .v-icon {
+        font-size: 12.5px !important;
+      }
+    }
+  }
+
+  .analytics-chart--donut {
+    :deep(.apexcharts-canvas) {
+      max-inline-size: 230px;
+    }
+  }
+
+  .analytics-chart--bar {
+    :deep(.apexcharts-xaxis-label),
+    :deep(.apexcharts-yaxis-label) {
+      font-size: 7.5px !important;
+    }
+  }
+
+  .analytics-stat-card {
+    padding-block: 0.5rem !important;
+    padding-inline: 0.5rem !important;
+
+    &__title {
+      font-size: 0.72rem !important;
+    }
+
+    :deep(.v-chip) {
+      font-size: 0.6rem !important;
+      padding-inline: 0.3125rem !important;
+    }
+  }
+
+  .analytics-stat-breakdown {
+    &__item {
+      font-size: 0.625rem !important;
+
+      .v-icon {
+        font-size: 11px !important;
+      }
+    }
+  }
+
+  .mix-count {
+    font-size: 0.65rem !important;
   }
 }
 

@@ -107,9 +107,9 @@ const currentFacilityTypeObj = computed(() => {
             class="expansion-custom mb-1"
           >
             <VExpansionPanel elevation="0">
-              <VExpansionPanelTitle class="py-3 px-4">
-                <div class="d-flex align-center justify-space-between w-100 me-3 flex-wrap gap-2">
-                  <div class="d-flex align-center gap-3">
+              <VExpansionPanelTitle class="facility-classification-title py-3 px-4">
+                <div class="facility-classification-summary d-flex align-center justify-space-between w-100 me-3 flex-wrap gap-2">
+                  <div class="facility-classification-current d-flex align-center gap-3">
                     <VAvatar
                       size="36"
                       :color="currentFacilityTypeObj.color"
@@ -127,10 +127,10 @@ const currentFacilityTypeObj = computed(() => {
                     </div>
                   </div>
                   <VChip
+                    class="facility-classification-chip text-capitalize font-weight-semibold"
                     size="small"
                     :color="currentFacilityTypeObj.color"
                     variant="tonal"
-                    class="text-capitalize font-weight-semibold"
                   >
                     {{ $t(currentFacilityTypeObj.title) }}
                   </VChip>
@@ -187,6 +187,7 @@ const currentFacilityTypeObj = computed(() => {
         <VCol cols="12">
           <AppTextField
             v-model="form.name"
+            class="facility-name-field"
             :label="$t('Facility / Site Name') + ' *'"
             :placeholder="$t('e.g. Sousse Manufacturing Plant - Block B')"
             variant="outlined"
@@ -223,6 +224,7 @@ const currentFacilityTypeObj = computed(() => {
 }
 
 .selection-card {
+  min-width: 0;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 12px;
   background: rgb(var(--v-theme-surface));
@@ -244,6 +246,51 @@ const currentFacilityTypeObj = computed(() => {
   &.is-selected {
     border-color: rgb(var(--v-theme-primary)) !important;
     background: rgba(var(--v-theme-primary), 0.06) !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .facility-classification-title {
+    :deep(.v-expansion-panel-title__content) {
+      min-width: 0;
+    }
+  }
+
+  .facility-classification-summary {
+    justify-content: center !important;
+    margin-inline-end: 0 !important;
+  }
+
+  .facility-classification-current {
+    flex-direction: column;
+    gap: 0.5rem !important;
+    text-align: center;
+  }
+
+  .facility-classification-chip {
+    display: none;
+  }
+
+  .selection-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .selection-card > div,
+  .selection-card > div > div {
+    min-width: 0;
+  }
+
+  .facility-name-field {
+    :deep(> .v-label) {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      text-align: center;
+    }
+
+    :deep(.v-field__input input) {
+      text-align: center;
+    }
   }
 }
 

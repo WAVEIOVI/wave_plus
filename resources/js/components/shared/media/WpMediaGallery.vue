@@ -19,6 +19,7 @@ const props = defineProps({
   icon: { type: String, default: '' },
   readOnly: { type: Boolean, default: false },
   canUpload: { type: Boolean, default: true },
+  showUploadButton: { type: Boolean, default: true },
   canRecordVideo: { type: Boolean, default: true },
   canCapturePhoto: { type: Boolean, default: true },
   canSetMain: { type: Boolean, default: true },
@@ -552,7 +553,7 @@ defineExpose({
         </VBtnToggle>
 
         <VMenu
-          v-if="effectiveCanUpload"
+          v-if="effectiveCanUpload && showUploadButton"
           location="bottom end"
         >
           <template #activator="{ props: menuProps }">

@@ -46,9 +46,8 @@ export function useStockItemList() {
 
   const conditionOptions = computed(() => [
     { title: t('inventory.conditions.new'), value: 'new' },
-    { title: t('inventory.conditions.good'), value: 'good' },
-    { title: t('inventory.conditions.fair'), value: 'fair' },
-    { title: t('inventory.conditions.poor'), value: 'poor' },
+    { title: t('inventory.conditions.used'), value: 'used' },
+    { title: t('inventory.conditions.refurbished'), value: 'refurbished' },
     { title: t('inventory.conditions.damaged'), value: 'damaged' },
   ])
 
@@ -76,9 +75,8 @@ export function useStockItemList() {
 
   const resolveConditionVariant = condition => ({
     new: 'success',
-    good: 'primary',
-    fair: 'info',
-    poor: 'warning',
+    used: 'primary',
+    refurbished: 'info',
     damaged: 'error',
   }[condition?.toLowerCase()] || 'secondary')
 

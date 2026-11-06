@@ -50,8 +50,19 @@ class StockLotController extends Controller
                 ->where('expiry_date', '>=', now());
         }
 
+        // ── Sorting ────────────────────────────────────────────────
+        $sortBy = $request->input('sort_by', $request->input('sortBy', 'created_at'));
+        $orderBy = $request->input('sort_order', $request->input('orderBy', 'desc'));
+
+        $allowedSorts = ['lot_number', 'status', 'manufacture_date', 'expiry_date', 'created_at', 'updated_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $orderBy === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->latest();
+        }
+
         return StockLotResource::collection(
-            $query->latest()->paginate($this->queryService->cappedPerPage($request))
+            $query->paginate($this->queryService->cappedPerPage($request))
         );
     }
 

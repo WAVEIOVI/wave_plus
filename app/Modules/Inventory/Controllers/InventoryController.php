@@ -68,8 +68,8 @@ class InventoryController extends Controller
         }
 
         // ── Sorting ────────────────────────────────────────────────
-        $sortBy = $request->input('sortBy', 'updated_at');
-        $orderBy = $request->input('orderBy', 'desc');
+        $sortBy = $request->input('sort_by', $request->input('sortBy', 'updated_at'));
+        $orderBy = $request->input('sort_order', $request->input('orderBy', 'desc'));
 
         $allowedSorts = ['qty_on_hand', 'qty_available', 'qty_reserved', 'unit_cost', 'updated_at', 'created_at', 'status', 'condition'];
         if (in_array($sortBy, $allowedSorts)) {

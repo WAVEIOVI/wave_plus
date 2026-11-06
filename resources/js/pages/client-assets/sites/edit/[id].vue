@@ -566,7 +566,7 @@ onMounted(async () => {
         <!-- Top KPI Metrics -->
         <WpKpiGroup
           :cols="{ xs: 2, sm: 2, md: 4, lg: 4 }"
-          class="mb-6 site-top-kpis"
+          class="site-top-kpis"
         >
           <template #default="{ getColProps }">
             <VCol v-bind="getColProps(0)">
@@ -849,10 +849,14 @@ onMounted(async () => {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   inline-size: 100%;
   min-inline-size: 0;
   padding-block-end: 2rem;
+}
+
+.journal-feed > :deep(.journal-section) {
+  margin-block-end: 0 !important;
 }
 
 .journal-section {
@@ -876,6 +880,10 @@ onMounted(async () => {
 }
 
 @media (max-width: 959px) {
+  .journal-feed {
+    gap: 1rem;
+  }
+
   .site-edit-quick-actions-launcher {
     inset-inline-end: 16px;
   }
@@ -886,11 +894,17 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 425px) {
+/* Small mobile devices: one KPI card per row */
+@media (max-width: 430px) {
   .site-top-kpis {
+    :deep(.v-row) {
+      margin: 0 !important;
+    }
+
     :deep(.v-col) {
       flex: 0 0 100% !important;
       max-width: 100% !important;
+      padding: 0.25rem !important;
     }
 
     :deep(.wp-kpi-card) {
@@ -901,11 +915,13 @@ onMounted(async () => {
       .wp-kpi-card__title {
         font-size: 0.65rem !important;
         margin-bottom: 2px !important;
+        line-height: 1.2;
       }
 
       .wp-kpi-card__value,
       .text-h5 {
         font-size: 1.05rem !important;
+        line-height: 1.3;
       }
 
       .wp-kpi-card__icon {
@@ -914,6 +930,174 @@ onMounted(async () => {
 
         .v-icon {
           font-size: 18px !important;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 390px) {
+  .site-top-kpis {
+    :deep(.wp-kpi-card) {
+      .v-card-text {
+        padding: 0.4375rem 0.6875rem !important;
+      }
+
+      .wp-kpi-card__title {
+        font-size: 0.64rem !important;
+      }
+
+      .wp-kpi-card__value,
+      .text-h5 {
+        font-size: 1.025rem !important;
+      }
+
+      .wp-kpi-card__icon {
+        block-size: 30px !important;
+        inline-size: 30px !important;
+
+        .v-icon {
+          font-size: 17px !important;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 375px) {
+  .site-top-kpis {
+    :deep(.wp-kpi-card) {
+      .v-card-text {
+        padding: 0.375rem 0.625rem !important;
+      }
+
+      .wp-kpi-card__title {
+        font-size: 0.625rem !important;
+      }
+
+      .wp-kpi-card__value,
+      .text-h5 {
+        font-size: 0.975rem !important;
+      }
+
+      .wp-kpi-card__icon {
+        block-size: 28px !important;
+        inline-size: 28px !important;
+
+        .v-icon {
+          font-size: 16px !important;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 360px) {
+  .site-top-kpis {
+    :deep(.wp-kpi-card) {
+      .v-card-text {
+        padding: 0.3125rem 0.5625rem !important;
+      }
+
+      .wp-kpi-card__title {
+        font-size: 0.615rem !important;
+      }
+
+      .wp-kpi-card__value,
+      .text-h5 {
+        font-size: 0.95rem !important;
+      }
+
+      .wp-kpi-card__icon {
+        block-size: 27px !important;
+        inline-size: 27px !important;
+
+        .v-icon {
+          font-size: 15.5px !important;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 340px) {
+  .site-top-kpis {
+    :deep(.wp-kpi-card) {
+      .v-card-text {
+        padding: 0.3125rem 0.5rem !important;
+      }
+
+      .wp-kpi-card__title {
+        font-size: 0.61rem !important;
+      }
+
+      .wp-kpi-card__value,
+      .text-h5 {
+        font-size: 0.925rem !important;
+      }
+
+      .wp-kpi-card__icon {
+        block-size: 26px !important;
+        inline-size: 26px !important;
+
+        .v-icon {
+          font-size: 15px !important;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 320px) {
+  .site-top-kpis {
+    :deep(.wp-kpi-card) {
+      .v-card-text {
+        padding: 0.25rem 0.5rem !important;
+      }
+
+      .wp-kpi-card__title {
+        font-size: 0.6rem !important;
+      }
+
+      .wp-kpi-card__value,
+      .text-h5 {
+        font-size: 0.9rem !important;
+      }
+
+      .wp-kpi-card__icon {
+        block-size: 25px !important;
+        inline-size: 25px !important;
+
+        .v-icon {
+          font-size: 14.5px !important;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 310px) {
+  .site-top-kpis {
+    :deep(.wp-kpi-card) {
+      .v-card-text {
+        padding: 0.25rem 0.4375rem !important;
+      }
+
+      .wp-kpi-card__title {
+        font-size: 0.59rem !important;
+      }
+
+      .wp-kpi-card__value,
+      .text-h5 {
+        font-size: 0.875rem !important;
+      }
+
+      .wp-kpi-card__icon {
+        block-size: 24px !important;
+        inline-size: 24px !important;
+
+        .v-icon {
+          font-size: 14px !important;
         }
       }
     }

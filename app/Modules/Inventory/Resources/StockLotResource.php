@@ -34,7 +34,7 @@ class StockLotResource extends JsonResource
 
             'supplier' => $this->whenLoaded('supplier', fn () => [
                 'id' => $this->supplier?->id,
-                'name' => $this->supplier?->name,
+                'name' => $this->supplier ? ($this->supplier->commercial_name ?: $this->supplier->legal_name) : null,
             ]),
 
             // Counts

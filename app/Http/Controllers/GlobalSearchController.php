@@ -96,7 +96,7 @@ class GlobalSearchController extends Controller
                     'title' => $sp->legal_name,
                     'subtitle' => 'Service Provider · '.($sp->primary_email ?? $sp->service_provider_id),
                     'icon' => 'tabler-briefcase',
-                    'url' => ['name' => 'business-partners-service-providers-id', 'params' => ['id' => $sp->id]],
+                    'url' => ['name' => 'business-partners-service-providers-edit-id', 'params' => ['id' => $sp->id]],
                 ])->values()->all(),
             ];
         }
@@ -111,7 +111,7 @@ class GlobalSearchController extends Controller
                     'title' => $o->legal_name,
                     'subtitle' => 'Organisation · '.($o->primary_email ?? $o->organisation_id),
                     'icon' => 'tabler-building',
-                    'url' => ['name' => 'business-partners-organisations-id', 'params' => ['id' => $o->id]],
+                    'url' => ['name' => 'business-partners-organisations-edit-id', 'params' => ['id' => $o->id]],
                 ])->values()->all(),
             ];
         }

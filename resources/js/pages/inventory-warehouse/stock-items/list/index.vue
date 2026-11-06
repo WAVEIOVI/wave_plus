@@ -13,6 +13,7 @@ import {
 } from '@/components/shared'
 import { useStockItemDialogs } from '@/composables/inventory/stock-items/useStockItemDialogs'
 import { useStockItemList } from '@/composables/inventory/stock-items/useStockItemList'
+import { useStockMovementActions } from '@/composables/inventory/movements/useStockMovementActions'
 import { localizedValue } from '@/composables/useLocaleField'
 import { useAbility } from '@/plugins/casl/composables/useAbility'
 import ViewStockItemDialog from '@/views/inventory/stock-items/ViewStockItemDialog.vue'
@@ -73,6 +74,19 @@ const {
   openTransfer,
   closeTransfer,
 } = useStockItemDialogs()
+
+// Movement actions
+const movementActions = useStockMovementActions({ onRefresh: refresh })
+
+const handleAdjustmentSubmit = async payload => {
+  const ok = await movementActions.createAdjustment(payload)
+  if (ok) closeAdjustment()
+}
+
+const handleTransferSubmit = async payload => {
+  const ok = await movementActions.createTransfer(payload)
+  if (ok) closeTransfer()
+}
 
 // Filter dialog
 const filterDialogOpen = ref(false)
@@ -342,15 +356,17 @@ const rowActions = item => {
     <!-- Adjustment Dialog -->
     <StockAdjustmentDialog
       v-model="adjustmentDialog.isOpen.value"
+      :loading="movementActions.creating.value"
       :prefill="activeItem ? { catalog_item_id: activeItem.catalog_item_id, catalog_variant_id: activeItem.catalog_variant_id, location_id: activeItem.location_id } : null"
-      @submit="payload => { closeAdjustment(); refresh() }"
+      @submit="handleAdjustmentSubmit"
     />
 
     <!-- Transfer Dialog -->
     <StockTransferDialog
       v-model="transferDialog.isOpen.value"
+      :loading="movementActions.creating.value"
       :prefill="activeItem ? { catalog_item_id: activeItem.catalog_item_id, catalog_variant_id: activeItem.catalog_variant_id, location_id: activeItem.location_id } : null"
-      @submit="payload => { closeTransfer(); refresh() }"
+      @submit="handleTransferSubmit"
     />
   </div>
 </template>

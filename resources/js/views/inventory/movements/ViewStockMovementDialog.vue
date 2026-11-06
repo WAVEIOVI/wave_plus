@@ -180,7 +180,7 @@ const formatCurrency = (value, currency = 'USD') => {
             <WpInfoItem
               icon="tabler-user"
               :label="t('inventory.movements.columns.performed_by')"
-              :value="movement.performed_by?.name"
+              :value="movement.performer?.name || movement.performed_by?.name"
               hide-when-empty
             />
           </VCol>

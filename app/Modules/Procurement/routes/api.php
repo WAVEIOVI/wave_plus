@@ -55,4 +55,5 @@ Route::prefix('procurement')
 
         // Procurement Dashboard
         Route::get('dashboard', [ProcurementDashboardController::class, 'index']);
+        Route::get('suppliers/{supplierId}/scorecard', [ProcurementDashboardController::class, 'supplierScorecard']);
     });

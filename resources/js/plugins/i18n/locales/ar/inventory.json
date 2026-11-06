@@ -3,35 +3,35 @@
     "nav": {
       "title": "المخزون والمستودع",
       "dashboard": "لوحة تحكم المخزون",
-      "stock_items": "بنود المخزون",
+      "stock_items": "عناصر المخزون",
       "movements": "حركات المخزون",
       "lots": "دفعات المخزون",
       "sites": "مواقع المستودعات",
-      "locations": "مواقع الحاويات"
+      "locations": "المواقع"
     },
     "dashboard": {
       "title": "لوحة تحكم المخزون",
-      "subtitle": "نظرة شاملة موحدة على المخزون والمستودعات والحركات في جميع مواقعك.",
+      "subtitle": "عرض موحد للمخزون والمستودعات والحركات لجميع مواقع المخزون الخاصة بك.",
       "kpi": {
-        "stock_items": "بنود المخزون",
-        "stock_items_sub": "إجمالي خطوط المخزون المتتبعة",
+        "stock_items": "عناصر المخزون",
+        "stock_items_sub": "إجمالي بنود المخزون المتتبعة",
         "inventory_value": "قيمة المخزون",
         "inventory_value_sub": "القيمة الإجمالية المقدرة للمخزون",
-        "below_reorder": "تحت حد إعادة الطلب",
-        "below_reorder_sub": "بنود تحتاج إلى تجديد",
+        "below_reorder": "أقل من حد الطلب",
+        "below_reorder_sub": "العناصر التي تتطلب إعادة التوريد",
         "active_locations": "المواقع النشطة",
-        "active_locations_sub": "مواقع الحاويات في الخدمة",
+        "active_locations_sub": "المواقع قيد التشغيل",
         "active_sites": "مواقع المستودعات",
         "active_sites_sub": "المواقع الثابتة والمتنقلة النشطة"
       },
-      "condition_distribution": "توزيع الحالة",
-      "condition_distribution_sub": "بنود المخزون مجمعة حسب الحالة المادية",
+      "condition_distribution": "التوزيع حسب الحالة",
+      "condition_distribution_sub": "عناصر المخزون مجمعة حسب الحالة الفيزيائية",
       "warehouse_distribution": "المخزون حسب المستودع",
       "warehouse_distribution_sub": "توزيع قيمة المخزون عبر المواقع",
       "recent_movements": "الحركات الأخيرة",
-      "recent_movements_sub": "أحدث التعديلات والتحويلات",
+      "recent_movements_sub": "آخر تعديلات وتحويلات المخزون",
       "low_stock_alerts": "تنبيهات المخزون المنخفض",
-      "low_stock_alerts_sub": "البنود أدنى من عتبة إعادة الطلب",
+      "low_stock_alerts_sub": "العناصر أقل من حد إعادة الطلب",
       "no_movements": "لا توجد حركات حديثة",
       "no_alerts": "لا توجد تنبيهات مخزون منخفض",
       "view_all_movements": "عرض جميع الحركات",
@@ -39,25 +39,25 @@
     },
     "conditions": {
       "new": "جديد",
-      "good": "جيد",
-      "fair": "مقبول",
-      "poor": "ضعيف",
+      "used": "مستعمل",
+      "refurbished": "مجدد",
       "damaged": "تالف"
     },
     "stock_items": {
-      "title": "بنود المخزون",
-      "subtitle": "جميع خطوط المخزون المتتبعة عبر مواقع مستودعاتك.",
-      "add": "إضافة بند مخزون",
+      "title": "عناصر المخزون",
+      "subtitle": "جميع بنود المخزون المتتبعة عبر مواقع المستودعات الخاصة بك.",
+      "add": "إضافة عنصر مخزون",
       "columns": {
-        "item": "البند",
+        "item": "العنصر",
         "location": "الموقع",
-        "qty_on_hand": "الكمية المتاحة",
-        "qty_available": "الكمية المتوفرة",
-        "qty_reserved": "الكمية المحجوزة",
-        "unit_cost": "التكلفة الوحدوية",
+        "qty_on_hand": "في اليد",
+        "qty_available": "متاح",
+        "qty_reserved": "محجوز",
+        "unit_cost": "تكلفة الوحدة",
         "condition": "الحالة",
-        "status": "الوضع",
-        "updated_at": "آخر تحديث"
+        "status": "الحالة",
+        "updated_at": "آخر تحديث",
+        "total_value": "القيمة الإجمالية"
       },
       "statuses": {
         "active": "نشط",
@@ -66,113 +66,164 @@
         "quarantined": "في الحجر"
       },
       "filters": {
-        "status": "الوضع",
+        "status": "الحالة",
         "condition": "الحالة",
         "site": "الموقع",
-        "below_reorder": "تحت حد الطلب"
+        "below_reorder": "أقل من حد الطلب"
+      },
+      "actions": {
+        "view": "عرض التفاصيل",
+        "adjust": "تعديل المخزون",
+        "transfer": "نقل المخزون"
+      },
+      "sections": {
+        "basic_info": "تفاصيل العنصر",
+        "stock_levels": "مستويات المخزون",
+        "location": "الموقع",
+        "costing": "التكلفة"
       },
       "messages": {
-        "created": "تم إنشاء بند المخزون بنجاح.",
-        "updated": "تم تحديث بند المخزون بنجاح.",
-        "deleted": "تم حذف بند المخزون بنجاح.",
-        "create_failed": "فشل في إنشاء بند المخزون.",
-        "update_failed": "فشل في تحديث بند المخزون.",
-        "delete_failed": "فشل في حذف بند المخزون."
+        "created": "تم إنشاء عنصر المخزون بنجاح.",
+        "updated": "تم تحديث عنصر المخزون بنجاح.",
+        "deleted": "تم حذف عنصر المخزون بنجاح.",
+        "create_failed": "فشل إنشاء عنصر المخزون.",
+        "update_failed": "فشل تحديث عنصر المخزون.",
+        "delete_failed": "فشل حذف عنصر المخزون."
       },
-      "empty": "لم يتم العثور على بنود مخزون.",
-      "empty_sub": "أضف بندك الأول للبدء."
+      "empty": "لم يتم العثور على عناصر مخزون.",
+      "empty_sub": "أضف عنصر المخزون الأول للبدء."
     },
     "movements": {
       "title": "حركات المخزون",
-      "subtitle": "سجل تدقيق كامل لجميع التعديلات والتحويلات والاستلامات.",
+      "subtitle": "سجل تدقيق كامل لجميع تعديلات وتحويلات واستلامات المخزون.",
       "add_adjustment": "تعديل جديد",
       "add_transfer": "تحويل جديد",
-      "add_initial_load": "تحميل أولي",
+      "add_initial_load": "التحميل الأولي",
+      "submit_adjustment": "إرسال التعديل",
+      "submit_transfer": "إرسال التحويل",
+      "submit_initial_load": "إرسال التحميل الأولي",
+      "item_line": "بند العنصر {n}",
+      "add_item_line": "إضافة عنصر آخر",
+      "fields": {
+        "catalog_item_id": "معرف عنصر الكتالوج",
+        "catalog_variant_id": "معرف المتغير",
+        "location_id": "معرف الموقع",
+        "from_location_id": "من الموقع",
+        "to_location_id": "إلى الموقع",
+        "stock_lot_id": "دفعة المخزون (اختياري)",
+        "quantity": "الكمية",
+        "unit_cost": "تكلفة الوحدة",
+        "currency": "العملة",
+        "condition": "الحالة",
+        "adjustment_type": "نوع التعديل",
+        "reason": "السبب"
+      },
+      "adjustment_type": {
+        "plus": "زيادة (+)",
+        "minus": "نقصان (-)"
+      },
+      "actions": {
+        "view": "عرض التفاصيل"
+      },
       "columns": {
         "type": "النوع",
-        "item": "البند",
+        "item": "العنصر",
         "quantity": "الكمية",
         "from_location": "من",
         "to_location": "إلى",
         "reference": "المرجع",
+        "performed_by": "نفذ بواسطة",
+        "reason": "السبب",
         "created_at": "التاريخ"
       },
       "types": {
         "adjustment": "تعديل",
         "transfer": "تحويل",
-        "initial_load": "تحميل أولي",
-        "grn_receipt": "إيصال البضاعة",
+        "initial_load": "التحميل الأولي",
+        "grn_receipt": "استلام GRN",
         "consumption": "استهلاك",
-        "return": "إعادة"
+        "return": "إرجاع"
       },
       "filters": {
         "type": "نوع الحركة",
-        "item": "البند",
+        "item": "العنصر",
         "date_from": "من تاريخ",
         "date_to": "إلى تاريخ"
       },
       "messages": {
         "adjustment_created": "تم إنشاء تعديل المخزون بنجاح.",
-        "adjustment_failed": "فشل في إنشاء التعديل.",
+        "adjustment_failed": "فشل إنشاء تعديل المخزون.",
         "transfer_created": "تم إنشاء تحويل المخزون بنجاح.",
-        "transfer_failed": "فشل في إنشاء التحويل.",
+        "transfer_failed": "فشل إنشاء تحويل المخزون.",
         "initial_load_created": "تم تسجيل التحميل الأولي للمخزون بنجاح.",
-        "initial_load_failed": "فشل في تسجيل التحميل الأولي."
+        "initial_load_failed": "فشل تسجيل التحميل الأولي للمخزون.",
+        "quantity_positive": "يجب أن تكون الكمية أكبر من الصفر.",
+        "different_locations": "يجب أن تكون المواقع المصدر والوجهة مختلفة."
       },
-      "empty": "لا توجد حركات مسجلة.",
-      "empty_sub": "ستظهر حركات المخزون هنا عند التعديل أو التحويل."
+      "empty": "لم يتم تسجيل أي حركات.",
+      "empty_sub": "ستظهر حركات المخزون هنا عند تعديل أو نقل العناصر."
     },
     "lots": {
       "title": "دفعات المخزون",
-      "subtitle": "إدارة تتبع الدفعات والأرقام التسلسلية مع التحكم في تواريخ الانتهاء.",
+      "subtitle": "إدارة تتبع الدفعات والدفعات لعناصر الكتالوج مع التحكم في انتهاء الصلاحية.",
       "add": "دفعة جديدة",
       "columns": {
         "lot_number": "رقم الدفعة",
-        "catalog_item": "البند",
+        "catalog_item": "العنصر",
         "supplier": "المورد",
-        "manufacture_date": "تاريخ الصنع",
-        "expiry_date": "تاريخ الانتهاء",
-        "status": "الوضع"
+        "manufacture_date": "تاريخ التصنيع",
+        "expiry_date": "تاريخ انتهاء الصلاحية",
+        "status": "الحالة"
       },
       "statuses": {
         "active": "نشط",
         "expired": "منتهي الصلاحية",
         "quarantined": "في الحجر",
-        "recalled": "مسحوب"
+        "recalled": "تم استدعاؤه"
       },
       "filters": {
-        "status": "الوضع",
-        "item": "البند",
-        "expiry_within_days": "الانتهاء خلال"
+        "status": "الحالة",
+        "item": "العنصر",
+        "expiry_within_days": "ينتهي خلال"
+      },
+      "sections": {
+        "basic_info": "تفاصيل الدفعة",
+        "stock_items": "عناصر المخزون",
+        "serial_numbers": "الأرقام التسلسلية"
+      },
+      "actions": {
+        "view": "عرض التفاصيل",
+        "edit": "تحرير الدفعة",
+        "delete": "حذف الدفعة"
       },
       "messages": {
-        "created": "تم إنشاء الدفعة بنجاح.",
-        "updated": "تم تحديث الدفعة بنجاح.",
-        "deleted": "تم حذف الدفعة بنجاح.",
-        "create_failed": "فشل في إنشاء الدفعة.",
-        "update_failed": "فشل في تحديث الدفعة.",
-        "delete_failed": "فشل في حذف الدفعة."
+        "created": "تم إنشاء دفعة المخزون بنجاح.",
+        "updated": "تم تحديث دفعة المخزون بنجاح.",
+        "deleted": "تم حذف دفعة المخزون بنجاح.",
+        "create_failed": "فشل إنشاء دفعة المخزون.",
+        "update_failed": "فشل تحديث دفعة المخزون.",
+        "delete_failed": "فشل حذف دفعة المخزون."
       },
-      "empty": "لم يتم العثور على دفعات.",
-      "empty_sub": "أنشئ دفعتك الأولى لبدء التتبع."
+      "empty": "لم يتم العثور على دفعات مخزون.",
+      "empty_sub": "قم بإنشاء الدفعة الأولى لبدء تتبع المخزون بالدفعات."
     },
     "sites": {
       "title": "مواقع المستودعات",
-      "subtitle": "إدارة المواقع الثابتة والمتنقلة مع مناطقها وأماكن تخزينها.",
+      "subtitle": "إدارة مواقع المستودعات الثابتة والمتنقلة مع المناطق والمواقع.",
       "add": "موقع جديد",
       "kpi": {
-        "total_sites": "إجمالي المستودعات",
-        "fixed_sites": "المستودعات الثابتة",
-        "mobile_sites": "المستودعات المتنقلة",
+        "total_sites": "إجمالي المواقع",
+        "fixed_sites": "مستودعات ثابتة",
+        "mobile_sites": "شاحنات متنقلة",
         "zones_and_locations": "المناطق والمواقع"
       },
       "columns": {
         "code": "الرمز",
         "name": "الاسم",
         "type": "النوع",
-        "status": "الوضع",
+        "status": "الحالة",
         "zones": "المناطق",
-        "locations": "الأماكن",
+        "locations": "المواقع",
         "manager": "المدير"
       },
       "types": {
@@ -185,94 +236,104 @@
         "maintenance": "صيانة"
       },
       "filters": {
-        "status": "الوضع",
+        "status": "الحالة",
         "type": "نوع الموقع"
       },
+      "sections": {
+        "basic_info": "تفاصيل الموقع",
+        "zones": "المناطق",
+        "locations": "المواقع",
+        "mobile": "الناقل المتنقل"
+      },
       "mobile": {
-        "section_title": "المستودع المتنقل",
-        "vehicle": "المركبة المخصصة",
-        "mobile_status": "الوضع المتنقل",
+        "section_title": "مستودع متنقل",
+        "vehicle": "المركبة المعينة",
+        "mobile_status": "حالة المتنقل",
         "current_location": "الموقع الحالي",
         "location_notes": "ملاحظات الموقع",
-        "link_vehicle": "ربط مركبة",
-        "unlink_vehicle": "فك ارتباط المركبة",
-        "assignment_history": "سجل التخصيصات",
-        "no_vehicle": "لا توجد مركبة مرتبطة حالياً",
-        "assigned_from": "مخصصة منذ",
-        "assigned_until": "مخصصة حتى",
-        "is_current": "الحالية"
+        "link_vehicle": "ربط المركبة",
+        "unlink_vehicle": "إلغاء ربط المركبة",
+        "assignment_history": "سجل التعيين",
+        "no_vehicle": "لا توجد مركبة مرتبطة حاليًا",
+        "assigned_from": "معين من",
+        "assigned_until": "معين حتى",
+        "is_current": "الحالي"
       },
       "messages": {
         "created": "تم إنشاء موقع المستودع بنجاح.",
         "updated": "تم تحديث موقع المستودع بنجاح.",
         "deleted": "تم حذف موقع المستودع بنجاح.",
-        "load_failed": "فشل في تحميل بيانات الموقع.",
-        "create_failed": "فشل في إنشاء الموقع.",
-        "update_failed": "فشل في تحديث الموقع.",
-        "delete_failed": "فشل في حذف الموقع.",
+        "load_failed": "فشل تحميل موقع المستودع.",
+        "create_failed": "فشل إنشاء موقع المستودع.",
+        "update_failed": "فشل تحديث موقع المستودع.",
+        "delete_failed": "فشل حذف موقع المستودع.",
         "vehicle_linked": "تم ربط المركبة بالمستودع بنجاح.",
-        "vehicle_link_failed": "فشل في ربط المركبة.",
-        "vehicle_unlinked": "تم فك ارتباط المركبة بنجاح.",
-        "vehicle_unlink_failed": "فشل في فك ارتباط المركبة.",
-        "history_failed": "فشل في تحميل سجل التخصيصات."
+        "vehicle_link_failed": "فشل ربط المركبة.",
+        "vehicle_unlinked": "تم إلغاء ربط المركبة من المستودع بنجاح.",
+        "vehicle_unlink_failed": "فشل إلغاء ربط المركبة.",
+        "history_failed": "فشل تحميل سجل التعيين."
       },
       "empty": "لم يتم العثور على مواقع مستودعات.",
-      "empty_sub": "أضف موقعك الأول لبدء إدارة المخزون."
+      "empty_sub": "أضف موقع المستودع الأول للبدء في إدارة مواقع المخزون."
     },
     "zones": {
       "title": "مناطق المستودع",
+      "subtitle": "المناطق الوظيفية المحددة داخل هذه المنشأة للتخزين أو الإرسال أو التجهيز",
       "add": "منطقة جديدة",
       "columns": {
         "code": "الرمز",
         "name": "الاسم",
         "type": "النوع",
-        "status": "الوضع",
-        "locations": "الأماكن"
+        "status": "الحالة",
+        "locations": "المواقع"
       },
       "types": {
-        "storage": "تخزين",
-        "receiving": "استلام",
-        "dispatch": "شحن",
-        "quarantine": "حجر",
-        "staging": "تجهيز",
-        "returns": "مردودات"
+        "storage": "التخزين",
+        "receiving": "الاستلام",
+        "dispatch": "الإرسال",
+        "picking": "الانتقاء",
+        "packing": "التعبئة",
+        "shipping": "الشحن",
+        "quarantine": "الحجر",
+        "staging": "التجهيز",
+        "returns": "المرتجعات"
       },
       "messages": {
         "created": "تم إنشاء المنطقة بنجاح.",
         "updated": "تم تحديث المنطقة بنجاح.",
         "deleted": "تم حذف المنطقة بنجاح.",
-        "create_failed": "فشل في إنشاء المنطقة.",
-        "update_failed": "فشل في تحديث المنطقة.",
-        "delete_failed": "فشل في حذف المنطقة."
+        "create_failed": "فشل إنشاء المنطقة.",
+        "update_failed": "فشل تحديث المنطقة.",
+        "delete_failed": "فشل حذف المنطقة."
       }
     },
     "locations": {
-      "title": "أماكن الحاويات",
-      "add": "مكان جديد",
+      "title": "المواقع",
+      "add": "موقع جديد",
       "columns": {
         "code": "الرمز",
         "name": "الاسم",
         "type": "النوع",
         "is_active": "نشط",
-        "max_weight": "أقصى وزن (كغ)",
-        "max_volume": "أقصى حجم (م³)"
+        "max_weight": "الوزن الأقصى (كجم)",
+        "max_volume": "الحجم الأقصى (م³)"
       },
       "types": {
         "shelf": "رف",
-        "bin": "حاوية",
+        "bin": "صندوق",
         "pallet": "منصة",
         "floor": "أرضية",
         "mobile": "متنقل"
       },
       "messages": {
-        "created": "تم إنشاء المكان بنجاح.",
-        "updated": "تم تحديث المكان بنجاح.",
-        "deleted": "تم حذف المكان بنجاح.",
-        "toggled": "تم تغيير حالة المكان.",
-        "create_failed": "فشل في إنشاء المكان.",
-        "update_failed": "فشل في تحديث المكان.",
-        "delete_failed": "فشل في حذف المكان.",
-        "toggle_failed": "فشل في تغيير الحالة."
+        "created": "تم إنشاء الموقع بنجاح.",
+        "updated": "تم تحديث الموقع بنجاح.",
+        "deleted": "تم حذف الموقع بنجاح.",
+        "toggled": "تم تبديل حالة الموقع.",
+        "create_failed": "فشل إنشاء الموقع.",
+        "update_failed": "فشل تحديث الموقع.",
+        "delete_failed": "فشل حذف الموقع.",
+        "toggle_failed": "فشل تبديل حالة الموقع."
       }
     }
   }

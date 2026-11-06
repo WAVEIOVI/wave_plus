@@ -517,7 +517,7 @@ onMounted(async () => {
         <!-- ──── Mobile Header Bar ──── -->
         <div
           v-if="smAndDown"
-          class="d-flex align-center gap-3 mb-4"
+          class="d-flex align-center gap-3"
         >
           <div class="d-flex align-center gap-3">
             <VAvatar
@@ -910,6 +910,10 @@ onMounted(async () => {
   @media (max-width: 960px) {
     scroll-margin-block-start: 16px;
   }
+}
+
+#section-overview :deep(.v-card.mb-6) {
+  margin-block-end: 0 !important;
 }
 
 /* ── Detail Row ──────────────────────────────────────────────────────── */

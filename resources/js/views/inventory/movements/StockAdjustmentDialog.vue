@@ -15,9 +15,8 @@ const { t } = useI18n()
 
 const conditionOptions = [
   { title: t('inventory.conditions.new'), value: 'new' },
-  { title: t('inventory.conditions.good'), value: 'good' },
-  { title: t('inventory.conditions.fair'), value: 'fair' },
-  { title: t('inventory.conditions.poor'), value: 'poor' },
+  { title: t('inventory.conditions.used'), value: 'used' },
+  { title: t('inventory.conditions.refurbished'), value: 'refurbished' },
   { title: t('inventory.conditions.damaged'), value: 'damaged' },
 ]
 

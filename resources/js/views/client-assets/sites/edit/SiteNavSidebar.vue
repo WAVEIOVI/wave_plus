@@ -23,6 +23,8 @@ const emit = defineEmits(['update:modelValue', 'save', 'delete'])
     :title="form.name || site?.site_code || ''"
     :subtitle="site?.site_code || ''"
     :id-prefix="idPrefix"
+    mobile-observer-root-margin="-130px 0px -60% 0px"
+    :mobile-observer-threshold="0"
     @update:model-value="emit('update:modelValue', $event)"
   >
     <template #avatar>

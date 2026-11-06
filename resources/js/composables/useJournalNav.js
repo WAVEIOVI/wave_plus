@@ -253,7 +253,7 @@ export function useJournalNav(sectionsOrGroups, options = {}) {
     observer = new IntersectionObserver(entries => {
       if (isManualScrolling.value) return
 
-      // Find the first intersecting entry
+      // Only consider sections crossing the active scroll band.
       const intersecting = entries.filter(e => e.isIntersecting)
       if (!intersecting.length) return
 
@@ -282,8 +282,8 @@ export function useJournalNav(sectionsOrGroups, options = {}) {
       }
     }, {
       root: containerEl || null,
-      threshold: options.threshold ?? 0.2,
-      rootMargin: options.rootMargin || '-80px 0px -40% 0px',
+      threshold: unref(options.threshold) ?? 0.2,
+      rootMargin: unref(options.rootMargin) || '-80px 0px -40% 0px',
     })
 
     // Observe each section element found in DOM

@@ -6,6 +6,8 @@ import {
   useEquipmentConstants,
 } from '@/composables/client-assets/equipment/useEquipmentConstants'
 import {
+  resolveCriticalityVariant,
+  resolveLifecycleVariant,
   useEquipmentHelpers,
 } from '@/composables/client-assets/equipment/useEquipmentHelpers'
 import { localizedValue } from '@/composables/useLocaleField'
@@ -24,8 +26,6 @@ const {
   lifecycleLabel,
   complianceLabel,
   criticalityLabel,
-  resolveLifecycleVariant,
-  resolveCriticalityVariant,
 } = useEquipmentHelpers()
 
 const nextInspectionDateText = computed(() => {

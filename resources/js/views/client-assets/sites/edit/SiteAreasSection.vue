@@ -2,6 +2,7 @@
 import { WpSectionCard } from '@/components/shared'
 import { localizedValue } from '@/composables/useLocaleField'
 import { resolveAreaTypeIcon } from '@/composables/client-assets/sites/useSiteConstants'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDisplay } from 'vuetify'
 
@@ -28,7 +29,12 @@ const emit = defineEmits([
 ])
 
 const { t } = useI18n()
-const { smAndDown } = useDisplay()
+const { smAndDown, width } = useDisplay()
+
+// Very small phones (320–425 px): hide the collapse/expand-all button,
+// and use the cards layout without showing the tree/cards view-mode toggle.
+const isExtraSmallScreen = computed(() => width.value <= 425)
+const effectiveAreasViewMode = computed(() => isExtraSmallScreen.value ? 'cards' : props.areasViewMode)
 </script>
 
 <template>
@@ -37,6 +43,7 @@ const { smAndDown } = useDisplay()
     class="journal-section mb-6"
   >
     <WpSectionCard
+      class="areas-section-card"
       :title="`${$t('Zones & Building Areas')} (${siteAreasFlat.length})`"
       :subtitle="$t('Hierarchical zones, levels, wings, and rooms for asset placement')"
       icon="tabler-hierarchy"
@@ -45,7 +52,8 @@ const { smAndDown } = useDisplay()
       <template #actions>
         <!-- View Mode Toggle -->
         <VBtnToggle
-          :model-value="areasViewMode"
+          v-if="!isExtraSmallScreen"
+          :model-value="effectiveAreasViewMode"
           mandatory
           density="compact"
           color="primary"
@@ -64,9 +72,9 @@ const { smAndDown } = useDisplay()
           />
         </VBtnToggle>
 
-        <!-- Collapse / Expand All (Icon button on mobile, text button on desktop) -->
+        <!-- Collapse / Expand All (icon button on mobile 426–600px, text button on desktop; hidden ≤425px) -->
         <IconBtn
-          v-if="areasViewMode === 'tree' && siteAreasFlat.length > 0 && smAndDown"
+          v-if="effectiveAreasViewMode === 'tree' && siteAreasFlat.length > 0 && smAndDown && !isExtraSmallScreen"
           size="small"
           variant="tonal"
           color="secondary"
@@ -80,7 +88,7 @@ const { smAndDown } = useDisplay()
         </IconBtn>
 
         <VBtn
-          v-else-if="areasViewMode === 'tree' && siteAreasFlat.length > 0"
+          v-else-if="effectiveAreasViewMode === 'tree' && siteAreasFlat.length > 0 && !isExtraSmallScreen"
           size="small"
           variant="tonal"
           color="secondary"
@@ -104,7 +112,7 @@ const { smAndDown } = useDisplay()
 
       <!-- Tree View -->
       <div
-        v-if="areasViewMode === 'tree'"
+        v-if="effectiveAreasViewMode === 'tree'"
         class="tree-view-wrapper"
       >
         <div
@@ -112,8 +120,9 @@ const { smAndDown } = useDisplay()
           class="tree-container"
         >
           <div class="site-root-node pa-3 mb-3 d-flex align-center justify-space-between rounded-lg">
-            <div class="d-flex align-center gap-3">
+            <div class="site-root-content d-flex align-center gap-3">
               <VAvatar
+                class="site-root-avatar"
                 size="34"
                 color="primary"
                 variant="tonal"
@@ -124,14 +133,15 @@ const { smAndDown } = useDisplay()
                   size="18"
                 />
               </VAvatar>
-              <div>
+              <div class="site-root-details">
                 <span class="text-caption text-disabled text-uppercase">{{ $t('Facility Root Location') }}</span>
-                <h6 class="text-subtitle-2 font-weight-bold mb-0">
+                <h6 class="site-root-title text-subtitle-2 font-weight-bold mb-0">
                   {{ siteName || site?.site_code }}
                 </h6>
               </div>
             </div>
             <VChip
+              class="site-root-count"
               size="small"
               color="primary"
               variant="tonal"
@@ -145,16 +155,17 @@ const { smAndDown } = useDisplay()
               v-for="area in flattenedHierarchy"
               :key="area.id"
               class="area-tree-row"
-              :style="{ paddingInlineStart: `${area.depth * 20}px` }"
+              :style="{ '--area-depth': area.depth }"
             >
               <VCard
                 variant="outlined"
                 class="pa-3 area-tree-card bg-surface"
               >
-                <div class="d-flex justify-space-between align-center flex-wrap gap-2">
-                  <div class="d-flex align-center gap-2 overflow-hidden grow">
+                <div class="area-tree-main d-flex justify-space-between align-center flex-wrap gap-2">
+                  <div class="area-tree-content d-flex align-center gap-2 overflow-hidden grow">
                     <IconBtn
                       v-if="area.hasChildren"
+                      class="area-tree-expand"
                       size="x-small"
                       variant="text"
                       @click="emit('toggleExpand', area.id)"
@@ -167,6 +178,7 @@ const { smAndDown } = useDisplay()
                     />
 
                     <VAvatar
+                      class="area-tree-avatar"
                       size="32"
                       variant="tonal"
                       color="info"
@@ -178,9 +190,9 @@ const { smAndDown } = useDisplay()
                       />
                     </VAvatar>
 
-                    <div class="overflow-hidden">
-                      <div class="d-flex align-center gap-2 flex-wrap">
-                        <h6 class="text-subtitle-2 font-weight-bold mb-0 text-truncate">
+                    <div class="area-tree-details overflow-hidden">
+                      <div class="area-tree-metadata d-flex align-center gap-2 flex-wrap">
+                        <h6 class="area-tree-title text-subtitle-2 font-weight-bold mb-0 text-truncate">
                           {{ localizedValue(area.name) }}
                         </h6>
                         <VChip
@@ -227,7 +239,7 @@ const { smAndDown } = useDisplay()
                     </div>
                   </div>
 
-                  <div class="d-flex align-center gap-1">
+                  <div class="area-tree-actions d-flex align-center gap-1">
                     <IconBtn
                       size="small"
                       color="primary"
@@ -341,11 +353,12 @@ const { smAndDown } = useDisplay()
             v-for="area in currentCardsAreas"
             :key="area.id"
             variant="outlined"
-            class="pa-4 rounded-lg d-flex flex-column justify-space-between bg-surface"
+            class="area-card pa-4 rounded-lg d-flex flex-column justify-space-between bg-surface"
           >
-            <div>
-              <div class="d-flex align-center justify-space-between mb-2">
+            <div class="area-card-body">
+              <div class="area-card-header d-flex align-center justify-space-between mb-2">
                 <VAvatar
+                  class="area-card-avatar"
                   size="36"
                   variant="tonal"
                   color="info"
@@ -375,7 +388,7 @@ const { smAndDown } = useDisplay()
                 </div>
               </div>
 
-              <h6 class="text-subtitle-1 font-weight-bold mb-1 text-truncate">
+              <h6 class="area-card-title text-subtitle-1 font-weight-bold mb-1 text-truncate">
                 {{ localizedValue(area.name) }}
               </h6>
               <p class="text-caption text-medium-emphasis mb-3 line-clamp-2">
@@ -417,7 +430,7 @@ const { smAndDown } = useDisplay()
               </div>
             </div>
 
-            <div class="d-flex align-center justify-space-between pt-2 border-t mt-auto">
+            <div class="area-card-actions d-flex align-center justify-space-between pt-2 border-t mt-auto">
               <div class="d-flex gap-1">
                 <IconBtn
                   size="small"
@@ -517,10 +530,15 @@ const { smAndDown } = useDisplay()
   }
 }
 
+.area-tree-row {
+  min-inline-size: 0;
+  padding-inline-start: calc(var(--area-depth, 0) * 20px);
+}
+
 .selection-grid {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
 }
 
 .line-clamp-2 {
@@ -528,5 +546,158 @@ const { smAndDown } = useDisplay()
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+@media (max-width: 425px) {
+  .site-root-node {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .site-root-content {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 0.25rem !important;
+    min-inline-size: 0;
+  }
+
+  .site-root-avatar,
+  .area-tree-avatar,
+  .area-card-avatar {
+    display: none;
+  }
+
+  .site-root-details,
+  .area-tree-details {
+    min-inline-size: 0;
+    inline-size: 100%;
+  }
+
+  .site-root-title {
+    overflow-wrap: anywhere;
+  }
+
+  .area-tree-row {
+    padding-inline-start: calc(min(var(--area-depth, 0), 3) * 8px);
+  }
+
+  .area-tree-card {
+    padding: 0.625rem !important;
+  }
+
+  .area-tree-main {
+    align-items: stretch !important;
+    flex-direction: column;
+  }
+
+  .area-tree-actions {
+    justify-content: flex-end;
+    order: 1;
+    inline-size: 100%;
+  }
+
+  .area-tree-content {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start !important;
+    inline-size: 100%;
+  }
+
+  .tree-leaf-spacer {
+    inline-size: 24px;
+  }
+
+  .area-tree-details {
+    grid-column: 2;
+  }
+
+  .area-tree-metadata {
+    align-items: flex-start !important;
+  }
+
+  .area-tree-title {
+    flex: 0 0 100%;
+    max-inline-size: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .area-tree-details > span {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .area-card {
+    align-items: stretch;
+    padding: 0.75rem !important;
+  }
+
+  .area-card-header {
+    justify-content: flex-start !important;
+  }
+
+  .area-card-title {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .area-card-actions {
+    justify-content: space-between;
+    margin-block-start: 0.5rem;
+    padding-block: 0.5rem 0 !important;
+  }
+
+  .areas-section-card {
+    :deep(.wp-section-card__header) {
+      display: flex !important;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 0.5rem 0.75rem;
+      padding: 0.75rem !important;
+    }
+
+    :deep(.wp-section-card__header .v-card-item__prepend) {
+      flex: 0 0 auto;
+      padding-inline-end: 0;
+    }
+
+    :deep(.wp-section-card__header .v-card-item__content) {
+      flex: 1 1 0%;
+      min-inline-size: 0;
+    }
+
+    :deep(.wp-section-card__header .v-card-title) {
+      font-size: 0.9375rem !important;
+      line-height: 1.35;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    :deep(.wp-section-card__header .v-card-subtitle) {
+      font-size: 0.75rem !important;
+      line-height: 1.3;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    :deep(.wp-section-card__header .v-card-item__append) {
+      flex: 0 0 100%;
+      inline-size: 100%;
+      margin: 0 !important;
+      padding-block-start: 0.5rem;
+      padding-inline-start: 0 !important;
+      justify-content: flex-start;
+    }
+
+    :deep(.wp-section-card__actions) {
+      inline-size: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+  }
 }
 </style>

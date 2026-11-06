@@ -47,8 +47,19 @@ class WarehouseSiteController extends Controller
             $query->where('site_type', $siteType);
         }
 
+        // ── Sorting ────────────────────────────────────────────────
+        $sortBy = $request->input('sort_by', $request->input('sortBy', 'code'));
+        $orderBy = $request->input('sort_order', $request->input('orderBy', 'asc'));
+
+        $allowedSorts = ['code', 'name', 'site_type', 'status', 'created_at', 'updated_at'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $orderBy === 'desc' ? 'desc' : 'asc');
+        } else {
+            $query->orderBy('code');
+        }
+
         return WarehouseSiteResource::collection(
-            $query->orderBy('code')->paginate($this->queryService->cappedPerPage($request))
+            $query->paginate($this->queryService->cappedPerPage($request))
         );
     }
 

@@ -32,6 +32,7 @@ const props = defineProps({
   error: { type: String, default: '' },
   readOnly: { type: Boolean, default: false },
   canAdd: { type: Boolean, default: true },
+  showAddButton: { type: Boolean, default: true },
   canEdit: { type: Boolean, default: true },
   canReplace: { type: Boolean, default: undefined },
   canDelete: { type: Boolean, default: true },
@@ -339,7 +340,7 @@ defineExpose({
         </IconBtn>
 
         <VBtn
-          v-if="canMutate"
+          v-if="canMutate && showAddButton"
           color="primary"
           size="small"
           prepend-icon="tabler-plus"
@@ -466,7 +467,7 @@ defineExpose({
         {{ emptySubtitle || emptyDescription || $t('documents.empty_subtitle', 'Upload PDF agreements, certificates, inspection records, or scan pages directly with your camera.') }}
       </p>
       <VBtn
-        v-if="canMutate"
+        v-if="canMutate && showAddButton"
         color="primary"
         variant="tonal"
         prepend-icon="tabler-cloud-upload"

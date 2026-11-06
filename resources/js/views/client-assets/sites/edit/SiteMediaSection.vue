@@ -103,6 +103,7 @@ defineExpose({
           icon="tabler-camera"
           :loading="uploadingPhoto"
           :read-only="readOnly"
+          :show-upload-button="false"
           show-title-input
           :empty-title="$t('No facility photos uploaded yet')"
           @upload="payload => emit('uploadPhoto', payload)"
@@ -123,6 +124,7 @@ defineExpose({
           icon="tabler-file-text"
           compact-header
           :add-label="$t('Scan / Upload Document')"
+          :show-add-button="false"
           preset="compact"
           :document-types="documentCategories"
           :loading="uploadingDoc"
