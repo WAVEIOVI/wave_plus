@@ -43,8 +43,8 @@ const visibleItems = computed(() => (props.items || []).filter(item => {
         size="18"
         class="text-medium-emphasis flex-shrink-0"
       />
-      <div class="min-w-0">
-        <div class="text-caption text-medium-emphasis text-truncate">
+      <div class="min-w-0 wp-doc-meta-bar__content">
+        <div class="text-caption text-medium-emphasis wp-doc-meta-bar__label">
           {{ item.label }}
         </div>
         <div class="text-body-2 font-weight-medium wp-doc-meta-bar__value">
@@ -73,13 +73,26 @@ const visibleItems = computed(() => (props.items || []).filter(item => {
 
 .wp-doc-meta-bar__item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   min-inline-size: 0;
+  overflow: hidden;
+}
+
+.wp-doc-meta-bar__content {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.wp-doc-meta-bar__label {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .wp-doc-meta-bar__value {
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 @media (max-width: 599px) {

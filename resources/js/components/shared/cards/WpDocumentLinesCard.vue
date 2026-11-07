@@ -695,7 +695,7 @@ const touchHeight = computed(() => (smAndDown.value ? 44 : undefined))
                   />
                 </VAvatar>
                 <div class="min-w-0">
-                  <div class="text-body-2 font-weight-bold text-truncate">
+                  <div class="text-body-2 font-weight-bold wp-doc-lines-card__mobile-title">
                     {{ itemLabel(line) || t('wp.cards.doc_lines.unnamed_item') }}
                   </div>
                   <div
@@ -943,10 +943,17 @@ const touchHeight = computed(() => (smAndDown.value ? 44 : undefined))
 }
 
 .wp-doc-lines-card__mobile-item {
+  min-inline-size: 0;
+  overflow: hidden;
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 8px;
   padding: 10px;
   background: rgba(var(--v-theme-surface), 0.6);
+}
+
+.wp-doc-lines-card__mobile-title {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .wp-doc-lines-card__tap {

@@ -10,6 +10,7 @@ use App\Modules\Procurement\Requests\UpdateGoodsReceiptNoteRequest;
 use App\Modules\Procurement\Resources\GoodsReceiptNoteResource;
 use App\Modules\Procurement\Services\GrnWriteService;
 use App\Modules\Procurement\Services\ProcurementQueryService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -50,6 +51,22 @@ class GoodsReceiptNoteController extends Controller
         $perPage = $this->queryService->cappedPerPage($request);
 
         return GoodsReceiptNoteResource::collection($query->latest()->paginate($perPage));
+    }
+
+    public function meta(): JsonResponse
+    {
+        $this->authorize('viewAny', GoodsReceiptNote::class);
+
+        $base = GoodsReceiptNote::query();
+
+        return response()->json([
+            'data' => [
+                'total_grns' => (clone $base)->count(),
+                'under_qc' => (clone $base)->whereIn('status', ['draft', 'under_qc'])->count(),
+                'confirmed' => (clone $base)->whereIn('status', ['confirmed', 'stocked'])->count(),
+                'discrepancies' => (clone $base)->whereIn('status', ['partially_rejected', 'fully_rejected'])->count(),
+            ],
+        ]);
     }
 
     public function show(GoodsReceiptNote $goodsReceiptNote)

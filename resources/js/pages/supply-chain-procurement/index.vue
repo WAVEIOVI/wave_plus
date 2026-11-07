@@ -4,6 +4,7 @@ import ProcurementDashboard from '@/views/supply-chain-procurement/dashboard/Pro
 definePage({
   name: 'supply-chain-procurement',
   meta: {
+    module: 'supply-chain-procurement',
     action: 'read',
     subject: 'SupplyChainProcurement',
   },

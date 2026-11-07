@@ -45,6 +45,7 @@ Route::prefix('procurement')
         Route::delete('pos/{purchaseOrder}', [PurchaseOrderController::class, 'destroy']);
 
         // Goods Receipt Notes (GRN)
+        Route::get('grns/meta', [GoodsReceiptNoteController::class, 'meta']);
         Route::get('grns', [GoodsReceiptNoteController::class, 'index']);
         Route::post('grns', [GoodsReceiptNoteController::class, 'store']);
         Route::get('grns/{goodsReceiptNote}', [GoodsReceiptNoteController::class, 'show']);

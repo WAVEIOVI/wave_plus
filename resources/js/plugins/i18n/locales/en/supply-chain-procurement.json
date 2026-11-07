@@ -84,7 +84,16 @@
       "name": "Name",
       "sku": "SKU",
       "description": "Description",
-      "unit_cost": "Unit Cost"
+      "unit_cost": "Unit Cost",
+      "days": "Days",
+      "subtotal_ht": "Subtotal HT",
+      "tva": "VAT",
+      "total_ttc": "Total TTC",
+      "total_ht": "Total HT",
+      "qty": "Qty",
+      "quantity": "Quantity",
+      "unit_price": "Unit Price",
+      "actions": "Actions"
     },
     "action": {
       "save": "Save",
@@ -110,7 +119,9 @@
       "new": "New",
       "back_to_list": "Back to List",
       "apply_filters": "Apply Filters",
-      "reset_filters": "Reset Filters"
+      "reset_filters": "Reset Filters",
+      "close": "Close",
+      "open": "Open"
     },
     "grn": {
       "title": "Goods Received Note",
@@ -169,7 +180,15 @@
         "unit_cost_ht": "Unit Cost (HT)",
         "qc_status": "QC Status",
         "no_zone": "No zone",
-        "no_path": "No path"
+        "no_path": "No path",
+        "source_po": "Source Purchase Order",
+        "select_po": "Select Purchase Order",
+        "expected_delivery_date": "Expected Delivery Date",
+        "on_time": "On Time",
+        "late": "Late",
+        "days_late": "Days Late",
+        "warehouse_zone": "Warehouse Zone",
+        "apply_location_all": "Apply location to all lines"
       },
       "action": {
         "receive_qc": "Receive & QC",
@@ -181,7 +200,9 @@
         "apply_batch": "Apply to All Lines",
         "done": "Save Line",
         "close": "Close",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "download_delivery_note": "Download BL",
+        "apply_all": "Apply to All"
       },
       "modal": {
         "title_receive_qc": "Receive & QC Line",
@@ -244,18 +265,25 @@
         "delivery_performance": "Delivery Performance",
         "qc_summary": "QC Summary",
         "notes_remarks": "Notes & QC Remarks",
-        "rejected_goods": "Rejected Goods"
+        "rejected_goods": "Rejected Goods",
+        "rejected_summary": "Quality Control & Rejected Items",
+        "logistics": "Logistics & Delivery"
       },
       "empty": {
         "no_lines": "No Lines",
         "select_po": "Select a Purchase Order to populate lines.",
-        "no_rejected": "No rejected items"
+        "no_rejected": "No rejected items",
+        "no_receivable_po": "No receivable purchase orders found",
+        "zero_rejected": "Zero Rejected Items",
+        "zero_rejected_desc": "All received items passed quality control inspection successfully"
       },
       "alerts": {
         "locked": "This GRN is stocked and locked.",
         "qc_review": "This GRN is currently {status}. Review QC findings before transitioning.",
         "missing_location": "Cannot confirm GRN: Some lines are missing a storage location.",
-        "required_fields": "PO, Supplier and at least one line are required."
+        "required_fields": "PO, Supplier and at least one line are required.",
+        "rejected_items_notice": "Items rejected during inspection require supplier return or debit note creation",
+        "non_stockable": "Service and non-stockable items do not require physical warehouse location assignment"
       },
       "match": {
         "title": "3-Way Match",
@@ -272,7 +300,18 @@
         "error_status": "Failed to update status",
         "error_load": "Failed to load GRN details",
         "error_po_populate": "Error auto-populating from PO",
-        "error_generic": "An error occurred"
+        "error_generic": "An error occurred",
+        "po_fully_received": "Purchase Order is already fully received",
+        "storage_required": "Storage location is required for confirmed receipt lines"
+      },
+      "badges": {
+        "non_stockable": "Non-Stockable",
+        "over_received": "Over Received",
+        "under_received": "Under Received"
+      },
+      "batch": {
+        "subtitle": "Batch receive all remaining items and assign storage",
+        "global_routing": "Global Storage Routing"
       }
     },
     "ipr": {
@@ -305,7 +344,11 @@
         "justification_placeholder": "Explain why these items or services are needed...",
         "qty_requested": "Qty Requested",
         "estimated_unit_cost": "Estimated Unit Cost",
-        "estimated_total": "Estimated Total"
+        "estimated_total": "Estimated Total",
+        "current_stock": "Current Stock",
+        "suggested_supplier": "Suggested Supplier",
+        "rejection_reason": "Rejection Reason",
+        "approval_note": "Approval Note"
       },
       "trigger_sources": {
         "manual_user": "Manual Request",
@@ -323,7 +366,8 @@
         "submit_approval": "Submit for Approval",
         "approve": "Approve",
         "reject": "Reject",
-        "convert": "Convert to RFQ / PO"
+        "convert": "Convert to RFQ / PO",
+        "add_ad_hoc": "Add Ad-Hoc Item"
       },
       "convert": {
         "title": "Convert Purchase Request",
@@ -345,7 +389,13 @@
         "error_generic": "An error occurred",
         "error_requested_by": "Requested By is required",
         "error_no_lines": "At least one line is required.",
-        "error_variant_load": "Failed to load item variants."
+        "error_variant_load": "Failed to load item variants.",
+        "error_load": "Failed to load purchase requisition"
+      },
+      "view_title": "Purchase Requisition Details",
+      "validation": {
+        "requested_by_required": "Requested by is required",
+        "lines_required": "At least one requisition line is required"
       }
     },
     "rfq": {
@@ -379,7 +429,19 @@
         "target_price_ht": "Target Unit Price (HT)",
         "target_total": "Target Total (HT)",
         "awarded_supplier": "Awarded Supplier",
-        "terms_and_conditions": "Terms & Conditions"
+        "terms_and_conditions": "Terms & Conditions",
+        "required_certifications": "Required Certifications",
+        "source_iprs": "Source Requisitions",
+        "payment_terms_offered": "Offered Payment Terms",
+        "can_deliver_by": "Promised Delivery Date",
+        "validity_until": "Quote Validity Until",
+        "offered_qty": "Offered Quantity",
+        "offered_unit_price_ht": "Offered Unit Price HT",
+        "vs_target": "vs Target Price",
+        "offered_lead_time_days": "Lead Time (days)",
+        "certifications_confirmed": "Certifications Confirmed",
+        "supplier_notes": "Supplier Remarks",
+        "evaluation_score": "Score"
       },
       "weights": {
         "price": "Price Weight",
@@ -389,7 +451,10 @@
         "payment": "Payment Terms Weight"
       },
       "validation": {
-        "weights_sum_100": "Evaluation criteria weights must sum to 100%."
+        "weights_sum_100": "Evaluation criteria weights must sum to 100%.",
+        "title_required": "RFQ title is required",
+        "deadline_required": "Submission deadline is required",
+        "lines_required": "At least one RFQ line is required"
       },
       "sections": {
         "overview": "RFQ Overview & Deadlines",
@@ -397,14 +462,25 @@
         "lines": "Requested Items",
         "responses": "Quotes Received",
         "comparison": "Supplier Responses & Bid Comparison",
-        "evaluation_criteria": "Evaluation Criteria Weights"
+        "evaluation_criteria": "Evaluation Criteria Weights",
+        "suppliers": "Invited Suppliers & Responses"
       },
       "actions": {
         "send_to_suppliers": "Send to Suppliers",
         "record_bid": "Record Supplier Bid",
         "start_evaluation": "Start Evaluation",
         "award_decision": "Award Decision",
-        "award_supplier": "Award Supplier"
+        "award_supplier": "Award Supplier",
+        "import_ipr": "Import from IPR",
+        "send_suppliers": "Send to Suppliers",
+        "edit_response": "Edit Response",
+        "record_response": "Record Response",
+        "send": "Send Broadcast",
+        "view_po": "View Purchase Order",
+        "convert_to_po": "Generate Purchase Order",
+        "revoke_award": "Revoke Award",
+        "invite_suppliers": "Invite Suppliers",
+        "confirm_invite": "Confirm Invitations"
       },
       "response_dialog": {
         "title": "Record Supplier Quotation",
@@ -420,7 +496,11 @@
       "empty": {
         "no_suppliers": "No suppliers invited yet",
         "no_responses": "No supplier bids recorded yet",
-        "no_responses_desc": "Record incoming supplier quotes to compare prices and award the RFQ."
+        "no_responses_desc": "Record incoming supplier quotes to compare prices and award the RFQ.",
+        "no_responses_title": "No Responses Submitted Yet",
+        "no_responses_subtitle": "Supplier quotations will appear here for side-by-side technical and commercial comparison once submitted",
+        "no_suppliers_title": "No Suppliers Invited Yet",
+        "no_suppliers_subtitle": "Invite registered suppliers or add qualified vendors from Business Partners"
       },
       "snackbar": {
         "created_success": "RFQ created successfully",
@@ -431,8 +511,53 @@
         "error_save": "Failed to save RFQ",
         "error_delete": "Failed to delete RFQ",
         "error_status": "Failed to update status",
-        "error_generic": "An error occurred"
-      }
+        "error_generic": "An error occurred",
+        "error_load": "Failed to load request for quotation",
+        "imported_ipr": "Requisition lines imported into RFQ",
+        "response_updated": "Supplier quotation updated",
+        "response_recorded": "Supplier quotation recorded",
+        "error_response": "Failed to save quotation response",
+        "broadcast_success": "RFQ broadcast dispatched successfully"
+      },
+      "alerts": {
+        "weights_sum_100": "Evaluation criteria weights must sum up to exactly 100%"
+      },
+      "broadcast": {
+        "title": "Broadcast RFQ to Suppliers",
+        "subtitle": "Send official RFQ invitation and specification package via email",
+        "no_suppliers_warning": "No invited suppliers selected for broadcast",
+        "confirm_message": "Are you sure you want to broadcast this RFQ to all selected suppliers?",
+        "status_pending": "Pending",
+        "status_sending": "Sending...",
+        "status_sent": "Dispatched",
+        "status_failed": "Failed"
+      },
+      "comparison": {
+        "on_time": "On Time",
+        "early": "Early",
+        "late": "Late",
+        "awarded_to": "Awarded to",
+        "awarded_on": "Awarded on",
+        "approved_by": "Awarded by",
+        "criteria_items": "Evaluation Matrix",
+        "submitted": "Submitted",
+        "awarded_badge": "Awarded",
+        "score_breakdown": "Evaluation Score Breakdown",
+        "confirm_award_message": "Are you sure you want to award this contract to the selected supplier? This will update the RFQ status to Awarded."
+      },
+      "suppliers": {
+        "code": "Supplier Code",
+        "legal_name": "Company Name",
+        "category": "Category",
+        "lead_time": "Standard Lead Time",
+        "supplier_status": "Partner Status",
+        "inv_status": "Invitation Status",
+        "sent_at": "Dispatched At",
+        "viewed_at": "Acknowledged At",
+        "invite_subtitle": "Select approved suppliers to receive this tender specification",
+        "search_placeholder": "Search suppliers by name, code or tax ID..."
+      },
+      "view_title": "Request for Quotation Details"
     },
     "po": {
       "title": "Purchase Order",
@@ -460,11 +585,17 @@
         "qty_ordered": "Qty Ordered",
         "qty_received": "Qty Received",
         "unit_price_ht": "Unit Price (HT)",
-        "receiving_progress": "Receiving Progress"
+        "receiving_progress": "Receiving Progress",
+        "supplier_contact": "Supplier Contact",
+        "supplier_address": "Supplier Address",
+        "sent_at": "Sent to Supplier",
+        "acknowledged_at": "Acknowledged by Supplier",
+        "goods_receipts": "Goods Receipts"
       },
       "sections": {
         "overview": "Supplier & Delivery Site",
-        "lines": "Order Lines"
+        "lines": "Order Lines",
+        "match": "3-Way Match & Reconciliation"
       },
       "actions": {
         "mark_sent": "Send to Supplier",
@@ -472,7 +603,8 @@
         "mark_in_delivery": "Mark In Delivery",
         "create_grn": "Create Goods Receipt (GRN)",
         "close_po": "Close Order",
-        "back_to_po": "Back to Purchase Order"
+        "back_to_po": "Back to Purchase Order",
+        "import_source": "Import from IPR / RFQ"
       },
       "match": {
         "variances": "Lines with Variance",
@@ -481,7 +613,16 @@
         "status_pending_receipt": "Pending Receipt",
         "status_over_received": "Over Received",
         "status_under_received": "Under Received",
-        "status_variance": "Price / QC Variance"
+        "status_variance": "Price / QC Variance",
+        "supplier_invoice": "Supplier Invoice",
+        "not_linked": "Not linked",
+        "invoice_pending": "Invoice pending or awaiting receipt linkage",
+        "policy_title": "3-Way Match Policy & Tolerances",
+        "qty_tolerance": "Quantity Tolerance",
+        "price_tolerance": "Price Tolerance",
+        "rejections_policy": "Rejected Quantities Policy",
+        "rejections_flag": "Strict — Rejected items are flagged as discrepancies until credit note or replacement is confirmed",
+        "pending_receipt_hint": "Receipts are still pending for this order. You can register goods receipts directly from here."
       },
       "snackbar": {
         "created_success": "PO created successfully",
@@ -491,7 +632,9 @@
         "error_save": "Failed to save PO",
         "error_delete": "Failed to delete PO",
         "error_status": "Failed to update status",
-        "error_generic": "An error occurred"
+        "error_generic": "An error occurred",
+        "error_load": "Failed to load purchase order",
+        "imported_source": "Source lines successfully imported"
       }
     },
     "dashboard": {
@@ -513,7 +656,15 @@
         "pending_grns": "Pending GRN Receipts",
         "pending_grns_desc": "Awaiting QC or confirmation",
         "committed_spend": "Total Committed Spend",
+        "open_pos_value": "Open POs",
         "this_month": "This month"
+      },
+      "attention": {
+        "title": "Attention Required",
+        "subtitle": "Actionable bottlenecks across procurement stages",
+        "all_clear_title": "All Clear",
+        "all_clear_subtitle": "No procurement documents currently require urgent attention.",
+        "late_deliveries": "Late Deliveries"
       },
       "pipeline": {
         "title": "Procurement Pipeline",

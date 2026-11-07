@@ -72,6 +72,10 @@ class RfqWriteService
             $payload['awarded_to_supplier_id'] = $supplierId;
             $payload['awarded_by'] = $user->id;
             $payload['awarded_at'] = now();
+        } elseif ($rfq->status === 'awarded' && $status === 'under_evaluation') {
+            $payload['awarded_to_supplier_id'] = null;
+            $payload['awarded_by'] = null;
+            $payload['awarded_at'] = null;
         }
 
         $rfq->update($payload);
@@ -81,6 +85,9 @@ class RfqWriteService
             $rfq->invitations()->where('status', 'awarded')->update(['status' => 'responded']);
             $rfq->responses()->where('supplier_id', $payload['awarded_to_supplier_id'])->update(['is_awarded' => true]);
             $rfq->invitations()->where('supplier_id', $payload['awarded_to_supplier_id'])->update(['status' => 'awarded']);
+        } elseif ($status === 'under_evaluation') {
+            $rfq->responses()->update(['is_awarded' => false]);
+            $rfq->invitations()->where('status', 'awarded')->update(['status' => 'responded']);
         }
 
         return $rfq->fresh();

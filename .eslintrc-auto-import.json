@@ -960,6 +960,7 @@
     "useDocumentAttachments": true,
     "useDocumentForm": true,
     "useDocumentTraceability": true,
-    "useProcurementHelpers": true
+    "useProcurementHelpers": true,
+    "useProcurementDashboard": true
   }
 }

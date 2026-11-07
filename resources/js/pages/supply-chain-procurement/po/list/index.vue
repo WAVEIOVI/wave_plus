@@ -2,14 +2,12 @@
 /* eslint-disable camelcase */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { avatarText } from '@core/utils/formatters'
 import { usePoStore } from '@/stores/usePoStore'
-import { useIprStore } from '@/stores/useIprStore'
-import { useRfqStore } from '@/stores/useRfqStore'
 import { useCurrency } from '@/composables/useCurrency'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useProcurementHelpers } from '@/composables/supply-chain-procurement/useProcurementHelpers'
-import CreatePoWizardDialog from '@/views/supply-chain-procurement/po/CreatePoWizardDialog.vue'
 import ViewPoDialog from '@/views/supply-chain-procurement/po/ViewPoDialog.vue'
 
 definePage({
@@ -24,11 +22,8 @@ definePage({
 })
 
 const { t } = useI18n()
-const route = useRoute()
 const router = useRouter()
 const poStore = usePoStore()
-const iprStore = useIprStore()
-const rfqStore = useRfqStore()
 const { format: formatMoney } = useCurrency()
 const { success, showApiError } = useAppSnackbar()
 
@@ -46,13 +41,11 @@ const {
 
 const searchQuery = ref('')
 const filterDialogOpen = ref(false)
-const createDialogOpen = ref(false)
 const viewDialogOpen = ref(false)
 const deleteDialogOpen = ref(false)
 const selectedPo = ref(null)
-const prefillIpr = ref(null)
-const prefillRfq = ref(null)
 const deleting = ref(false)
+const isMobileFabOpen = ref(false)
 
 const page = ref(1)
 const perPage = ref(15)
@@ -70,43 +63,31 @@ const draftFilters = reactive({
 })
 
 const metaStats = ref({})
+const metaLoading = ref(false)
 
 const loadList = async () => {
-  await Promise.all([
-    poStore.fetchList({
-      page: page.value,
-      per_page: perPage.value,
-      q: searchQuery.value.trim() || undefined,
-      'filter[status]': filters.status || undefined,
-      'filter[supplier_id]': filters.supplier_id || undefined,
-      'filter[site_id]': filters.site_id || undefined,
-    }),
-    poStore.fetchMeta().then(meta => { metaStats.value = meta || {} }).catch(() => {}),
-  ])
+  metaLoading.value = true
+  try {
+    await Promise.all([
+      poStore.fetchList({
+        page: page.value,
+        per_page: perPage.value,
+        q: searchQuery.value.trim() || undefined,
+        'filter[status]': filters.status || undefined,
+        'filter[supplier_id]': filters.supplier_id || undefined,
+        'filter[site_id]': filters.site_id || undefined,
+      }),
+      poStore.fetchMeta().then(meta => { metaStats.value = meta || {} }).catch(() => {}),
+    ])
+  }
+  finally {
+    metaLoading.value = false
+  }
 }
 
 onMounted(async () => {
   ensureSuppliers()
   ensureWarehouses()
-
-  if (route.query.from_rfq) {
-    const rfq = await rfqStore.fetchDetails(route.query.from_rfq)
-    if (rfq) {
-      prefillRfq.value = rfq
-      createDialogOpen.value = true
-    }
-  }
-  else if (route.query.from_ipr) {
-    const ipr = await iprStore.fetchDetails(route.query.from_ipr)
-    if (ipr) {
-      prefillIpr.value = ipr
-      createDialogOpen.value = true
-    }
-  }
-  else if (route.query.create === '1') {
-    createDialogOpen.value = true
-  }
-
   await loadList()
 })
 
@@ -120,6 +101,13 @@ watch(searchQuery, () => {
 })
 
 watch([page, perPage], () => loadList())
+
+const handleKpiFilter = status => {
+  if (status === undefined) return
+  filters.status = status === null || filters.status === status ? null : status
+  page.value = 1
+  loadList()
+}
 
 const openFilterDialog = () => {
   draftFilters.status = filters.status
@@ -186,6 +174,7 @@ const kpiItems = computed(() => {
       value: ms.total_pos ?? poStore.totalItems ?? 0,
       icon: 'tabler-shopping-cart',
       color: 'primary',
+      filterStatus: null,
     },
     {
       key: 'pending',
@@ -193,6 +182,7 @@ const kpiItems = computed(() => {
       value: ms.pending_approval ?? 0,
       icon: 'tabler-clock',
       color: 'warning',
+      filterStatus: 'pending_approval',
     },
     {
       key: 'awaiting_delivery',
@@ -200,6 +190,7 @@ const kpiItems = computed(() => {
       value: ms.in_delivery ?? 0,
       icon: 'tabler-truck-delivery',
       color: 'info',
+      filterStatus: 'in_delivery',
     },
     {
       key: 'received',
@@ -207,6 +198,7 @@ const kpiItems = computed(() => {
       value: ms.fully_received ?? 0,
       icon: 'tabler-package-check',
       color: 'success',
+      filterStatus: 'fully_received',
     },
     {
       key: 'total_value',
@@ -214,6 +206,7 @@ const kpiItems = computed(() => {
       value: formatMoney(totalValue),
       icon: 'tabler-coins',
       color: 'secondary',
+      filterStatus: undefined,
     },
   ]
 })
@@ -221,12 +214,18 @@ const kpiItems = computed(() => {
 const headers = computed(() => [
   { title: t('scp.common.reference'), key: 'reference', sortable: false },
   { title: t('scp.common.supplier'), key: 'supplier', sortable: false },
+  { title: t('scp.common.created_at'), key: 'created_at', sortable: false },
   { title: t('scp.po.fields.committed_delivery_date'), key: 'committed_delivery_date', sortable: false },
   { title: t('scp.common.currency'), key: 'currency', sortable: false },
+  { title: t('wp.docs.totals.subtotal_ht'), key: 'total_ht', align: 'end', sortable: false },
   { title: t('wp.docs.totals.grand_total'), key: 'total_ttc', align: 'end', sortable: false },
   { title: t('scp.common.status'), key: 'status', sortable: false },
   { title: t('common.actions'), key: 'actions', align: 'end', sortable: false },
 ])
+
+const createNewPo = () => {
+  router.push('/supply-chain-procurement/po/edit/new')
+}
 
 const openView = async item => {
   selectedPo.value = item
@@ -241,7 +240,7 @@ const openEdit = item => {
 }
 
 const openReceiveGrn = item => {
-  router.push({ path: '/supply-chain-procurement/grn/list', query: { from_po: item.id } })
+  router.push({ path: '/supply-chain-procurement/grn/edit/new', query: { from_po: item.id } })
 }
 
 const openMatchPage = item => {
@@ -316,18 +315,32 @@ const handleRowAction = (item, act) => {
   found?.handler?.()
 }
 
-const onCreated = created => {
-  prefillIpr.value = null
-  prefillRfq.value = null
-  loadList()
-  if (created?.id) {
-    router.push(`/supply-chain-procurement/po/edit/${created.id}`)
-  }
-}
+const mobileFabActions = computed(() => [
+  {
+    id: 'create-po',
+    icon: 'tabler-plus',
+    title: t('scp.po.new_title'),
+    color: 'primary',
+    onClick: createNewPo,
+  },
+  {
+    id: 'filter-po',
+    icon: 'tabler-filter',
+    title: t('wp.filters.label', 'Filters'),
+    onClick: openFilterDialog,
+  },
+  {
+    id: 'refresh-po',
+    icon: 'tabler-refresh',
+    title: t('common.refresh', 'Refresh'),
+    onClick: loadList,
+  },
+])
 </script>
 
 <template>
-  <div>
+  <div class="scp-po-list d-flex flex-column gap-6">
+    <!-- 👉 Page Header -->
     <WpPageHeader
       :title="t('scp.nav.po')"
       :subtitle="t('scp.po.subtitle')"
@@ -336,166 +349,246 @@ const onCreated = created => {
         { title: t('scp.nav.title'), to: '/supply-chain-procurement' },
         { title: t('scp.nav.po') },
       ]"
-    >
-      <template #actions>
-        <VBtn
-          color="primary"
-          prepend-icon="tabler-plus"
-          min-height="44"
-          @click="createDialogOpen = true"
-        >
-          {{ t('scp.po.new_title') }}
-        </VBtn>
-      </template>
-    </WpPageHeader>
+    />
 
-    <WpKpiGroup class="mb-6">
-      <WpKpiCard
-        v-for="kpi in kpiItems"
-        :key="kpi.key"
-        :title="kpi.title"
-        :value="kpi.value"
-        :icon="kpi.icon"
-        :color="kpi.color"
-        :loading="poStore.loading"
-      />
+    <!-- 👉 Error Banner -->
+    <WpErrorBanner
+      :error="poStore.error"
+      @retry="loadList"
+    />
+
+    <!-- 👉 KPI Cards Group -->
+    <WpKpiGroup
+      :item-count="kpiItems.length"
+      :cols="{ xs: 2, sm: 2, md: 3, lg: kpiItems.length }"
+    >
+      <template #default="{ getColProps }">
+        <VCol
+          v-for="(kpi, index) in kpiItems"
+          :key="kpi.key"
+          v-bind="getColProps(index)"
+        >
+          <WpKpiCard
+            :title="kpi.title"
+            :value="kpi.value"
+            :icon="kpi.icon"
+            :icon-color="kpi.color"
+            :loading="metaLoading || poStore.loading"
+            :clickable="kpi.filterStatus !== undefined"
+            :active="kpi.filterStatus !== undefined ? filters.status === kpi.filterStatus : false"
+            @click="handleKpiFilter(kpi.filterStatus)"
+          />
+        </VCol>
+      </template>
     </WpKpiGroup>
 
-    <WpPageToolbar
-      v-model:search="searchQuery"
-      :search-placeholder="t('scp.po.search_placeholder')"
-      show-filter
-      :active-filter-count="activeFilterChips.length"
-      @open-filters="openFilterDialog"
-      @refresh="loadList"
-    />
+    <!-- 👉 Main Card Container -->
+    <VCard>
+      <WpPageToolbar
+        v-model:search="searchQuery"
+        :search-placeholder="t('scp.po.search_placeholder')"
+        :create-label="t('scp.po.new_title')"
+        hide-create-on-mobile
+        show-filter
+        hide-filter-on-mobile
+        :active-filter-count="activeFilterChips.length"
+        :loading="poStore.loading"
+        @create="createNewPo"
+        @refresh="loadList"
+        @open-filters="openFilterDialog"
+      >
+        <template #filter-chips>
+          <WpActiveFilters
+            v-if="activeFilterChips.length > 0"
+            :filters="activeFilterChips"
+            :label-map="{
+              status: t('scp.common.status'),
+              supplier_id: t('scp.common.supplier'),
+              site_id: t('scp.common.warehouse'),
+            }"
+            @remove="removeFilterChip"
+            @clear-all="resetFilters"
+          />
+        </template>
+      </WpPageToolbar>
 
-    <WpActiveFilters
-      v-if="activeFilterChips.length"
-      :filters="activeFilterChips"
-      :label-map="{ status: t('scp.common.status'), supplier_id: t('scp.common.supplier'), site_id: t('scp.common.warehouse') }"
-      class="mb-4"
-      @remove="removeFilterChip"
-      @clear-all="resetFilters"
-    />
+      <WpResponsiveList
+        :items="poStore.list"
+        :headers="headers"
+        :loading="poStore.loading"
+        :error="poStore.error"
+        :total-items="poStore.totalItems"
+        :page="page"
+        :items-per-page="perPage"
+        :show-select="false"
+        @update:page="page = $event"
+        @update:items-per-page="perPage = $event"
+        @retry="loadList"
+      >
+        <template #item.reference="{ item }">
+          <RouterLink
+            :to="`/supply-chain-procurement/po/edit/${item.id}`"
+            class="font-weight-bold text-primary text-decoration-none"
+          >
+            {{ item.reference }}
+          </RouterLink>
+        </template>
 
-    <WpResponsiveList
-      :items="poStore.list"
-      :headers="headers"
-      :loading="poStore.loading"
-      :total-items="poStore.totalItems"
-      :page="page"
-      :items-per-page="perPage"
-      :show-select="false"
-      @update:page="page = $event"
-      @update:items-per-page="perPage = $event"
-    >
-      <template #item.reference="{ item }">
-        <RouterLink
-          :to="`/supply-chain-procurement/po/edit/${item.id}`"
-          class="font-weight-bold text-primary text-decoration-none"
-        >
-          {{ item.reference }}
-        </RouterLink>
-      </template>
-
-      <template #item.supplier="{ item }">
-        <div class="font-weight-medium">
-          {{ resolveSupplierName(item.supplier) }}
-        </div>
-        <div
-          v-if="item.supplier?.supplier_id"
-          class="text-caption text-medium-emphasis"
-        >
-          {{ item.supplier.supplier_id }}
-        </div>
-      </template>
-
-      <template #item.committed_delivery_date="{ item }">
-        {{ formatDate(item.committed_delivery_date) }}
-      </template>
-
-      <template #item.currency="{ item }">
-        <VChip
-          size="x-small"
-          label
-          variant="tonal"
-          color="secondary"
-        >
-          {{ item.currency || 'TND' }}
-        </VChip>
-      </template>
-
-      <template #item.total_ttc="{ item }">
-        <span class="font-weight-bold">{{ formatMoney(item.total_ttc || 0, { currency: item.currency }) }}</span>
-      </template>
-
-      <template #item.status="{ item }">
-        <WpStatusChip
-          :status="item.status"
-          :label="statusLabel(item.status)"
-          :color="resolveStatusVariant(item.status)"
-          dot
-        />
-      </template>
-
-      <template #item.actions="{ item }">
-        <WpRowActions
-          :actions="getRowActions(item)"
-          @view="openView(item)"
-          @edit="openEdit(item)"
-          @delete="confirmDelete(item)"
-          @action="act => handleRowAction(item, act)"
-        />
-      </template>
-
-      <template #mobile-card="{ item }">
-        <WpMobileCard
-          :title="item.reference"
-          :subtitle="`${resolveSupplierName(item.supplier)} · ${formatDate(item.committed_delivery_date)}`"
-          :status="item.status"
-          :status-color="resolveStatusVariant(item.status)"
-          :status-label="statusLabel(item.status)"
-          clickable
-          @click="openEdit(item)"
-        >
-          <template #badges>
-            <VChip
-              size="x-small"
-              label
+        <template #item.supplier="{ item }">
+          <div class="d-flex align-center gap-2 py-1">
+            <VAvatar
+              size="32"
               variant="tonal"
-              color="secondary"
+              color="primary"
+              rounded
             >
-              {{ item.currency || 'TND' }}
-            </VChip>
-          </template>
-
-          <template #content>
-            <div class="d-flex align-center justify-space-between">
-              <span class="text-caption text-medium-emphasis">
-                {{ t('wp.docs.totals.grand_total') }}
+              <span class="text-xs font-weight-semibold">
+                {{ avatarText(resolveSupplierName(item.supplier)) }}
               </span>
-              <span class="text-body-1 font-weight-bold text-primary">
-                {{ formatMoney(item.total_ttc || 0, { currency: item.currency }) }}
-              </span>
+            </VAvatar>
+            <div class="min-w-0">
+              <div class="font-weight-medium text-truncate">
+                {{ resolveSupplierName(item.supplier) }}
+              </div>
+              <div
+                v-if="item.supplier?.supplier_id"
+                class="d-flex align-center gap-1"
+              >
+                <VChip
+                  size="x-small"
+                  label
+                  color="secondary"
+                  variant="tonal"
+                >
+                  {{ item.supplier.supplier_id }}
+                </VChip>
+              </div>
             </div>
-          </template>
+          </div>
+        </template>
 
-          <template #actions>
-            <WpRowActions
-              :actions="getRowActions(item)"
-              @view="openView(item)"
-              @edit="openEdit(item)"
-              @delete="confirmDelete(item)"
-              @action="act => handleRowAction(item, act)"
-            />
-          </template>
-        </WpMobileCard>
-      </template>
-    </WpResponsiveList>
+        <template #item.created_at="{ item }">
+          <span class="text-body-2">{{ formatDate(item.created_at) }}</span>
+        </template>
 
+        <template #item.committed_delivery_date="{ item }">
+          {{ formatDate(item.committed_delivery_date) }}
+        </template>
+
+        <template #item.currency="{ item }">
+          <VChip
+            size="x-small"
+            label
+            variant="tonal"
+            color="secondary"
+          >
+            {{ item.currency || 'TND' }}
+          </VChip>
+        </template>
+
+        <template #item.total_ht="{ item }">
+          <span class="text-body-2 font-weight-medium">
+            {{ formatMoney(item.total_ht || 0, { currency: item.currency }) }}
+          </span>
+        </template>
+
+        <template #item.total_ttc="{ item }">
+          <span class="font-weight-bold">
+            {{ formatMoney(item.total_ttc || 0, { currency: item.currency }) }}
+          </span>
+        </template>
+
+        <template #item.status="{ item }">
+          <WpStatusChip
+            :status="item.status"
+            :label="statusLabel(item.status)"
+            :color="resolveStatusVariant(item.status)"
+            dot
+          />
+        </template>
+
+        <template #item.actions="{ item }">
+          <WpRowActions
+            :actions="getRowActions(item)"
+            @view="openView(item)"
+            @edit="openEdit(item)"
+            @delete="confirmDelete(item)"
+            @action="act => handleRowAction(item, act)"
+          />
+        </template>
+
+        <template #mobile-card="{ item }">
+          <WpMobileCard
+            :title="item.reference"
+            :subtitle="`${resolveSupplierName(item.supplier)} · ${formatDate(item.committed_delivery_date)}`"
+            :status="item.status"
+            :status-color="resolveStatusVariant(item.status)"
+            :status-label="statusLabel(item.status)"
+            clickable
+            @click="openEdit(item)"
+          >
+            <template #avatar>
+              <VAvatar
+                size="36"
+                variant="tonal"
+                color="primary"
+                rounded
+              >
+                <span class="text-xs font-weight-semibold">
+                  {{ avatarText(resolveSupplierName(item.supplier)) }}
+                </span>
+              </VAvatar>
+            </template>
+
+            <template #badges>
+              <VChip
+                v-if="item.supplier?.supplier_id"
+                size="x-small"
+                label
+                variant="tonal"
+                color="secondary"
+              >
+                {{ item.supplier.supplier_id }}
+              </VChip>
+              <VChip
+                size="x-small"
+                label
+                variant="tonal"
+                color="info"
+              >
+                {{ item.currency || 'TND' }}
+              </VChip>
+            </template>
+
+            <template #content>
+              <div class="d-flex align-center justify-space-between">
+                <span class="text-caption text-medium-emphasis">
+                  {{ t('wp.docs.totals.subtotal_ht') }}: {{ formatMoney(item.total_ht || 0, { currency: item.currency }) }}
+                </span>
+                <span class="text-body-2 font-weight-bold text-primary">
+                  {{ formatMoney(item.total_ttc || 0, { currency: item.currency }) }}
+                </span>
+              </div>
+            </template>
+
+            <template #actions>
+              <WpRowActions
+                :actions="getRowActions(item)"
+                @view="openView(item)"
+                @edit="openEdit(item)"
+                @delete="confirmDelete(item)"
+                @action="act => handleRowAction(item, act)"
+              />
+            </template>
+          </WpMobileCard>
+        </template>
+      </WpResponsiveList>
+    </VCard>
+
+    <!-- 👉 Filter Dialog -->
     <WpFilterDialog
       v-model="filterDialogOpen"
+      :active-count="activeFilterChips.length"
       @apply="applyFilters"
       @reset="resetFilters"
     >
@@ -533,13 +626,7 @@ const onCreated = created => {
       </VRow>
     </WpFilterDialog>
 
-    <CreatePoWizardDialog
-      v-model="createDialogOpen"
-      :prefill-ipr="prefillIpr"
-      :prefill-rfq="prefillRfq"
-      @created="onCreated"
-    />
-
+    <!-- 👉 Quick View Dialog -->
     <ViewPoDialog
       v-model="viewDialogOpen"
       :po="selectedPo"
@@ -548,11 +635,35 @@ const onCreated = created => {
       @match="openMatchPage"
     />
 
+    <!-- 👉 Delete Confirmation -->
     <WpDeleteDialog
       v-model="deleteDialogOpen"
       :item-name="selectedPo?.reference"
       :loading="deleting"
       @confirm="handleDelete"
     />
+
+    <!-- 👉 Mobile Speed Dial FAB -->
+    <AppFabSpeedDial
+      v-model="isMobileFabOpen"
+      class="d-md-none scp-list-quick-actions"
+      :actions="mobileFabActions"
+      icon="tabler-apps"
+      activator-rounded="lg"
+    />
   </div>
 </template>
+
+<style lang="scss" scoped>
+.scp-po-list {
+  overflow-x: clip;
+
+  @media (max-width: 959px) {
+    padding-block-end: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.scp-list-quick-actions {
+  inset-inline-end: 25px;
+}
+</style>

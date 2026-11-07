@@ -41,6 +41,10 @@ class IprController extends Controller
             $query->where('urgency', $urgency);
         }
 
+        if ($triggerSource = request('filter.trigger_source')) {
+            $query->where('trigger_source', $triggerSource);
+        }
+
         $perPage = $this->queryService->cappedPerPage(request());
 
         return IprResource::collection($query->latest()->paginate($perPage));
@@ -56,6 +60,7 @@ class IprController extends Controller
             'data' => [
                 'total_iprs' => (clone $base)->count(),
                 'pending_approval' => (clone $base)->where('status', 'pending_approval')->count(),
+                'approved' => (clone $base)->where('status', 'approved')->count(),
                 'urgent_requests' => (clone $base)->whereIn('urgency', ['urgent', 'critical'])->count(),
                 'converted_to_po' => (clone $base)->where('status', 'converted_to_po')->count(),
             ],

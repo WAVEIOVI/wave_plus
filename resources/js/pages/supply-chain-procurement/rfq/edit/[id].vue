@@ -3,12 +3,11 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useDisplay } from 'vuetify'
 import { useRfqStore } from '@/stores/useRfqStore'
 import { useIprStore } from '@/stores/useIprStore'
+import { useSupplierStore } from '@/stores/useSupplierStore'
 import { useCurrency } from '@/composables/useCurrency'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
-import { useJournalNav } from '@/composables/useJournalNav'
 import {
   useDocumentForm,
   useDocumentTotals,
@@ -17,6 +16,12 @@ import {
 } from '@/composables/documents'
 import { useProcurementHelpers } from '@/composables/supply-chain-procurement/useProcurementHelpers'
 import RecordRfqResponseDialog from '@/views/supply-chain-procurement/rfq/RecordRfqResponseDialog.vue'
+import RfqSuppliersSection from '@/views/supply-chain-procurement/rfq/RfqSuppliersSection.vue'
+import RfqBroadcastDialog from '@/views/supply-chain-procurement/rfq/RfqBroadcastDialog.vue'
+import RfqComparisonSection from '@/views/supply-chain-procurement/rfq/RfqComparisonSection.vue'
+import VariantSelectDialog from '@/views/supply-chain-procurement/shared/VariantSelectDialog.vue'
+import SourceDocumentImporterDialog from '@/views/supply-chain-procurement/shared/SourceDocumentImporterDialog.vue'
+import ProcurementUnsavedBar from '@/views/supply-chain-procurement/shared/ProcurementUnsavedBar.vue'
 
 definePage({
   name: 'procurement-rfq-edit-id',
@@ -32,16 +37,14 @@ definePage({
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { smAndDown } = useDisplay()
 const rfqStore = useRfqStore()
 const iprStore = useIprStore()
+const supplierStore = useSupplierStore()
 const { format: formatMoney } = useCurrency()
-const { success, showApiError } = useAppSnackbar()
+const { success, error: showError, showApiError } = useAppSnackbar()
 
 const {
   statusLabel,
-  paymentTermsLabel,
-  supplierOptions,
   ensureSuppliers,
   fetchCatalogItemsForPicker,
   formatDate,
@@ -53,17 +56,31 @@ const {
 const rfqId = computed(() => route.params.id)
 const isCreateMode = computed(() => rfqId.value === 'new')
 const rawDocument = ref(null)
+const pageError = ref(null)
 const responseDialogOpen = ref(false)
+const editingResponse = ref(null)
+const broadcastDialogOpen = ref(false)
 const deleteDialogOpen = ref(false)
 const deleting = ref(false)
 const submittingTransition = ref(false)
 
 // Smart Import from Approved IPR state
 const importIprDialogOpen = ref(false)
-const approvedIprs = ref([])
-const selectedImportIprIds = ref([])
-const loadingApprovedIprs = ref(false)
-const importingIprs = ref(false)
+
+// Variant selection dialog state
+const variantDialogOpen = ref(false)
+const variantDialogCatalogItem = ref(null)
+const variantDialogLineIndex = ref(null)
+
+const commonCertOptions = [
+  'ISO 9001',
+  'ISO 14001',
+  'CE',
+  'EN3',
+  'UL',
+  'NFPA',
+  'ATEX',
+]
 
 const normalizeRfqToForm = doc => {
   const ec = doc?.evaluation_criteria || {}
@@ -84,6 +101,7 @@ const normalizeRfqToForm = doc => {
     ipr_ids: Array.isArray(doc?.ipr_ids)
       ? [...doc.ipr_ids]
       : (doc?.iprs || []).map(i => i.id).filter(Boolean),
+    iprs: Array.isArray(doc?.iprs) ? [...doc.iprs] : [],
     invited_supplier_ids: (doc?.invitations || []).map(inv => inv.supplier_id || inv.supplier?.id).filter(Boolean),
     lines: (doc?.lines || []).map(l => {
       const qty = Number(l.qty_requested ?? l.quantity ?? 1) || 1
@@ -95,9 +113,11 @@ const normalizeRfqToForm = doc => {
         variant_id: l.variant_id || l.variant?.id || null,
         is_ad_hoc: Boolean(l.is_ad_hoc || (!l.catalog_item_id && l.ad_hoc_name)),
         ad_hoc_name: l.ad_hoc_name || '',
-        ad_hoc_sku: l.ad_hoc_sku || '',
+        ad_hoc_sku: l.ad_hoc_sku || 'NEW',
         item_name: resolveLineItemName(l),
         sku: resolveLineItemSku(l),
+        item_type: l.catalog_item?.item_type || l.item_type || '',
+        subtype: l.catalog_item?.subtype || l.subtype || '',
         quantity: qty,
         qty_requested: qty,
         unit_id: l.unit_id || l.unit?.id || null,
@@ -105,6 +125,7 @@ const normalizeRfqToForm = doc => {
         target_price_ht: price,
         line_total: qty * price,
         description: l.description_for_supplier || l.description || '',
+        required_certifications: Array.isArray(l.required_certifications) ? [...l.required_certifications] : [],
       }
     }),
   }
@@ -127,14 +148,57 @@ const {
   unsavedGuard: true,
 })
 
+const mapIprLineToRfqLine = (l, sourceIprId) => {
+  const qty = Number(l.qty_requested ?? l.quantity ?? 1) || 1
+  const price = Number(l.resolved_unit_price ?? l.estimated_unit_cost ?? l.unit_price ?? 0) || 0
+
+  return {
+    source_ipr_id: sourceIprId || null,
+    is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
+    catalog_item_id: l.catalog_item_id || null,
+    variant_id: l.variant_id || l.variant?.id || null,
+    ad_hoc_name: l.ad_hoc_name || '',
+    ad_hoc_sku: l.ad_hoc_sku || 'NEW',
+    item_name: resolveLineItemName(l),
+    sku: resolveLineItemSku(l),
+    item_type: l.catalog_item?.item_type || l.item_type || '',
+    subtype: l.catalog_item?.subtype || l.subtype || '',
+    quantity: qty,
+    qty_requested: qty,
+    unit_id: l.unit_id || l.catalog_item?.uom_id || null,
+    unit_price: price,
+    target_price_ht: price,
+    line_total: qty * price,
+    description: l.ad_hoc_description || l.description || '',
+    required_certifications: [],
+  }
+}
+
 const reloadRfq = async () => {
   isLoading.value = true
+  pageError.value = null
   try {
     await ensureSuppliers()
 
     if (isCreateMode.value) {
       rawDocument.value = null
       setDocument(normalizeRfqToForm({}))
+
+      const fromIprId = route.query?.from_ipr ? String(route.query.from_ipr) : null
+      if (fromIprId) {
+        const ipr = await iprStore.fetchDetails(fromIprId).catch(() => null)
+        if (ipr) {
+          form.value.ipr_ids = [ipr.id]
+          form.value.iprs = [{ id: ipr.id, reference: ipr.reference }]
+          if (!form.value.title && ipr.reference) {
+            form.value.title = `RFQ — ${ipr.reference}`
+          }
+          if (!form.value.required_delivery_date && ipr.needed_by_date) {
+            form.value.required_delivery_date = String(ipr.needed_by_date).slice(0, 10)
+          }
+          form.value.lines = (ipr.lines || []).map(l => mapIprLineToRfqLine(l, ipr.id))
+        }
+      }
 
       return
     }
@@ -146,6 +210,7 @@ const reloadRfq = async () => {
     }
   }
   catch (err) {
+    pageError.value = err?.data?.message || err?.message || t('scp.rfq.snackbar.error_load', 'Failed to load RFQ')
     showApiError(err, t('scp.rfq.snackbar.error_load', 'Failed to load RFQ'))
   }
   finally {
@@ -173,11 +238,13 @@ const executeTransition = async (targetStatus, extraPayload = {}) => {
       ...extraPayload,
     })
 
-    rawDocument.value = updated
-    setDocument(normalizeRfqToForm(updated))
+    const fresh = await rfqStore.fetchDetails(rfqId.value).catch(() => updated)
+
+    rawDocument.value = fresh || updated
+    setDocument(normalizeRfqToForm(fresh || updated))
     success(t('scp.rfq.snackbar.status_updated'))
 
-    return updated
+    return fresh || updated
   }
   catch (err) {
     showApiError(err, t('scp.rfq.snackbar.error_status'))
@@ -359,6 +426,7 @@ const buildSavePayload = current => ({
     technical_weight: Number(current.technical_weight) || 0,
     payment_weight: Number(current.payment_weight) || 0,
   },
+  invited_supplier_ids: Array.isArray(current.invited_supplier_ids) ? current.invited_supplier_ids : [],
   invitations: (current.invited_supplier_ids || []).map(id => {
     const existing = invitations.value.find(inv => inv.supplier_id === id)
 
@@ -373,16 +441,40 @@ const buildSavePayload = current => ({
       catalog_item_id: isAdHoc ? null : (l.catalog_item_id || null),
       variant_id: isAdHoc ? null : (l.variant_id || null),
       ad_hoc_name: isAdHoc ? (l.ad_hoc_name || l.item_name || 'Ad-hoc Item') : null,
-      ad_hoc_sku: isAdHoc ? (l.ad_hoc_sku || l.sku || null) : null,
+      ad_hoc_sku: isAdHoc ? (l.ad_hoc_sku || l.sku || 'NEW') : null,
       description_for_supplier: l.description || null,
       qty_requested: Number(l.quantity ?? l.qty_requested ?? 1) || 1,
       unit_id: l.unit_id || null,
       target_price_ht: Number(l.unit_price ?? l.target_price_ht ?? 0) || null,
+      required_certifications: Array.isArray(l.required_certifications) ? l.required_certifications : [],
     }
   }),
 })
 
 const handleSave = async () => {
+  if (!form.value.title?.trim()) {
+    errors.value = { ...errors.value, title: [t('scp.rfq.validation.title_required', 'RFQ title is required.')] }
+    showError(t('scp.rfq.validation.title_required', 'RFQ title is required.'))
+
+    return null
+  }
+  if (!form.value.response_deadline) {
+    errors.value = { ...errors.value, response_deadline: [t('scp.rfq.validation.deadline_required', 'Response deadline is required.')] }
+    showError(t('scp.rfq.validation.deadline_required', 'Response deadline is required.'))
+
+    return null
+  }
+  if (!Array.isArray(form.value.lines) || form.value.lines.length === 0) {
+    showError(t('scp.rfq.validation.lines_required', 'At least one requested item is required.'))
+
+    return null
+  }
+  if (totalCriteriaWeight.value !== 100) {
+    showError(t('scp.rfq.alerts.weights_sum_100', 'Evaluation criteria weights must sum to 100%.'))
+
+    return null
+  }
+
   isSaving.value = true
   try {
     const payload = buildSavePayload(form.value)
@@ -415,82 +507,38 @@ const handleSave = async () => {
   }
 }
 
-const openImportIprDialog = async () => {
-  selectedImportIprIds.value = [...(form.value.ipr_ids || [])]
+const openImportIprDialog = () => {
   importIprDialogOpen.value = true
-  loadingApprovedIprs.value = true
-  try {
-    const res = await iprStore.fetchList({ 'filter[status]': 'approved', per_page: 50 })
-
-    approvedIprs.value = res?.data || iprStore.list || []
-  }
-  catch (err) {
-    showApiError(err)
-  }
-  finally {
-    loadingApprovedIprs.value = false
-  }
 }
 
-const approvedIprOptions = computed(() =>
-  approvedIprs.value.map(ipr => ({
-    title: `${ipr.reference} — ${ipr.requested_by_user?.name || ipr.requester?.name || ''}`,
-    value: ipr.id,
-  })),
-)
+const handleImportSource = ({ sourceId, sourceDoc, lines }) => {
+  if (!sourceId || !Array.isArray(lines)) return
+  const importedLines = lines.map(l => mapIprLineToRfqLine(l, sourceId))
 
-const confirmImportFromIprs = async () => {
-  importingIprs.value = true
-  try {
-    const ids = selectedImportIprIds.value || []
-    const existingIprIds = new Set(form.value.ipr_ids || [])
-    const newLines = []
+  form.value.ipr_ids = [...new Set([...(form.value.ipr_ids || []), sourceId])]
 
-    for (const id of ids) {
-      if (existingIprIds.has(id) && form.value.lines.some(l => l.source_ipr_id === id)) continue
-
-      let ipr = approvedIprs.value.find(item => item.id === id)
-      if (!ipr?.lines?.length) {
-        ipr = await iprStore.fetchDetails(id)
-      }
-
-      for (const l of ipr?.lines || []) {
-        const qty = Number(l.qty_requested ?? 1) || 1
-        const price = Number(l.estimated_unit_cost ?? 0) || 0
-
-        newLines.push({
-          source_ipr_id: id,
-          is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
-          catalog_item_id: l.catalog_item_id || null,
-          variant_id: l.variant_id || l.variant?.id || null,
-          ad_hoc_name: l.ad_hoc_name || '',
-          ad_hoc_sku: l.ad_hoc_sku || '',
-          item_name: resolveLineItemName(l),
-          sku: resolveLineItemSku(l),
-          quantity: qty,
-          qty_requested: qty,
-          unit_id: l.unit_id || l.catalog_item?.uom_id || null,
-          unit_price: price,
-          target_price_ht: price,
-          line_total: qty * price,
-          description: l.ad_hoc_description || '',
-        })
-      }
-    }
-
-    form.value.ipr_ids = [...new Set([...(form.value.ipr_ids || []), ...ids])]
-    if (newLines.length) {
-      form.value.lines = [...(form.value.lines || []), ...newLines]
-    }
-    importIprDialogOpen.value = false
-    success(t('scp.rfq.snackbar.imported_ipr', 'IPR lines imported into RFQ'))
+  const existingIprs = Array.isArray(form.value.iprs) ? form.value.iprs : []
+  if (!existingIprs.some(i => i.id === sourceId)) {
+    form.value.iprs = [
+      ...existingIprs,
+      { id: sourceId, reference: sourceDoc?.reference || `#${String(sourceId).slice(-6)}` },
+    ]
   }
-  catch (err) {
-    showApiError(err)
+  if (importedLines.length) {
+    form.value.lines = [...(form.value.lines || []), ...importedLines]
   }
-  finally {
-    importingIprs.value = false
-  }
+  success(t('scp.rfq.snackbar.imported_ipr', 'IPR lines imported into RFQ'))
+}
+
+const detachIpr = iprIdToRemove => {
+  if (isReadOnly.value) return
+  form.value.ipr_ids = (form.value.ipr_ids || []).filter(id => id !== iprIdToRemove)
+  form.value.iprs = (form.value.iprs || []).filter(i => i.id !== iprIdToRemove)
+}
+
+const openRecordResponse = (resp = null) => {
+  editingResponse.value = resp || null
+  responseDialogOpen.value = true
 }
 
 const onHeaderAction = async key => {
@@ -498,14 +546,17 @@ const onHeaderAction = async key => {
     await handleSave()
   }
   else if (key === 'import_ipr') {
-    await openImportIprDialog()
+    openImportIprDialog()
   }
   else if (key === 'send') {
-    if (isDirty.value) await handleSave()
-    await executeTransition('sent')
+    if (isDirty.value) {
+      const saved = await handleSave()
+      if (!saved) return
+    }
+    broadcastDialogOpen.value = true
   }
   else if (key === 'record_bid') {
-    responseDialogOpen.value = true
+    openRecordResponse(null)
   }
   else if (key === 'start_eval') {
     if (form.value.status === 'sent') {
@@ -514,10 +565,10 @@ const onHeaderAction = async key => {
     await executeTransition('under_evaluation')
   }
   else if (key === 'go_comparison') {
-    scrollToSection('comparison')
+    journalNavRef.value?.scrollToSection('comparison')
   }
   else if (key === 'convert_po') {
-    router.push({ path: '/supply-chain-procurement/po/list', query: { from_rfq: rfqId.value } })
+    router.push({ path: '/supply-chain-procurement/po/edit/new', query: { from_rfq: rfqId.value } })
   }
   else if (key === 'cancel') {
     await executeTransition('cancelled')
@@ -527,9 +578,14 @@ const onHeaderAction = async key => {
   }
 }
 
-const awardSupplier = async supplierId => {
-  if (!supplierId) return
+const handleToggleAward = async supplierId => {
   try {
+    if (form.value.status === 'awarded') {
+      await executeTransition('under_evaluation')
+
+      return
+    }
+    if (!supplierId) return
     if (form.value.status === 'sent') {
       await executeTransition('awaiting_responses')
     }
@@ -562,6 +618,7 @@ const handleDelete = async () => {
 const mapCatalogToRfqLine = (item, quantity = 1) => {
   const price = Number(item.unit_price ?? item.purchase_price_ht ?? 0) || 0
   const qty = Number(quantity) || 1
+  const raw = item.raw || item
 
   return {
     is_ad_hoc: false,
@@ -569,6 +626,8 @@ const mapCatalogToRfqLine = (item, quantity = 1) => {
     variant_id: item.variant_id || null,
     item_name: item.item_name || item.name || item.sku,
     sku: item.sku || item.code || '',
+    item_type: raw?.item_type || item.item_type || '',
+    subtype: raw?.subtype || item.subtype || '',
     unit: item.unit || '',
     unit_id: item.unit_id || null,
     quantity: qty,
@@ -577,26 +636,150 @@ const mapCatalogToRfqLine = (item, quantity = 1) => {
     target_price_ht: price,
     line_total: qty * price,
     description: '',
+    required_certifications: [],
+    raw_catalog_item: raw,
   }
 }
 
-const findResponseLineFor = (response, rfqLineId) =>
-  (response?.lines || []).find(rl => rl.rfq_line_id === rfqLineId)
-
-const computeVsTargetPct = (offeredPrice, targetPrice) => {
-  const offered = Number(offeredPrice)
-  const target = Number(targetPrice)
-  if (!Number.isFinite(offered) || !Number.isFinite(target) || target <= 0) return null
-
-  return Math.round(((offered - target) / target) * 1000) / 10
+const addAdHocLine = () => {
+  if (isReadOnly.value) return
+  form.value.lines = [
+    ...form.value.lines,
+    {
+      is_ad_hoc: true,
+      catalog_item_id: null,
+      variant_id: null,
+      ad_hoc_name: '',
+      ad_hoc_sku: 'NEW',
+      item_name: '',
+      sku: 'NEW',
+      item_type: 'ad_hoc',
+      subtype: '',
+      unit: '',
+      unit_id: null,
+      quantity: 1,
+      qty_requested: 1,
+      unit_price: 0,
+      target_price_ht: 0,
+      line_total: 0,
+      description: '',
+      required_certifications: [],
+    },
+  ]
 }
 
-const formatEvaluationScore = resp => {
-  const score = resp?.evaluation_score ?? resp?.weighted_score
-  if (score === null || score === undefined) return null
+const resolveItemTypeBadgeColor = type => {
+  const map = {
+    product: 'primary',
+    consumable: 'info',
+    eq_servicing: 'warning',
+    service: 'success',
+  }
 
-  return Number(score).toFixed(1)
+  return map[type] || 'secondary'
 }
+
+const lineColumns = computed(() => [
+  { key: 'item', title: t('scp.common.item') },
+  { key: 'sku', title: t('scp.common.sku', 'Variant / SKU'), width: '140px' },
+  { key: 'required_certifications', title: t('scp.rfq.fields.required_certifications', 'Required Certifications'), width: '240px' },
+  { key: 'quantity', title: t('scp.ipr.fields.qty_requested'), align: 'end', width: '120px' },
+  { key: 'unit_price', title: t('scp.rfq.fields.target_price_ht'), align: 'end', width: '150px' },
+  { key: 'line_total', title: t('scp.common.total'), align: 'end', width: '140px' },
+])
+
+const openVariantDialogForLine = (line, index) => {
+  const catItem = line?.raw_catalog_item || line?.catalog_item || line?.item
+  if (!catItem || !Array.isArray(catItem.variants) || catItem.variants.length === 0) return
+  variantDialogCatalogItem.value = catItem
+  variantDialogLineIndex.value = index
+  variantDialogOpen.value = true
+}
+
+const onBulkAddLines = entries => {
+  if (!Array.isArray(entries) || !entries.length) return
+  const multiVariantEntry = entries.find(e => Array.isArray(e?.item?.variants) && e.item.variants.length > 1)
+  if (multiVariantEntry) {
+    const idx = form.value.lines.findIndex(l => l.catalog_item_id === multiVariantEntry.item.id)
+    if (idx >= 0) {
+      openVariantDialogForLine({ raw_catalog_item: multiVariantEntry.item }, idx)
+    }
+  }
+}
+
+const handleVariantSelected = ({ item, variant }) => {
+  const idx = variantDialogLineIndex.value
+  if (idx === null || idx === undefined || !form.value.lines[idx] || !variant) return
+  const line = form.value.lines[idx]
+  const unitPrice = Number(variant.cost_price ?? variant.price ?? line.unit_price ?? 0) || 0
+  const qty = Number(line.quantity ?? line.qty_requested ?? 1) || 1
+
+  form.value.lines[idx] = {
+    ...line,
+    variant_id: variant.id,
+    sku: variant.sku || item?.sku || line.sku,
+    unit_price: unitPrice,
+    target_price_ht: unitPrice,
+    line_total: qty * unitPrice,
+  }
+}
+
+const handleDiscardChanges = () => {
+  if (isCreateMode.value) {
+    setDocument(normalizeRfqToForm({}))
+  }
+  else if (rawDocument.value) {
+    setDocument(normalizeRfqToForm(rawDocument.value))
+  }
+}
+
+const unsavedSummaryItems = computed(() => [
+  { label: t('scp.common.lines'), value: form.value.lines?.length || 0 },
+  { label: t('scp.rfq.fields.invited_suppliers'), value: invitations.value.length || form.value.invited_supplier_ids.length },
+  { label: t('scp.rfq.fields.target_total'), value: formatMoney(totals.value.grandTotal), color: 'primary' },
+])
+
+const mobileQuickActions = computed(() => {
+  const list = []
+  if (form.value.status === 'draft') {
+    list.push({
+      id: 'import_ipr',
+      title: t('scp.rfq.actions.import_ipr', 'Import from Approved IPR'),
+      icon: 'tabler-file-import',
+      color: 'info',
+      handler: () => openImportIprDialog(),
+    })
+  }
+  if (!isCreateMode.value && form.value.status === 'draft') {
+    list.push({
+      id: 'send',
+      title: t('scp.rfq.actions.send_suppliers'),
+      icon: 'tabler-send',
+      color: 'primary',
+      handler: () => onHeaderAction('send'),
+    })
+  }
+  if (canRecordBid.value) {
+    list.push({
+      id: 'record_bid',
+      title: t('scp.rfq.actions.record_bid'),
+      icon: 'tabler-plus',
+      color: 'primary',
+      handler: () => onHeaderAction('record_bid'),
+    })
+  }
+  if (!isCreateMode.value && form.value.status === 'awarded') {
+    list.push({
+      id: 'convert_po',
+      title: t('scp.action.convert_to_po'),
+      icon: 'tabler-shopping-cart-plus',
+      color: 'success',
+      handler: () => onHeaderAction('convert_po'),
+    })
+  }
+
+  return list
+})
 
 const journalSections = computed(() => [
   { id: 'overview', title: t('scp.rfq.sections.overview'), icon: 'tabler-info-circle' },
@@ -606,11 +789,18 @@ const journalSections = computed(() => [
   { id: 'traceability', title: t('scp.ipr.sections.traceability'), icon: 'tabler-git-branch' },
 ])
 
-const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPrefix: 'section-' })
+const activeSection = ref('overview')
+const journalNavRef = ref(null)
 </script>
 
 <template>
   <div class="rfq-edit-page">
+    <WpErrorBanner
+      :error="pageError"
+      class="mb-4"
+      @retry="reloadRfq"
+    />
+
     <WpDocumentHeader
       :title="form.reference || t('scp.rfq.new_title', 'New Request for Quotation')"
       :reference="form.reference"
@@ -629,50 +819,62 @@ const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPr
     />
 
     <WpDocumentLifecycleStepper
+      v-if="!isCreateMode"
       :steps="lifecycleSteps"
       class="mb-4"
     />
 
     <WpDocumentMetadataBar
+      v-if="!isCreateMode"
       :items="metadataItems"
       class="mb-6"
     />
 
-    <WpKpiGroup class="mb-6">
-      <WpKpiCard
-        :title="t('scp.rfq.fields.invited_suppliers')"
-        :value="invitations.length || form.invited_supplier_ids.length"
-        icon="tabler-users"
-        color="info"
-      />
-      <WpKpiCard
-        :title="t('scp.rfq.sections.responses')"
-        :value="responses.length"
-        icon="tabler-messages"
-        color="primary"
-      />
-      <WpKpiCard
-        :title="t('scp.common.lines')"
-        :value="form.lines.length"
-        icon="tabler-list-numbers"
-        color="warning"
-      />
-      <WpKpiCard
-        :title="t('scp.rfq.fields.target_total')"
-        :value="formatMoney(totals.grandTotal)"
-        icon="tabler-coins"
-        color="success"
-      />
-    </WpKpiGroup>
+    <VAlert
+      v-else
+      type="info"
+      variant="tonal"
+      density="comfortable"
+      icon="tabler-file-plus"
+      class="mb-6"
+    >
+      <div class="d-flex flex-wrap align-center justify-space-between gap-2">
+        <div>
+          <div class="font-weight-semibold">
+            {{ t('scp.rfq.new_title', 'New Request for Quotation (Draft)') }}
+          </div>
+          <div class="text-caption">
+            {{ t('scp.rfq.subtitle') }}
+          </div>
+        </div>
+        <VChip
+          size="small"
+          color="secondary"
+          variant="tonal"
+          label
+        >
+          {{ statusLabel('draft') }}
+        </VChip>
+      </div>
+    </VAlert>
 
-    <div class="scp-edit-layout">
+    <VSkeletonLoader
+      v-if="isLoading && !rawDocument && !isCreateMode"
+      type="card-avatar, article, table-row-divider"
+      class="mb-6 w-100 bg-transparent"
+    />
+
+    <div
+      v-else
+      class="scp-edit-layout"
+    >
       <WpJournalNav
+        ref="journalNavRef"
         v-model="activeSection"
         :sections="journalSections"
         :title="form.reference || t('scp.rfq.title')"
         :subtitle="statusLabel(form.status)"
         id-prefix="section-"
-        @update:model-value="scrollToSection($event)"
       >
         <template #footer>
           <div v-if="!isReadOnly">
@@ -702,21 +904,65 @@ const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPr
       </WpJournalNav>
 
       <main class="scp-journal-feed">
+        <WpKpiGroup
+          :item-count="4"
+          :cols="{ xs: 2, sm: 2, md: 4, lg: 4 }"
+          class="mb-6"
+        >
+          <template #default="{ getColProps }">
+            <VCol v-bind="getColProps(0)">
+              <WpKpiCard
+                :title="t('scp.rfq.fields.invited_suppliers')"
+                :value="invitations.length || form.invited_supplier_ids.length"
+                icon="tabler-users"
+                icon-color="info"
+                :loading="isLoading"
+              />
+            </VCol>
+            <VCol v-bind="getColProps(1)">
+              <WpKpiCard
+                :title="t('scp.rfq.sections.responses')"
+                :value="responses.length"
+                icon="tabler-messages"
+                icon-color="primary"
+                :loading="isLoading"
+              />
+            </VCol>
+            <VCol v-bind="getColProps(2)">
+              <WpKpiCard
+                :title="t('scp.common.lines')"
+                :value="form.lines.length"
+                icon="tabler-list-numbers"
+                icon-color="warning"
+                :loading="isLoading"
+              />
+            </VCol>
+            <VCol v-bind="getColProps(3)">
+              <WpKpiCard
+                :title="t('scp.rfq.fields.target_total')"
+                :value="formatMoney(totals.grandTotal)"
+                icon="tabler-coins"
+                icon-color="success"
+                :loading="isLoading"
+              />
+            </VCol>
+          </template>
+        </WpKpiGroup>
+
         <!-- Section 1: Overview & Evaluation Criteria -->
         <section
           id="section-overview"
-          class="mb-6"
+          class="journal-section mb-6"
         >
           <WpSectionCard
             :title="t('scp.rfq.sections.overview')"
             icon="tabler-info-circle"
           >
             <template
-              v-if="!isReadOnly"
+              v-if="!isReadOnly && form.status === 'draft'"
               #actions
             >
               <VBtn
-                v-if="form.status === 'draft'"
                 variant="tonal"
                 color="secondary"
                 size="small"
@@ -726,18 +972,37 @@ const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPr
               >
                 {{ t('scp.rfq.actions.import_ipr', 'Import from Approved IPR') }}
               </VBtn>
-              <VBtn
-                color="primary"
-                size="small"
-                prepend-icon="tabler-device-floppy"
-                :loading="isSaving"
-                :disabled="!isDirty && !isCreateMode"
-                min-height="40"
-                @click="handleSave"
-              >
-                {{ t('scp.action.save') }}
-              </VBtn>
             </template>
+
+            <!-- Linked Source IPR Chips -->
+            <div
+              v-if="form.iprs?.length || form.ipr_ids?.length"
+              class="d-flex flex-wrap align-center gap-2 mb-4 pa-3 rounded border bg-surface"
+            >
+              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis me-1">
+                <VIcon
+                  icon="tabler-link"
+                  size="14"
+                  class="me-1"
+                />
+                {{ t('scp.rfq.fields.source_iprs', 'Linked Source IPR(s)') }}:
+              </span>
+
+              <VChip
+                v-for="ipr in (form.iprs?.length ? form.iprs : form.ipr_ids.map(id => ({ id, reference: `#${String(id).slice(-6)}` })))"
+                :key="ipr.id"
+                size="small"
+                color="primary"
+                variant="tonal"
+                label
+                :closable="!isReadOnly"
+                class="font-weight-semibold cursor-pointer"
+                @click="router.push(`/supply-chain-procurement/ipr/edit/${ipr.id}`)"
+                @click:close="detachIpr(ipr.id)"
+              >
+                {{ ipr.reference || ipr.id }}
+              </VChip>
+            </div>
 
             <VRow>
               <VCol
@@ -886,78 +1151,27 @@ const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPr
         <!-- Section 2: Invited Suppliers -->
         <section
           id="section-suppliers"
-          class="mb-6"
+          class="journal-section mb-6"
         >
-          <WpSectionCard
-            :title="t('scp.rfq.sections.invited_suppliers')"
-            icon="tabler-building-store"
-          >
-            <VAutocomplete
-              v-if="!isReadOnly"
-              v-model="form.invited_supplier_ids"
-              :items="supplierOptions"
-              item-title="title"
-              item-value="value"
-              :label="t('scp.rfq.fields.invited_suppliers')"
-              multiple
-              chips
-              closable-chips
-              class="mb-4"
-            />
-
-            <WpEmptyState
-              v-if="invitations.length === 0 && form.invited_supplier_ids.length === 0"
-              :title="t('scp.rfq.empty.no_suppliers')"
-              icon="tabler-building-store"
-              compact
-            />
-
-            <VRow v-else-if="invitations.length">
-              <VCol
-                v-for="inv in invitations"
-                :key="inv.id"
-                cols="12"
-                sm="6"
-                md="4"
-              >
-                <VCard
-                  variant="outlined"
-                  class="pa-3"
-                >
-                  <div class="d-flex align-center justify-space-between gap-2">
-                    <div class="min-w-0">
-                      <div class="font-weight-bold text-body-2 text-truncate">
-                        {{ resolveSupplierName(inv.supplier) }}
-                      </div>
-                      <div class="text-caption text-medium-emphasis">
-                        {{ inv.supplier?.supplier_id || inv.supplier?.primary_email || '' }}
-                      </div>
-                    </div>
-                    <VChip
-                      size="x-small"
-                      label
-                      variant="tonal"
-                      :color="responses.some(r => r.supplier_id === inv.supplier_id) ? 'success' : 'warning'"
-                    >
-                      {{ responses.some(r => r.supplier_id === inv.supplier_id) ? t('scp.rfq.bid_received') : t('scp.rfq.awaiting_bid') }}
-                    </VChip>
-                  </div>
-                </VCard>
-              </VCol>
-            </VRow>
-          </WpSectionCard>
+          <RfqSuppliersSection
+            v-model:invited-supplier-ids="form.invited_supplier_ids"
+            :invitations="invitations"
+            :suppliers="supplierStore.suppliers"
+            :readonly="isReadOnly"
+          />
         </section>
 
         <!-- Section 3: Requested Items -->
         <section
           id="section-lines"
-          class="mb-6"
+          class="journal-section mb-6"
         >
           <WpDocumentLinesCard
             v-model:lines="form.lines"
             :title="t('scp.rfq.sections.lines')"
             :readonly="isReadOnly"
             :loading="isLoading"
+            :columns="lineColumns"
             :fields="['item', 'description', 'quantity', 'unit', 'unit_price']"
             :field-labels="{
               quantity: t('scp.ipr.fields.qty_requested'),
@@ -971,309 +1185,179 @@ const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPr
             :fetch-catalog-items="fetchCatalogItemsForPicker"
             :map-catalog-item="mapCatalogToRfqLine"
             :errors="errors"
-          />
+            @bulk-add="onBulkAddLines"
+          >
+            <template
+              v-if="!isReadOnly && form.status === 'draft'"
+              #actions
+            >
+              <VBtn
+                size="small"
+                color="info"
+                variant="tonal"
+                prepend-icon="tabler-file-import"
+                @click="openImportIprDialog"
+              >
+                {{ t('scp.rfq.actions.import_ipr', 'Import from Approved IPR') }}
+              </VBtn>
+              <VBtn
+                size="small"
+                color="warning"
+                variant="tonal"
+                prepend-icon="tabler-Sparkles"
+                @click="addAdHocLine"
+              >
+                {{ t('scp.ipr.actions.add_ad_hoc', 'Add Ad-Hoc Item') }}
+              </VBtn>
+            </template>
+
+            <template #cell-item="{ line }">
+              <div class="d-flex flex-column gap-1 py-1">
+                <div class="d-flex flex-wrap align-center gap-2">
+                  <VChip
+                    v-if="line.is_ad_hoc"
+                    size="x-small"
+                    color="warning"
+                    variant="tonal"
+                    label
+                    class="font-weight-bold"
+                  >
+                    AD-HOC
+                  </VChip>
+                  <VChip
+                    v-else-if="line.item_type || line.catalog_item?.item_type"
+                    size="x-small"
+                    :color="resolveItemTypeBadgeColor(line.item_type || line.catalog_item?.item_type)"
+                    variant="tonal"
+                    label
+                    class="text-uppercase font-weight-semibold"
+                  >
+                    {{ line.item_type || line.catalog_item?.item_type }}
+                  </VChip>
+                  <span
+                    v-if="!line.is_ad_hoc && (line.subtype || line.catalog_item?.subtype)"
+                    class="text-caption text-medium-emphasis"
+                  >
+                    {{ line.subtype || line.catalog_item?.subtype }}
+                  </span>
+                </div>
+
+                <VTextField
+                  v-if="!isReadOnly && line.is_ad_hoc"
+                  v-model="line.ad_hoc_name"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  :placeholder="t('scp.common.item')"
+                  @update:model-value="line.item_name = $event"
+                />
+                <div
+                  v-else
+                  class="text-body-2 font-weight-bold text-high-emphasis"
+                >
+                  {{ line.is_ad_hoc ? (line.ad_hoc_name || line.item_name || '—') : (line.item_name || '—') }}
+                </div>
+
+                <div
+                  v-if="line.description"
+                  class="text-caption text-medium-emphasis text-truncate"
+                >
+                  {{ line.description }}
+                </div>
+              </div>
+            </template>
+
+            <template #cell-sku="{ line, index }">
+              <VChip
+                v-if="line.is_ad_hoc"
+                size="x-small"
+                variant="tonal"
+                color="warning"
+                label
+              >
+                {{ line.ad_hoc_sku || line.sku || 'NEW' }}
+              </VChip>
+              <VChip
+                v-else-if="line.sku || line.ad_hoc_sku"
+                size="x-small"
+                variant="tonal"
+                :color="!isReadOnly && (line.raw_catalog_item?.variants?.length > 1 || line.catalog_item?.variants?.length > 1) ? 'primary' : 'secondary'"
+                label
+                :class="{ 'cursor-pointer': !isReadOnly && (line.raw_catalog_item?.variants?.length > 1 || line.catalog_item?.variants?.length > 1) }"
+                @click="!isReadOnly && openVariantDialogForLine(line, index)"
+              >
+                <VIcon
+                  v-if="!isReadOnly && (line.raw_catalog_item?.variants?.length > 1 || line.catalog_item?.variants?.length > 1)"
+                  icon="tabler-layers-linked"
+                  size="12"
+                  class="me-1"
+                />
+                {{ line.sku || line.ad_hoc_sku }}
+              </VChip>
+              <span
+                v-else
+                class="text-disabled"
+              >—</span>
+            </template>
+
+            <template #cell-required_certifications="{ line }">
+              <VCombobox
+                v-if="!isReadOnly"
+                v-model="line.required_certifications"
+                :items="commonCertOptions"
+                density="compact"
+                variant="outlined"
+                multiple
+                chips
+                closable-chips
+                hide-details
+                :placeholder="t('scp.rfq.fields.required_certifications', 'Certs...')"
+              />
+              <div
+                v-else-if="line.required_certifications?.length"
+                class="d-flex flex-wrap gap-1"
+              >
+                <VChip
+                  v-for="cert in line.required_certifications"
+                  :key="cert"
+                  size="x-small"
+                  color="info"
+                  variant="tonal"
+                  label
+                >
+                  {{ cert }}
+                </VChip>
+              </div>
+              <span
+                v-else
+                class="text-disabled"
+              >—</span>
+            </template>
+          </WpDocumentLinesCard>
         </section>
 
         <!-- Section 4: Supplier Responses & Bid Comparison Matrix -->
         <section
           id="section-comparison"
-          class="mb-6"
+          class="journal-section mb-6"
         >
-          <WpSectionCard
-            :title="t('scp.rfq.sections.comparison')"
-            icon="tabler-git-compare"
-          >
-            <template #actions>
-              <VBtn
-                v-if="canRecordBid"
-                size="small"
-                color="primary"
-                variant="tonal"
-                prepend-icon="tabler-plus"
-                min-height="40"
-                @click="responseDialogOpen = true"
-              >
-                {{ t('scp.rfq.actions.record_bid') }}
-              </VBtn>
-              <VBtn
-                v-if="form.status === 'awarded'"
-                size="small"
-                color="success"
-                prepend-icon="tabler-shopping-cart-plus"
-                min-height="40"
-                @click="router.push({ path: '/supply-chain-procurement/po/list', query: { from_rfq: rfqId } })"
-              >
-                {{ t('scp.action.convert_to_po') }}
-              </VBtn>
-            </template>
-
-            <WpEmptyState
-              v-if="responses.length === 0"
-              :title="t('scp.rfq.empty.no_responses')"
-              :subtitle="t('scp.rfq.empty.no_responses_desc')"
-              icon="tabler-messages-off"
-              compact
-            />
-
-            <!-- Mobile Bid Cards -->
-            <div
-              v-else-if="smAndDown"
-              class="d-flex flex-column gap-3"
-            >
-              <WpMobileCard
-                v-for="resp in responses"
-                :key="resp.id"
-                :title="resolveSupplierName(resp.supplier)"
-                :subtitle="`${paymentTermsLabel(resp.payment_terms_offered)} · ${formatDate(resp.can_deliver_by)}`"
-              >
-                <template #badges>
-                  <VChip
-                    v-if="rawDocument?.awarded_to_supplier_id === resp.supplier_id"
-                    size="x-small"
-                    color="success"
-                    prepend-icon="tabler-award"
-                    label
-                  >
-                    {{ statusLabel('awarded') }}
-                  </VChip>
-                  <VChip
-                    v-if="formatEvaluationScore(resp) !== null"
-                    size="x-small"
-                    color="info"
-                    variant="tonal"
-                    label
-                  >
-                    {{ t('scp.common.score') }}: {{ formatEvaluationScore(resp) }}
-                  </VChip>
-                </template>
-
-                <template #content>
-                  <div class="d-flex justify-space-between align-center mt-1">
-                    <span class="text-body-2 font-weight-bold text-primary">
-                      {{ formatMoney(resp.total_ht || 0) }}
-                    </span>
-                  </div>
-                  <div
-                    v-if="resp.evaluation_details"
-                    class="d-flex flex-wrap gap-1 mt-2"
-                  >
-                    <VChip
-                      v-for="(val, key) in resp.evaluation_details"
-                      :key="key"
-                      size="x-small"
-                      variant="outlined"
-                      color="secondary"
-                    >
-                      {{ key }}: {{ val }}
-                    </VChip>
-                  </div>
-                </template>
-
-                <template
-                  v-if="form.status !== 'awarded' && form.status !== 'cancelled'"
-                  #actions
-                >
-                  <VBtn
-                    size="small"
-                    color="success"
-                    variant="tonal"
-                    prepend-icon="tabler-award"
-                    min-height="40"
-                    @click="awardSupplier(resp.supplier_id)"
-                  >
-                    {{ t('scp.rfq.actions.award_supplier') }}
-                  </VBtn>
-                </template>
-              </WpMobileCard>
-            </div>
-
-            <!-- Desktop Side-by-Side Comparison Matrix -->
-            <div
-              v-else
-              class="overflow-x-auto"
-            >
-              <VTable density="comfortable">
-                <thead>
-                  <tr>
-                    <th>{{ t('scp.common.item') }}</th>
-                    <th class="text-end">
-                      {{ t('scp.ipr.fields.qty_requested') }}
-                    </th>
-                    <th class="text-end">
-                      {{ t('scp.rfq.fields.target_price_ht') }}
-                    </th>
-                    <th
-                      v-for="resp in responses"
-                      :key="resp.id"
-                      class="text-end"
-                    >
-                      <div class="font-weight-bold">
-                        {{ resolveSupplierName(resp.supplier) }}
-                      </div>
-                      <div class="d-flex justify-end align-center gap-1 mt-1">
-                        <VChip
-                          v-if="formatEvaluationScore(resp) !== null"
-                          size="x-small"
-                          color="info"
-                          variant="tonal"
-                          label
-                        >
-                          {{ t('scp.common.score') }}: {{ formatEvaluationScore(resp) }}
-                        </VChip>
-                        <VChip
-                          v-if="rawDocument?.awarded_to_supplier_id === resp.supplier_id"
-                          size="x-small"
-                          color="success"
-                          prepend-icon="tabler-award"
-                          label
-                        >
-                          {{ statusLabel('awarded') }}
-                        </VChip>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    v-for="line in form.lines"
-                    :key="line.id || line.item_name"
-                  >
-                    <td class="font-weight-medium">
-                      {{ line.item_name }}
-                    </td>
-                    <td class="text-end">
-                      {{ line.qty_requested }}
-                    </td>
-                    <td class="text-end text-medium-emphasis">
-                      {{ formatMoney(line.target_price_ht || 0) }}
-                    </td>
-                    <td
-                      v-for="resp in responses"
-                      :key="resp.id"
-                      class="text-end"
-                    >
-                      <template v-if="findResponseLineFor(resp, line.id)">
-                        <div class="d-flex align-center justify-end gap-1">
-                          <span class="font-weight-bold">
-                            {{ formatMoney(findResponseLineFor(resp, line.id).offered_unit_price_ht) }}
-                          </span>
-                          <VChip
-                            v-if="computeVsTargetPct(findResponseLineFor(resp, line.id).offered_unit_price_ht, line.target_price_ht) !== null"
-                            size="x-small"
-                            label
-                            variant="tonal"
-                            :color="computeVsTargetPct(findResponseLineFor(resp, line.id).offered_unit_price_ht, line.target_price_ht) <= 0 ? 'success' : 'warning'"
-                          >
-                            {{ computeVsTargetPct(findResponseLineFor(resp, line.id).offered_unit_price_ht, line.target_price_ht) > 0 ? '+' : '' }}{{ computeVsTargetPct(findResponseLineFor(resp, line.id).offered_unit_price_ht, line.target_price_ht) }}%
-                          </VChip>
-                        </div>
-                        <div class="text-caption text-medium-emphasis">
-                          {{ findResponseLineFor(resp, line.id).offered_lead_time_days ?? '—' }} {{ t('scp.rfq.days') }}
-                        </div>
-                      </template>
-                      <span
-                        v-else
-                        class="text-disabled"
-                      >—</span>
-                    </td>
-                  </tr>
-
-                  <!-- Summary Rows -->
-                  <tr class="bg-surface">
-                    <td
-                      colspan="3"
-                      class="font-weight-bold"
-                    >
-                      {{ t('scp.rfq.response_dialog.total_quoted_ht') }}
-                    </td>
-                    <td
-                      v-for="resp in responses"
-                      :key="resp.id"
-                      class="text-end font-weight-bold text-primary text-body-1"
-                    >
-                      {{ formatMoney(resp.total_ht || 0) }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td
-                      colspan="3"
-                      class="text-medium-emphasis"
-                    >
-                      {{ t('scp.common.score', 'Evaluation Breakdown') }}
-                    </td>
-                    <td
-                      v-for="resp in responses"
-                      :key="resp.id"
-                      class="text-end"
-                    >
-                      <div
-                        v-if="resp.evaluation_details"
-                        class="d-inline-flex flex-wrap justify-end gap-1"
-                      >
-                        <VChip
-                          v-for="(val, key) in resp.evaluation_details"
-                          :key="key"
-                          size="x-small"
-                          variant="tonal"
-                          color="secondary"
-                        >
-                          {{ key }}: {{ val }}
-                        </VChip>
-                      </div>
-                      <span
-                        v-else
-                        class="text-caption text-medium-emphasis"
-                      >
-                        {{ formatEvaluationScore(resp) ?? '—' }}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td
-                      colspan="3"
-                      class="text-medium-emphasis"
-                    >
-                      {{ t('wp.docs.terms.payment_terms') }} / {{ t('scp.rfq.response_dialog.can_deliver_by') }}
-                    </td>
-                    <td
-                      v-for="resp in responses"
-                      :key="resp.id"
-                      class="text-end text-caption"
-                    >
-                      {{ paymentTermsLabel(resp.payment_terms_offered) }} · {{ formatDate(resp.can_deliver_by) }}
-                    </td>
-                  </tr>
-                  <tr v-if="form.status !== 'awarded' && form.status !== 'cancelled'">
-                    <td colspan="3">
-                      {{ t('scp.rfq.actions.award_decision') }}
-                    </td>
-                    <td
-                      v-for="resp in responses"
-                      :key="resp.id"
-                      class="text-end"
-                    >
-                      <VBtn
-                        size="small"
-                        color="success"
-                        variant="tonal"
-                        prepend-icon="tabler-award"
-                        :loading="submittingTransition"
-                        @click="awardSupplier(resp.supplier_id)"
-                      >
-                        {{ t('scp.rfq.actions.award_supplier') }}
-                      </VBtn>
-                    </td>
-                  </tr>
-                </tbody>
-              </VTable>
-            </div>
-          </WpSectionCard>
+          <RfqComparisonSection
+            :rfq="rawDocument || form"
+            :lines="form.lines"
+            :responses="responses"
+            :readonly="isCreateMode"
+            :submitting-award="submittingTransition"
+            @record-response="openRecordResponse(null)"
+            @edit-response="openRecordResponse($event)"
+            @toggle-award="handleToggleAward($event)"
+            @convert-to-po="router.push({ path: '/supply-chain-procurement/po/edit/new', query: { from_rfq: rfqId } })"
+          />
         </section>
 
         <!-- Section 5: Traceability -->
         <section
           id="section-traceability"
-          class="mb-6"
+          class="journal-section mb-6"
         >
           <WpDocumentTraceabilitySection
             :title="t('scp.ipr.sections.traceability')"
@@ -1283,35 +1367,43 @@ const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPr
       </main>
     </div>
 
-    <!-- Smart Import from Approved IPR Dialog -->
-    <WpFormDialog
+    <SourceDocumentImporterDialog
       v-model="importIprDialogOpen"
-      :title="t('scp.rfq.actions.import_ipr', 'Import from Approved IPR')"
-      icon="tabler-file-import"
-      size="medium"
-      :loading="importingIprs"
-      :submit-label="t('scp.action.import', 'Import Lines')"
-      @submit="confirmImportFromIprs"
-    >
-      <div class="pa-4">
-        <VAutocomplete
-          v-model="selectedImportIprIds"
-          :items="approvedIprOptions"
-          item-title="title"
-          item-value="value"
-          :loading="loadingApprovedIprs"
-          :label="t('scp.rfq.fields.source_iprs', 'Approved Purchase Requests')"
-          prepend-inner-icon="tabler-file-import"
-          multiple
-          chips
-          closable-chips
-        />
-      </div>
-    </WpFormDialog>
+      :allowed-sources="['ipr']"
+      @import="handleImportSource"
+    />
+
+    <VariantSelectDialog
+      v-model="variantDialogOpen"
+      :catalog-item="variantDialogCatalogItem"
+      @select="handleVariantSelected"
+    />
+
+    <ProcurementUnsavedBar
+      :is-dirty="isDirty"
+      :is-saving="isSaving"
+      :is-create-mode="isCreateMode"
+      :is-read-only="isReadOnly"
+      :summary-items="unsavedSummaryItems"
+      :mobile-actions="mobileQuickActions"
+      :save-label="t('scp.action.save')"
+      @save="handleSave"
+      @discard="handleDiscardChanges"
+    />
+
+    <RfqBroadcastDialog
+      v-model="broadcastDialogOpen"
+      :rfq-id="rfqId"
+      :invitations="invitations"
+      :invited-supplier-ids="form.invited_supplier_ids"
+      :suppliers="supplierStore.suppliers"
+      @completed="reloadRfq"
+    />
 
     <RecordRfqResponseDialog
       v-model="responseDialogOpen"
       :rfq="rawDocument"
+      :response-to-edit="editingResponse"
       @submitted="reloadRfq"
     />
 
@@ -1337,22 +1429,31 @@ const { activeSection, scrollToSection } = useJournalNav(journalSections, { idPr
 
 .scp-edit-layout {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
   gap: 1.5rem;
+
+  @media (max-width: 959px) {
+    flex-direction: column;
+    padding-block-end: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 .scp-journal-feed {
   flex: 1 1 auto;
   min-inline-size: 0;
+
+  @media (max-width: 959px) {
+    inline-size: 100%;
+  }
 }
 
-@media (max-width: 959px) {
-  .scp-edit-layout {
-    flex-direction: column;
-  }
+.journal-section {
+  min-inline-size: 0;
+  scroll-margin-block-start: 96px;
 
-  .scp-journal-feed {
-    inline-size: 100%;
+  @media (max-width: 959px) {
+    scroll-margin-block-start: 24px;
   }
 }
 </style>

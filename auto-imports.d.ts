@@ -778,6 +778,7 @@ declare global {
   const usePreferredLanguages: typeof import('@vueuse/core')['usePreferredLanguages']
   const usePreferredReducedMotion: typeof import('@vueuse/core')['usePreferredReducedMotion']
   const usePrevious: typeof import('@vueuse/core')['usePrevious']
+  const useProcurementDashboard: typeof import('./resources/js/composables/supply-chain-procurement/useProcurementDashboard.js')['useProcurementDashboard']
   const useProcurementHelpers: typeof import('./resources/js/composables/supply-chain-procurement/useProcurementHelpers.js')['useProcurementHelpers']
   const useProjection: typeof import('@vueuse/math')['useProjection']
   const useQrCode: typeof import('./resources/js/composables/scanner/useQrCode.js')['useQrCode']
@@ -1697,6 +1698,7 @@ declare module 'vue' {
     readonly usePreferredLanguages: UnwrapRef<typeof import('@vueuse/core')['usePreferredLanguages']>
     readonly usePreferredReducedMotion: UnwrapRef<typeof import('@vueuse/core')['usePreferredReducedMotion']>
     readonly usePrevious: UnwrapRef<typeof import('@vueuse/core')['usePrevious']>
+    readonly useProcurementDashboard: UnwrapRef<typeof import('./resources/js/composables/supply-chain-procurement/useProcurementDashboard.js')['useProcurementDashboard']>
     readonly useProcurementHelpers: UnwrapRef<typeof import('./resources/js/composables/supply-chain-procurement/useProcurementHelpers.js')['useProcurementHelpers']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
     readonly useQrCode: UnwrapRef<typeof import('./resources/js/composables/scanner/useQrCode.js')['useQrCode']>

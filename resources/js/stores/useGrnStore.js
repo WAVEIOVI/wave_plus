@@ -240,6 +240,21 @@ export const useGrnStore = defineStore('grn', () => {
     }
   }
 
+  /**
+   * Fetch summary metadata counts for GRNs.
+   * @returns {Promise<object>}
+   */
+  const fetchMeta = async () => {
+    try {
+      const response = await $api('/procurement/grns/meta', { method: 'GET' })
+
+      return response.data || response
+    } catch (err) {
+      if (is401(err)) return {}
+      throw err
+    }
+  }
+
   return {
     list,
     totalItems,
@@ -252,5 +267,6 @@ export const useGrnStore = defineStore('grn', () => {
     update,
     deleteItem,
     updateStatus,
+    fetchMeta,
   }
 })

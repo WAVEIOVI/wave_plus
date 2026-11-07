@@ -84,7 +84,16 @@
       "name": "الاسم",
       "sku": "الرمز (SKU)",
       "description": "الوصف",
-      "unit_cost": "تكلفة الوحدة"
+      "unit_cost": "تكلفة الوحدة",
+      "days": "أيام",
+      "subtotal_ht": "المجموع الفرعي قبل الضريبة",
+      "tva": "ضريبة القيمة المضافة",
+      "total_ttc": "المجموع الإجمالي شامل الضريبة",
+      "total_ht": "المجموع قبل الضريبة",
+      "qty": "الكمية",
+      "quantity": "الكمية",
+      "unit_price": "سعر الوحدة",
+      "actions": "الإجراءات"
     },
     "action": {
       "save": "حفظ",
@@ -110,7 +119,9 @@
       "new": "جديد",
       "back_to_list": "العودة للقائمة",
       "apply_filters": "تطبيق الفلاتر",
-      "reset_filters": "إعادة تعيين"
+      "reset_filters": "إعادة تعيين",
+      "close": "إغلاق",
+      "open": "فتح"
     },
     "grn": {
       "title": "سند استلام بضاعة (GRN)",
@@ -169,7 +180,15 @@
         "unit_cost_ht": "تكلفة الوحدة (دون ضريبة)",
         "qc_status": "حالة الجودة",
         "no_zone": "بلا منطقة",
-        "no_path": "بلا مسار"
+        "no_path": "بلا مسار",
+        "source_po": "أمر الشراء المصدر",
+        "select_po": "اختر أمر الشراء",
+        "expected_delivery_date": "تاريخ التسليم المتوقع",
+        "on_time": "في الوقت المحدد",
+        "late": "متأخر",
+        "days_late": "أيام التأخير",
+        "warehouse_zone": "منطقة المستودع",
+        "apply_location_all": "تطبيق الموقع على كافة البنود"
       },
       "action": {
         "receive_qc": "الاستلام والفحص",
@@ -181,7 +200,9 @@
         "apply_batch": "تطبيق على كل البنود",
         "done": "حفظ البند",
         "close": "إغلاق",
-        "cancel": "إلغاء"
+        "cancel": "إلغاء",
+        "download_delivery_note": "تحميل سند التسليم",
+        "apply_all": "تطبيق على الكل"
       },
       "modal": {
         "title_receive_qc": "استلام وفحص جودة البند",
@@ -244,18 +265,25 @@
         "delivery_performance": "أداء التسليم",
         "qc_summary": "ملخص فحص الجودة",
         "notes_remarks": "الملاحظات والتعليقات",
-        "rejected_goods": "البضائع المرفوضة"
+        "rejected_goods": "البضائع المرفوضة",
+        "rejected_summary": "مراقبة الجودة والبنود المرفوضة",
+        "logistics": "اللوجستيات والتسليم"
       },
       "empty": {
         "no_lines": "لا توجد بنود",
         "select_po": "اختر أمر شراء لتحميل البنود.",
-        "no_rejected": "لا توجد أصناف مرفوضة"
+        "no_rejected": "لا توجد أصناف مرفوضة",
+        "no_receivable_po": "لا توجد أوامر شراء مؤهلة للاستلام",
+        "zero_rejected": "لا توجد عناصر مرفوضة",
+        "zero_rejected_desc": "اجتازت جميع البنود المستلمة فحص مراقبة الجودة بنجاح"
       },
       "alerts": {
         "locked": "تم تأكيد سند الاستلام هذا وإغلاقه.",
         "qc_review": "سند الاستلام حالياً في حالة {status}. راجع نتائج الفحص قبل المتابعة.",
         "missing_location": "لا يمكن تأكيد السند: بعض البنود تفتقر إلى موقع تخزين.",
-        "required_fields": "أمر الشراء والمورد وبند واحد على الأقل مطلوبة."
+        "required_fields": "أمر الشراء والمورد وبند واحد على الأقل مطلوبة.",
+        "rejected_items_notice": "تتطلب البنود المرفوضة أثناء الفحص إرجاعاً للمورد أو إنشاء إشعار مدين",
+        "non_stockable": "الخدمات والأصناف غير القابلة للتخزين لا تتطلب تعيين موقع تخزين فعلي"
       },
       "match": {
         "title": "المطابقة الثلاثية",
@@ -272,7 +300,18 @@
         "error_status": "فشل تحديث الحالة",
         "error_load": "فشل تحميل تفاصيل سند الاستلام",
         "error_po_populate": "خطأ أثناء التعبئة التلقائية من أمر الشراء",
-        "error_generic": "حدث خطأ"
+        "error_generic": "حدث خطأ",
+        "po_fully_received": "تم استلام أمر الشراء بالكامل مسبقاً",
+        "storage_required": "موقع التخزين مطلوب لبنود الاستلام المؤكدة"
+      },
+      "badges": {
+        "non_stockable": "غير قابل للتخزين",
+        "over_received": "مستلم بالزيادة",
+        "under_received": "مستلم بالنقص"
+      },
+      "batch": {
+        "subtitle": "استلام دفعات لكافة البنود المتبقية وتعيين مواقع التخزين",
+        "global_routing": "التوجيه الشامل للتخزين"
       }
     },
     "ipr": {
@@ -305,7 +344,11 @@
         "justification_placeholder": "اشرح سبب الحاجة إلى هذه الأصناف أو الخدمات...",
         "qty_requested": "الكمية المطلوبة",
         "estimated_unit_cost": "التكلفة التقديرية للوحدة",
-        "estimated_total": "الإجمالي التقديري"
+        "estimated_total": "الإجمالي التقديري",
+        "current_stock": "المخزون الحالي",
+        "suggested_supplier": "المورد المقترح",
+        "rejection_reason": "سبب الرفض",
+        "approval_note": "ملاحظة الاعتماد"
       },
       "trigger_sources": {
         "manual_user": "طلب يدوي",
@@ -323,7 +366,8 @@
         "submit_approval": "إرسال للموافقة",
         "approve": "موافقة",
         "reject": "رفض",
-        "convert": "تحويل إلى عرض سعر / أمر شراء"
+        "convert": "تحويل إلى عرض سعر / أمر شراء",
+        "add_ad_hoc": "إضافة صنف استثنائي"
       },
       "convert": {
         "title": "تحويل طلب الشراء",
@@ -345,7 +389,13 @@
         "error_generic": "حدث خطأ",
         "error_requested_by": "حقل مقدم الطلب مطلوب",
         "error_no_lines": "يجب إضافة بند واحد على الأقل.",
-        "error_variant_load": "فشل تحميل متغيرات الصنف."
+        "error_variant_load": "فشل تحميل متغيرات الصنف.",
+        "error_load": "فشل تحميل طلب الشراء الداخلي"
+      },
+      "view_title": "تفاصيل طلب الشراء الداخلي",
+      "validation": {
+        "requested_by_required": "اسم صاحب الطلب مطلوب",
+        "lines_required": "يجب إضافة بند واحد على الأقل"
       }
     },
     "rfq": {
@@ -379,7 +429,19 @@
         "target_price_ht": "سعر الوحدة المستهدف (دون ضريبة)",
         "target_total": "الإجمالي المستهدف (دون ضريبة)",
         "awarded_supplier": "المورد الفائز",
-        "terms_and_conditions": "الشروط والأحكام"
+        "terms_and_conditions": "الشروط والأحكام",
+        "required_certifications": "الشهادات والاعتمادات المطلوبة",
+        "source_iprs": "طلبات الشراء المصدر",
+        "payment_terms_offered": "شروط الدفع المعروضة",
+        "can_deliver_by": "تاريخ التسليم المحدد من المورد",
+        "validity_until": "صلاحية العرض حتى",
+        "offered_qty": "الكمية المعروضة",
+        "offered_unit_price_ht": "سعر الوحدة المعروض قبل الضريبة",
+        "vs_target": "مقارنة بالسعر المستهدف",
+        "offered_lead_time_days": "مدة التوريد (بالأيام)",
+        "certifications_confirmed": "تم تأكيد الشهادات المطلوبة",
+        "supplier_notes": "ملاحظات المورد",
+        "evaluation_score": "الدرجة"
       },
       "weights": {
         "price": "وزن السعر",
@@ -389,7 +451,10 @@
         "payment": "وزن شروط الدفع"
       },
       "validation": {
-        "weights_sum_100": "يجب أن يكون مجموع أوزان معايير التقييم 100%."
+        "weights_sum_100": "يجب أن يكون مجموع أوزان معايير التقييم 100%.",
+        "title_required": "عنوان طلب عروض الأسعار مطلوب",
+        "deadline_required": "الموعد النهائي لتقديم العروض مطلوب",
+        "lines_required": "يجب إضافة بند واحد على الأقل"
       },
       "sections": {
         "overview": "نظرة عامة والمواعيد",
@@ -397,14 +462,25 @@
         "lines": "الأصناف المطلوبة",
         "responses": "العروض المستلمة",
         "comparison": "ردود الموردين ومقارنة العروض",
-        "evaluation_criteria": "أوزان معايير التقييم"
+        "evaluation_criteria": "أوزان معايير التقييم",
+        "suppliers": "الموردون المدعوون والعروض"
       },
       "actions": {
         "send_to_suppliers": "إرسال للموردين",
         "record_bid": "تسجيل عرض مورد",
         "start_evaluation": "بدء التقييم",
         "award_decision": "قرار الترسية",
-        "award_supplier": "ترسية على المورد"
+        "award_supplier": "ترسية على المورد",
+        "import_ipr": "استيراد من طلب الشراء الداخلي",
+        "send_suppliers": "إرسال إلى الموردين",
+        "edit_response": "تعديل العرض",
+        "record_response": "تسجيل عرض أسعار",
+        "send": "بدء الإرسال",
+        "view_po": "عرض أمر الشراء",
+        "convert_to_po": "إنشاء أمر الشراء",
+        "revoke_award": "إلغاء الترسية",
+        "invite_suppliers": "دعوة موردين",
+        "confirm_invite": "تأكيد الدعوات"
       },
       "response_dialog": {
         "title": "تسجيل عرض سعر من مورد",
@@ -420,7 +496,11 @@
       "empty": {
         "no_suppliers": "لم تتم دعوة موردين بعد",
         "no_responses": "لم يتم تسجيل عروض موردين بعد",
-        "no_responses_desc": "سجل عروض الأسعار الواردة من الموردين لمقارنتها وترسية الطلب."
+        "no_responses_desc": "سجل عروض الأسعار الواردة من الموردين لمقارنتها وترسية الطلب.",
+        "no_responses_title": "لم يتم تقديم أي عروض حتى الآن",
+        "no_responses_subtitle": "ستظهر عروض الموردين هنا لإجراء المقارنة الفنية والمالية فور استلامها",
+        "no_suppliers_title": "لم تتم دعوة أي موردين حتى الآن",
+        "no_suppliers_subtitle": "قم بدعوة موردين معتمدين من دليل شركاء الأعمال"
       },
       "snackbar": {
         "created_success": "تم إنشاء طلب عرض الأسعار بنجاح",
@@ -431,8 +511,53 @@
         "error_save": "فشل حفظ طلب عرض الأسعار",
         "error_delete": "فشل حذف طلب عرض الأسعار",
         "error_status": "فشل تحديث الحالة",
-        "error_generic": "حدث خطأ"
-      }
+        "error_generic": "حدث خطأ",
+        "error_load": "فشل تحميل طلب عروض الأسعار",
+        "imported_ipr": "تم استيراد بنود طلب الشراء إلى طلب عروض الأسعار",
+        "response_updated": "تم تحديث عرض أسعار المورد",
+        "response_recorded": "تم تسجيل عرض أسعار المورد",
+        "error_response": "فشل حفظ عرض الأسعار",
+        "broadcast_success": "تم إرسال طلب عروض الأسعار للموردين بنجاح"
+      },
+      "alerts": {
+        "weights_sum_100": "يجب أن يكون مجموع أوزان معايير التقييم 100% تماماً"
+      },
+      "broadcast": {
+        "title": "إرسال طلب عروض الأسعار إلى الموردين",
+        "subtitle": "إرسال دعوة المشاركة ودفتر الشروط رسمياً عبر البريد الإلكتروني",
+        "no_suppliers_warning": "لم يتم تحديد أي موردين للإرسال",
+        "confirm_message": "هل أنت متأكد من رغبتك في إرسال طلب عروض الأسعار لكافة الموردين المحددين؟",
+        "status_pending": "قيد الانتظار",
+        "status_sending": "جاري الإرسال...",
+        "status_sent": "تم الإرسال",
+        "status_failed": "فشل الإرسال"
+      },
+      "comparison": {
+        "on_time": "في الموعد",
+        "early": "مبكر",
+        "late": "متأخر",
+        "awarded_to": "تم الترسية على",
+        "awarded_on": "تاريخ الترسية",
+        "approved_by": "معتمد من قبل",
+        "criteria_items": "معايير التقييم",
+        "submitted": "تم التقديم",
+        "awarded_badge": "العرض الفائز",
+        "score_breakdown": "تفصيل درجات التقييم",
+        "confirm_award_message": "هل أنت متأكد من اعتماد ترسية هذا العقد على المورد المحدد؟ سيتم تغيير حالة الطلب إلى معتمد."
+      },
+      "suppliers": {
+        "code": "رمز المورد",
+        "legal_name": "اسم الشركة",
+        "category": "الفئة",
+        "lead_time": "مدة التوريد القياسية",
+        "supplier_status": "حالة المورد",
+        "inv_status": "حالة الدعوة",
+        "sent_at": "تاريخ الإرسال",
+        "viewed_at": "تاريخ الاطلاع",
+        "invite_subtitle": "حدد الموردين المعتمدين لتلقي كراسة الشروط",
+        "search_placeholder": "البحث عن مورد بالاسم أو الرمز أو المعرف الجبائي..."
+      },
+      "view_title": "تفاصيل طلب عروض الأسعار"
     },
     "po": {
       "title": "أمر شراء",
@@ -460,11 +585,17 @@
         "qty_ordered": "الكمية المطلوبة",
         "qty_received": "الكمية المستلمة",
         "unit_price_ht": "سعر الوحدة (دون ضريبة)",
-        "receiving_progress": "تقدم الاستلام"
+        "receiving_progress": "تقدم الاستلام",
+        "supplier_contact": "جهة الاتصال لدى المورد",
+        "supplier_address": "عنوان المورد",
+        "sent_at": "أُرسل إلى المورد",
+        "acknowledged_at": "تم تأكيد الاستلام من المورد",
+        "goods_receipts": "سندات الاستلام"
       },
       "sections": {
         "overview": "المورد وموقع التسليم",
-        "lines": "بنود أمر الشراء"
+        "lines": "بنود أمر الشراء",
+        "match": "المطابقة الثلاثية والتسوية"
       },
       "actions": {
         "mark_sent": "إرسال للمورد",
@@ -472,7 +603,8 @@
         "mark_in_delivery": "تحديد كقيد التوصيل",
         "create_grn": "إنشاء سند استلام (GRN)",
         "close_po": "إغلاق أمر الشراء",
-        "back_to_po": "العودة لأمر الشراء"
+        "back_to_po": "العودة لأمر الشراء",
+        "import_source": "استيراد من طلب الشراء / طلب عروض الأسعار"
       },
       "match": {
         "variances": "بنود بها فروقات",
@@ -481,7 +613,16 @@
         "status_pending_receipt": "بانتظار الاستلام",
         "status_over_received": "استلام زائد",
         "status_under_received": "استلام ناقص",
-        "status_variance": "فرق سعر / جودة"
+        "status_variance": "فرق سعر / جودة",
+        "supplier_invoice": "فاتورة المورد",
+        "not_linked": "غير مرتبطة",
+        "invoice_pending": "الفاتورة معلقة أو بانتظار ربط سند الاستلام",
+        "policy_title": "سياسة وضوابط المطابقة الثلاثية",
+        "qty_tolerance": "نسبة التفاوت المقبولة في الكمية",
+        "price_tolerance": "نسبة التفاوت المقبولة في السعر",
+        "rejections_policy": "سياسة الكميات المرفوضة",
+        "rejections_flag": "صارمة — تُسجل الكميات المرفوضة كفروقات حتى إصدار إشعار دائن أو الاستبدال",
+        "pending_receipt_hint": "لا تزال هناك استلامات معلقة لهذا الطلب. يمكنك تسجيل سند استلام مباشرة من هنا."
       },
       "snackbar": {
         "created_success": "تم إنشاء أمر الشراء بنجاح",
@@ -491,7 +632,9 @@
         "error_save": "فشل حفظ أمر الشراء",
         "error_delete": "فشل حذف أمر الشراء",
         "error_status": "فشل تحديث الحالة",
-        "error_generic": "حدث خطأ"
+        "error_generic": "حدث خطأ",
+        "error_load": "فشل تحميل أمر الشراء",
+        "imported_source": "تم استيراد بنود المصدر بنجاح"
       }
     },
     "dashboard": {
@@ -513,7 +656,15 @@
         "pending_grns": "سندات استلام معلقة",
         "pending_grns_desc": "قيد الفحص أو بانتظار التأكيد",
         "committed_spend": "إجمالي الإنفاق الملتزم به",
+        "open_pos_value": "أوامر الشراء المفتوحة",
         "this_month": "هذا الشهر"
+      },
+      "attention": {
+        "title": "يتطلب الانتباه",
+        "subtitle": "الإجراءات المعلقة عبر مراحل المشتريات",
+        "all_clear_title": "لا توجد تنبيهات",
+        "all_clear_subtitle": "لا توجد مستندات مشتريات تتطلب إجراءً عاجلاً حالياً.",
+        "late_deliveries": "التسليمات المتأخرة"
       },
       "pipeline": {
         "title": "مسار المشتريات",
@@ -552,4 +703,3 @@
     }
   }
 }
-

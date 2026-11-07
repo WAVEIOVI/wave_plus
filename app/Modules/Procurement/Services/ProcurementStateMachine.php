@@ -26,7 +26,7 @@ class ProcurementStateMachine
         'sent' => ['awaiting_responses', 'cancelled'],
         'awaiting_responses' => ['under_evaluation', 'cancelled'],
         'under_evaluation' => ['awarded', 'cancelled'],
-        'awarded' => [],
+        'awarded' => ['under_evaluation'],
         'cancelled' => [],
     ];
 

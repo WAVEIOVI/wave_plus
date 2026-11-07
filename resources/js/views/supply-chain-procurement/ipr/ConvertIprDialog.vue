@@ -20,10 +20,10 @@ const handleConfirm = () => {
   if (!props.ipr?.id) return
   emit('update:modelValue', false)
   if (targetType.value === 'rfq') {
-    router.push({ path: '/supply-chain-procurement/rfq/list', query: { from_ipr: props.ipr.id } })
+    router.push({ path: '/supply-chain-procurement/rfq/edit/new', query: { from_ipr: props.ipr.id } })
   }
   else {
-    router.push({ path: '/supply-chain-procurement/po/list', query: { from_ipr: props.ipr.id } })
+    router.push({ path: '/supply-chain-procurement/po/edit/new', query: { from_ipr: props.ipr.id } })
   }
 }
 </script>

@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { $api } from '@/utils/api'
 import { defineStore } from 'pinia'
 import { ref, toRaw } from 'vue'
