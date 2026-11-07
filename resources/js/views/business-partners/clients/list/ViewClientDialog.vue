@@ -28,6 +28,10 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  clientId: {
+    type: [String, Number],
+    default: null,
+  },
   client: {
     type: Object,
     default: null,

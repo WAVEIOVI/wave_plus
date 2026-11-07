@@ -56,28 +56,32 @@ export function useWorkwearEmployeeEdit(employeeId) {
   ]
 
   const garmentTypeOptions = [
-    'jacket',
-    'trousers',
     'coverall',
+    'jacket',
     'vest',
+    'tshirt',
+    'polo',
     'shirt',
+    'sweatshirt',
+    'lab_coat',
+    'trousers',
+    'shorts',
+    'apron',
     'helmet',
     'boots',
     'gloves',
-    'goggles',
-    'other',
   ].map(g => ({
-    title: g.replace(/\b\w/g, l => l.toUpperCase()),
+    title: g.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
     value: g,
   }))
 
   const statusMap = { active: 'success', inactive: 'secondary', terminated: 'error' }
 
-  const statusOptions = [
-    { title: 'Active', value: 'active' },
-    { title: 'Inactive', value: 'inactive' },
-    { title: 'Terminated', value: 'terminated' },
-  ]
+  const statusOptions = computed(() => [
+    { title: t('Active'), value: 'active' },
+    { title: t('Inactive'), value: 'inactive' },
+    { title: t('Terminated'), value: 'terminated' },
+  ])
 
   const returnActionColor = {
     restock: 'success',
@@ -123,12 +127,6 @@ export function useWorkwearEmployeeEdit(employeeId) {
     return { color: 'error', text: `0 / ${required} (${t('Missing')})` }
   }
 
-  const issuedCountForModel = modelId => {
-    if (!modelId) return 0
-
-    return currentAssignments.value.filter(a => String(a.item?.model_id) === String(modelId)).length
-  }
-
   const filteredAvailableItems = computed(() => {
     const list = availableClientItems.value || []
 
@@ -137,7 +135,7 @@ export function useWorkwearEmployeeEdit(employeeId) {
       : list
 
     return filtered.map(i => ({
-      title: `${i.item_code} — ${i.model?.name || i.model_name || i.garment_type} (${i.size || '—'}${i.color ? `, ${i.color}` : ''})`,
+      title: `${i.item_code} — ${i.model?.name || i.workwear_model?.name || i.model_name || i.garment_type || ''} (${i.size || 'STD'}${i.color ? `, ${i.color}` : ''})`,
       value: i.id,
     }))
   })
@@ -171,17 +169,6 @@ export function useWorkwearEmployeeEdit(employeeId) {
       }))
       : []
 
-    const model_assignments = Array.isArray(data?.model_assignments)
-      ? data.model_assignments.map(ma => ({
-        id: ma.id,
-        model_id: ma.model_id || ma.workwear_model_id,
-        model: ma.model || ma.workwear_model,
-        quantity: ma.quantity ?? 1,
-        size: ma.size || '',
-        notes: ma.notes || '',
-      }))
-      : []
-
     return {
       id: data?.id,
       client_id: data?.client_id,
@@ -202,7 +189,6 @@ export function useWorkwearEmployeeEdit(employeeId) {
       sizes,
       measurements,
       workwear_requirements,
-      model_assignments,
     }
   }
 
@@ -240,21 +226,6 @@ export function useWorkwearEmployeeEdit(employeeId) {
     }
   }
 
-  const addModelEntitlement = () => {
-    if (!employeeData.value) return
-    employeeData.value.model_assignments.push({
-      model_id: clientModels.value[0]?.id || null,
-      quantity: 2,
-      size: employeeData.value.sizes?.top || 'L',
-      notes: '',
-    })
-  }
-
-  const removeModelEntitlement = index => {
-    if (!employeeData.value) return
-    employeeData.value.model_assignments.splice(index, 1)
-  }
-
   const addRequirement = () => {
     if (!employeeData.value) return
     employeeData.value.workwear_requirements.push({
@@ -279,14 +250,16 @@ export function useWorkwearEmployeeEdit(employeeId) {
     isIssueDialogOpen.value = true
     try {
       const params = {
-        'filter[status]': 'in_stock',
         'filter[client_id]': employeeData.value?.client_id,
         itemsPerPage: 100,
       }
 
       const res = await store.fetchWorkwearItems(params)
 
-      availableClientItems.value = res.data || []
+      // Only items that are assignable (in_stock, available, returned)
+      availableClientItems.value = (res.data || []).filter(item =>
+        ['in_stock', 'available', 'returned'].includes(item.status),
+      )
     } catch (err) {
       console.error('Failed to fetch available items for issuance:', err)
     }
@@ -295,7 +268,7 @@ export function useWorkwearEmployeeEdit(employeeId) {
   const confirmIssueGarments = async () => {
     const id = toValue(employeeId)
     if (!issueForm.value.item_ids?.length) {
-      showMessage(t('Select at least one in-stock garment item to issue'), 'warning')
+      showMessage(t('Select at least one in-stock workwear item to issue'), 'warning')
 
       return false
     }
@@ -307,7 +280,7 @@ export function useWorkwearEmployeeEdit(employeeId) {
         condition_at_assign: issueForm.value.condition_at_assign,
         notes: issueForm.value.notes || null,
       })
-      showMessage(t('Garment(s) issued to employee'), 'success')
+      showMessage(t('Workwear item(s) issued to employee'), 'success')
       isIssueDialogOpen.value = false
       await fetchEmployee()
 
@@ -358,15 +331,6 @@ export function useWorkwearEmployeeEdit(employeeId) {
       notes: r.notes ? String(r.notes).trim() : null,
     }))
 
-    const cleanModelAssignments = (employeeData.value.model_assignments || [])
-      .filter(ma => ma.model_id)
-      .map(ma => ({
-        model_id: ma.model_id,
-        quantity: Math.max(1, Number(ma.quantity) || 1),
-        size: ma.size ? String(ma.size).trim() : null,
-        notes: ma.notes ? String(ma.notes).trim() : null,
-      }))
-
     try {
       await store.updateWorkwearEmployee(id, {
         first_name: employeeData.value.first_name,
@@ -380,7 +344,6 @@ export function useWorkwearEmployeeEdit(employeeId) {
         sizes: Object.keys(cleanSizes).length ? cleanSizes : null,
         measurements: Object.keys(cleanMeasurements).length ? cleanMeasurements : null,
         workwear_requirements: cleanRequirements.length ? cleanRequirements : null,
-        model_assignments: cleanModelAssignments,
         notes: employeeData.value.notes?.trim() || null,
       })
 
@@ -442,14 +405,11 @@ export function useWorkwearEmployeeEdit(employeeId) {
     isDirty,
     fieldErrors,
     coverageFor,
-    issuedCountForModel,
     filteredAvailableItems,
 
     // Actions
     fetchEmployee,
     fetchClientModels,
-    addModelEntitlement,
-    removeModelEntitlement,
     addRequirement,
     removeRequirement,
     openIssueGarmentDialog,

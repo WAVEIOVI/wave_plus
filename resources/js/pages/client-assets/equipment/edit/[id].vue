@@ -15,6 +15,7 @@ import {
 import { useEquipmentEdit } from '@/composables/client-assets/equipment/useEquipmentEdit'
 import { useEquipmentEditModals } from '@/composables/client-assets/equipment/useEquipmentEditModals'
 import { useUnsavedChangesGuard } from '@/composables/dialog/useUnsavedChangesGuard'
+import { useAbility } from '@/plugins/casl/composables/useAbility'
 import EquipmentEditHeaderKpis from '@/views/client-assets/equipment/edit/EquipmentEditHeaderKpis.vue'
 import EquipmentEditModals from '@/views/client-assets/equipment/edit/EquipmentEditModals.vue'
 import EquipmentEditUnsavedBar from '@/views/client-assets/equipment/edit/EquipmentEditUnsavedBar.vue'
@@ -28,10 +29,9 @@ import EquipmentLocationSection from '@/views/client-assets/equipment/sections/E
 import EquipmentMediaGallery from '@/views/client-assets/equipment/sections/EquipmentMediaGallery.vue'
 import EquipmentSpecsKvEditor from '@/views/client-assets/equipment/sections/EquipmentSpecsKvEditor.vue'
 import EquipmentStatusTiles from '@/views/client-assets/equipment/sections/EquipmentStatusTiles.vue'
-import { useAbility } from '@/plugins/casl/composables/useAbility'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
 const props = defineProps({
@@ -52,6 +52,7 @@ definePage({
 })
 
 const route = useRoute()
+const router = useRouter()
 const targetEquipmentId = computed(() => props.embeddedEquipmentId ?? route.params.id)
 const { t } = useI18n()
 const { smAndDown } = useDisplay()
@@ -59,12 +60,10 @@ const ability = useAbility()
 
 const isReadOnly = computed(() => props.isReadOnly || !ability.can('update', 'ClientAssets'))
 const canDelete = computed(() => !isNew.value && ability.can('delete', 'ClientAssets'))
-const canUpdate = computed(() => ability.can('update', 'ClientAssets'))
 
 // ── Composables ──────────────────────────────────────────────────────────────
 const {
   sections,
-  mobileNavItems,
   optionTitle,
   resolveLifecycleVariant,
   resolveComplianceVariant,
@@ -157,18 +156,12 @@ const visibleSections = computed(() =>
   isNew.value ? sections.filter(s => s.id !== 'history') : sections,
 )
 
-const visibleMobileNavItems = computed(() =>
-  isNew.value ? mobileNavItems.value.filter(item => item.value !== 'history') : mobileNavItems.value,
-)
-
 const breadcrumbItems = computed(() => [
   { title: t('Home'), to: '/', icon: 'tabler-home' },
   { title: t('Client Assets'), to: '/client-assets/equipment/list', icon: 'tabler-building-estate' },
   { title: t('Equipment Registry'), to: '/client-assets/equipment/list', icon: 'tabler-fire-extinguisher' },
   {
-    title: isNew.value
-      ? t('New Equipment')
-      : (form.value.model_name || form.value.equipment_code || t('Edit Equipment')),
+    title: form.value.model_name || form.value.equipment_code || t('Edit Equipment'),
     icon: 'tabler-tool',
     disabled: true,
   },
@@ -194,10 +187,10 @@ const {
 const quickActions = computed(() => [
   {
     id: 'save-equipment',
-    title: isNew.value ? t('Create Equipment') : t('Save Changes'),
+    title: t('Save Changes'),
     icon: 'tabler-device-floppy',
     color: 'success',
-    disabled: saving.value || (!isDirty.value && !isNew.value),
+    disabled: saving.value || !isDirty.value,
     onClick: handleSave,
   },
   {
@@ -205,7 +198,7 @@ const quickActions = computed(() => [
     title: t('Transfer Equipment'),
     icon: 'tabler-arrows-exchange',
     color: 'info',
-    disabled: isNew.value || loading.value,
+    disabled: loading.value,
     onClick: () => { isTransferDialogOpen.value = true },
   },
   {
@@ -213,7 +206,7 @@ const quickActions = computed(() => [
     title: t('Replace QR Code'),
     icon: 'tabler-qrcode',
     color: 'warning',
-    disabled: isNew.value || loading.value,
+    disabled: loading.value,
     onClick: () => { isReplaceQrDialogOpen.value = true },
   },
   {
@@ -221,7 +214,7 @@ const quickActions = computed(() => [
     title: t('Download QR Tag'),
     icon: 'tabler-download',
     color: 'primary',
-    disabled: isNew.value || loading.value,
+    disabled: loading.value,
     onClick: handleDownloadQr,
   },
   {
@@ -229,7 +222,7 @@ const quickActions = computed(() => [
     title: t('Take / Upload Photo'),
     icon: 'tabler-camera',
     color: 'success',
-    disabled: isNew.value || loading.value,
+    disabled: loading.value,
     onClick: () => { isImageDialogOpen.value = true },
   },
   {
@@ -237,7 +230,7 @@ const quickActions = computed(() => [
     title: t('Scan / Upload Document'),
     icon: 'tabler-file-upload',
     color: 'primary',
-    disabled: isNew.value || loading.value,
+    disabled: loading.value,
     onClick: () => {
       scrollToSection('media')
       mediaGalleryRef.value?.openUploadDocDialog()
@@ -251,27 +244,33 @@ const quickActions = computed(() => [
     disabled: !selectedClient.value,
     onClick: handleViewClient,
   },
-  {
+  ...(canDelete.value ? [{
     id: 'delete-equipment',
     title: t('Delete Equipment'),
     icon: 'tabler-trash',
     color: 'error',
-    disabled: isNew.value,
     onClick: () => { isDeleteDialogVisible.value = true },
-  },
+  }] : []),
 ])
 
 // ── Keyboard Save Shortcut ───────────────────────────────────────────────────
 const handleKeydown = e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
     e.preventDefault()
-    if (!isReadOnly.value && !saving.value && (isDirty.value || isNew.value)) {
+    if (!isReadOnly.value && !saving.value && isDirty.value) {
       handleSave()
     }
   }
 }
 
 onMounted(async () => {
+  // Creation is handled via EquipmentWizardDialog; redirect /client-assets/equipment/edit/new to list
+  if (String(targetEquipmentId.value ?? '') === 'new') {
+    await router.replace({ name: 'client-assets-equipment-list' })
+
+    return
+  }
+
   window.addEventListener('keydown', handleKeydown)
 
   await Promise.allSettled([
@@ -321,10 +320,9 @@ onBeforeUnmount(() => {
         :sections="visibleSections"
         :saving="saving"
         :is-dirty="isDirty"
-        :is-new="isNew"
+        :is-new="false"
         :readonly="isReadOnly"
         :can-delete="canDelete"
-        @scroll-to-section="scrollToSection"
         @save="handleSave"
         @transfer="isTransferDialogOpen = true"
         @delete="isDeleteDialogVisible = true"
@@ -359,7 +357,7 @@ onBeforeUnmount(() => {
           :selected-blueprint="selectedBlueprint"
           :selected-class="selectedClass"
           :selected-option-badges="selectedOptionBadges"
-          :is-new="isNew"
+          :is-new="false"
           :readonly="isReadOnly"
           @update:field="updateField"
           @open-photo-dialog="isImageDialogOpen = true"
@@ -370,91 +368,60 @@ onBeforeUnmount(() => {
           @view-client="handleViewClient"
         />
 
-        <!-- Section 2: Commercial Assignment & Physical Location -->
+        <!-- Section 2: Commercial Assignment & Physical Location (Client Locked, Site/Zone via Transfer Dialog) -->
         <section
           id="section-general"
           class="journal-section mb-6"
         >
-          <WpSectionCard
-            :title="$t('Commercial Assignment & Physical Location')"
-            :subtitle="$t('Client organization ownership, facility site assignment, and hierarchical building zone')"
-            icon="tabler-map-pin"
-            icon-color="info"
-          >
-            <template
-              v-if="!isNew && !isReadOnly"
-              #actions
-            >
-              <VBtn
-                size="small"
-                variant="tonal"
-                color="info"
-                prepend-icon="tabler-arrows-exchange"
-                @click="isTransferDialogOpen = true"
-              >
-                {{ $t('Formal Site Transfer') }}
-              </VBtn>
-            </template>
-
-            <EquipmentLocationSection
-              :form="form"
-              :selected-client="selectedClient"
-              :selected-site="selectedSite"
-              :selected-area="selectedArea"
-              :selected-area-full-path="selectedAreaFullPath"
-              :is-client-locked="isReadOnly"
-              show-view-client
-              :loading="loading"
-              @open-client-modal="isClientSearchModalVisible = true"
-              @open-site-modal="isSiteAreaModalVisible = true"
-              @open-area-modal="isSiteAreaModalVisible = true"
-              @clear-area="clearArea"
-              @view-client="handleViewClient"
-            />
-          </WpSectionCard>
+          <EquipmentLocationSection
+            :form="form"
+            :selected-client="selectedClient"
+            :selected-site="selectedSite"
+            :selected-area="selectedArea"
+            :selected-area-full-path="selectedAreaFullPath"
+            :is-mode-new="false"
+            :is-client-locked="true"
+            :is-transfer-only="true"
+            show-view-client
+            :loading="loading"
+            @open-move-site-modal="isTransferDialogOpen = true"
+            @open-transfer="isTransferDialogOpen = true"
+            @view-client="handleViewClient"
+          />
         </section>
 
         <!-- Section 3: Product Info, Blueprint & Codification -->
         <section
           id="section-product"
-          class="journal-section mb-6"
+          class="journal-section mb-6 d-flex flex-column gap-6"
         >
-          <WpSectionCard
-            :title="$t('Product Info, Blueprint & Codification')"
-            :subtitle="$t('Catalog blueprint connection, manufacturer & model designation, and tracking numbers')"
-            icon="tabler-box"
-            icon-color="success"
-          >
-            <div class="d-flex flex-column gap-4">
-              <EquipmentClassificationSection
-                :form="form"
-                :selected-blueprint="selectedBlueprint"
-                :selected-class="selectedClass"
-                :brands-list="brandsList"
-                :selected-option-badges="selectedOptionBadges"
-                :blueprint-intervention-cycles="blueprintInterventionCycles"
-                :is-custom-model-name="isCustomModelName"
-                :is-read-only="isReadOnly"
-                :loading="loading"
-                @update:field="updateField"
-                @update:is-custom-model-name="val => { isCustomModelName = val }"
-                @open-class-blueprint-modal="isClassBlueprintModalVisible = true"
-                @sync-model-name="updateModelNameFromOptions"
-                @view-guideline="handleViewGuideline"
-              />
+          <EquipmentClassificationSection
+            :form="form"
+            :selected-blueprint="selectedBlueprint"
+            :selected-class="selectedClass"
+            :brands-list="brandsList"
+            :selected-option-badges="selectedOptionBadges"
+            :blueprint-intervention-cycles="blueprintInterventionCycles"
+            :is-custom-model-name="isCustomModelName"
+            :is-read-only="isReadOnly"
+            :loading="loading"
+            @update:field="updateField"
+            @update:is-custom-model-name="val => { isCustomModelName = val }"
+            @open-class-blueprint-modal="isClassBlueprintModalVisible = true"
+            @sync-model-name="updateModelNameFromOptions"
+            @view-guideline="handleViewGuideline"
+          />
 
-              <EquipmentCodificationSection
-                :form="form"
-                :loading="loading"
-                :is-new="isNew"
-                :is-read-only="isReadOnly"
-                @update:field="updateField"
-                @open-qr-scanner="isQrScannerOpen = true"
-                @open-replace-qr="isReplaceQrDialogOpen = true"
-                @download-qr="handleDownloadQr"
-              />
-            </div>
-          </WpSectionCard>
+          <EquipmentCodificationSection
+            :form="form"
+            :loading="loading"
+            :is-new="false"
+            :is-read-only="isReadOnly"
+            @update:field="updateField"
+            @open-qr-scanner="isQrScannerOpen = true"
+            @open-replace-qr="isReplaceQrDialogOpen = true"
+            @download-qr="handleDownloadQr"
+          />
         </section>
 
         <!-- Section 4: Operational Status, Compliance & Lifecycle Dates -->
@@ -498,22 +465,17 @@ onBeforeUnmount(() => {
           id="section-specs"
           class="journal-section mb-6"
         >
-          <WpSectionCard
-            :title="$t('Technical Specifications, Certifications & Remarks')"
-            :subtitle="$t('Custom key-value hardware parameters, regulatory standards, and field technician instructions')"
-            icon="tabler-tools"
-            icon-color="info"
-          >
-            <EquipmentSpecsKvEditor
-              :specs="form.specs"
-              :certifications="form.certifications"
-              :notes="form.notes"
-              :disabled="isReadOnly"
-              @update:specs="v => { form.specs = v }"
-              @update:certifications="v => { form.certifications = v }"
-              @update:notes="v => { form.notes = v }"
-            />
-          </WpSectionCard>
+          <EquipmentSpecsKvEditor
+            :specs="form.specs"
+            :certifications="form.certifications"
+            :description="form.description"
+            :notes="form.notes"
+            :disabled="isReadOnly"
+            @update:specs="v => { form.specs = v }"
+            @update:certifications="v => { form.certifications = v }"
+            @update:description="v => { form.description = v }"
+            @update:notes="v => { form.notes = v }"
+          />
         </section>
 
         <!-- Section 6: Equipment Photography, Certificates & Documents -->
@@ -528,7 +490,7 @@ onBeforeUnmount(() => {
             icon-color="success"
           >
             <template
-              v-if="!smAndDown && !isNew && !isReadOnly"
+              v-if="!smAndDown && !isReadOnly"
               #actions
             >
               <div class="d-flex align-center gap-2">
@@ -557,7 +519,7 @@ onBeforeUnmount(() => {
               :photos="fetchedEquipment.photos || []"
               :documents="fetchedEquipment.documents || []"
               :certificates="fetchedEquipment.certificates || []"
-              :is-new="isNew"
+              :is-new="false"
               :read-only="isReadOnly"
               @refresh="fetchEquipment"
             />
@@ -566,7 +528,6 @@ onBeforeUnmount(() => {
 
         <!-- Section 7: Movement & Audit History -->
         <section
-          v-if="!isNew"
           id="section-history"
           class="journal-section mb-6"
         >
@@ -587,7 +548,7 @@ onBeforeUnmount(() => {
     <EquipmentEditUnsavedBar
       :is-read-only="isReadOnly"
       :is-dirty="isDirty"
-      :is-new="isNew"
+      :is-new="false"
       :saving="saving"
       :sm-and-down="smAndDown"
       @discard="fetchEquipment"
@@ -659,7 +620,7 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 .client-equipment-edit-page {
   min-block-size: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
   padding-block-end: 2rem;
 }
 

@@ -139,6 +139,165 @@
         "tax_total": "إجمالي الضرائب",
         "grand_total": "المجموع الإجمالي"
       }
+    },
+    "documents": {
+      "actions": {
+        "save_success": "تم الحفظ بنجاح",
+        "save_error": "تعذر الحفظ",
+        "submit_success": "تم الإرسال بنجاح",
+        "submit_error": "تعذر الإرسال",
+        "approve_success": "تمت الموافقة بنجاح",
+        "approve_error": "تعذرت الموافقة",
+        "reject_success": "تم الرفض بنجاح",
+        "reject_error": "تعذر الرفض",
+        "convert_success": "تم التحويل بنجاح",
+        "convert_error": "تعذر التحويل",
+        "print_success": "تم الإرسال إلى الطباعة",
+        "print_error": "تعذرت الطباعة",
+        "pdf_success": "تم إنشاء ملف PDF",
+        "pdf_error": "تعذر إنشاء ملف PDF",
+        "email_success": "تم إرسال البريد الإلكتروني",
+        "email_error": "تعذر إرسال البريد الإلكتروني",
+        "duplicate_success": "تم تكرار المستند",
+        "duplicate_error": "تعذر التكرار",
+        "delete_success": "تم الحذف بنجاح",
+        "delete_error": "تعذر الحذف"
+      },
+      "lines": {
+        "errors": {
+          "qty_positive": "يجب أن تكون الكمية أكبر من 0",
+          "price_min": "يجب أن يكون السعر 0 أو أكثر",
+          "item_required": "اختر صنفًا من الكتالوج أو أدخل اسم الصنف"
+        }
+      }
+    },
+    "docs": {
+      "header": {
+        "copy_reference": "نسخ المرجع",
+        "version": "إصدار {version}",
+        "more_actions": "المزيد من الإجراءات"
+      },
+      "stepper": {
+        "title": "دورة حياة المستند",
+        "step_of": "الخطوة {current} من {total}",
+        "state_done": "مكتمل",
+        "state_current": "الحالي",
+        "state_pending": "قيد الانتظار",
+        "state_skipped": "تم التخطي",
+        "state_rejected": "مرفوض",
+        "state_cancelled": "ملغى"
+      },
+      "picker": {
+        "title": "اختيار أصناف الكتالوج",
+        "search_placeholder": "البحث بالاسم أو الرمز (SKU) أو الباركود...",
+        "category": "الفئة",
+        "scan": "مسح",
+        "scan_title": "مسح الباركود / رمز QR",
+        "scan_subtitle": "وجّه الكاميرا نحو باركود الصنف أو رمز QR",
+        "scan_not_found": "لم يتم العثور على صنف يطابق الرمز \"{code}\"",
+        "scan_added": "تمت إضافة {name}",
+        "scan_failed": "تعذر البحث عن الرمز الممسوح",
+        "error": "فشل تحميل أصناف الكتالوج",
+        "empty_title": "لم يتم العثور على أصناف",
+        "empty_text": "حاول تعديل عبارات البحث أو الفئة.",
+        "unnamed": "صنف بدون اسم",
+        "decrease": "إنقاص الكمية",
+        "increase": "زيادة الكمية",
+        "quantity": "الكمية",
+        "load_more": "تحميل المزيد (متبقي {count})",
+        "selected": "تم اختيار {count}",
+        "add_selected": "إضافة المحدد ({count})",
+        "select": "اختيار الصنف"
+      },
+      "line": {
+        "title_add": "إضافة بند",
+        "title_edit": "تعديل البند",
+        "save": "حفظ البند",
+        "item": "الصنف / المنتج من الكتالوج",
+        "change_item": "اختيار",
+        "description": "الوصف / المواصفات",
+        "quantity": "الكمية",
+        "unit": "الوحدة",
+        "unit_price": "سعر الوحدة (دون ضريبة)",
+        "discount": "الخصم %",
+        "tax_rate": "نسبة الضريبة %",
+        "required_date": "التاريخ المطلوب",
+        "notes": "ملاحظات البند",
+        "line_total": "إجمالي البند المحسوب",
+        "required": "هذا الحقل مطلوب",
+        "non_negative": "يجب أن يكون 0 أو أكثر",
+        "quantity_positive": "يجب أن تكون الكمية أكبر من 0",
+        "max_percent": "لا يمكن أن يتجاوز 100%"
+      },
+      "lines": {
+        "bulk_add": "إضافة جماعية من الكتالوج",
+        "scan": "مسح رمز QR / باركود",
+        "scan_not_found": "لم يتم العثور على صنف للرمز \"{code}\"",
+        "quantity": "الكمية",
+        "unit_price": "سعر الوحدة",
+        "discount": "الخصم",
+        "remove": "حذف البند",
+        "decrease": "إنقاص الكمية",
+        "increase": "زيادة الكمية",
+        "unit_fallback": "وحدة"
+      },
+      "totals": {
+        "title": "الملخص المالي",
+        "subtotal": "المجموع الفرعي (دون ضريبة)",
+        "discount": "إجمالي الخصومات",
+        "tax": "إجمالي الضرائب (VAT)",
+        "tax_rate": "ضريبة ({rate}%)",
+        "shipping": "تكلفة الشحن",
+        "additional_costs": "تكاليف إضافية",
+        "stamp_duty": "رسم الطابع الجبائي",
+        "grand_total": "المجموع الإجمالي (شامل الضريبة)",
+        "budget": "تخصيص الميزانية",
+        "budget_used": "{used} / {limit}",
+        "over_budget": "تجاوز الميزانية بمقدار {amount}",
+        "remaining": "متبقي {amount}"
+      },
+      "terms": {
+        "title": "الشروط التجارية والملاحظات",
+        "payment_terms": "شروط الدفع",
+        "incoterms": "شروط التسليم (Incoterms)",
+        "currency": "العملة",
+        "expected_delivery_date": "تاريخ التسليم المتوقع",
+        "supplier_reference": "المرجع الخارجي للمورد",
+        "supplier_notes": "ملاحظات موجهة للمورد",
+        "supplier_notes_hint": "تظهر في المستند المرسل إلى المورد",
+        "internal_notes": "ملاحظات داخلية",
+        "internal_notes_hint": "للاستخدام الداخلي للفريق فقط"
+      },
+      "approval": {
+        "title": "سير العمل والموافقات",
+        "take_decision": "مراجعة واتخاذ قرار",
+        "empty": "لم يتم تسجيل خطوات موافقة بعد.",
+        "dialog_title": "قرار الموافقة على المستند",
+        "decision": "القرار",
+        "approved": "موافقة",
+        "rejected": "رفض",
+        "revision_requested": "طلب مراجعة",
+        "submit": "إرسال القرار",
+        "submit_approved": "تأكيد الموافقة",
+        "submit_rejected": "تأكيد الرفض",
+        "submit_revision_requested": "طلب مراجعة",
+        "reason": "سبب الرفض",
+        "reason_required": "سبب الرفض مطلوب",
+        "comment": "ملاحظة / تعليق الموافقة",
+        "state_pending": "قيد الانتظار",
+        "state_approved": "تمت الموافقة",
+        "state_rejected": "مرفوض",
+        "state_revision_requested": "مطلوب مراجعة",
+        "state_skipped": "تم التخطي"
+      },
+      "traceability": {
+        "title": "تتبع المستندات وسجل التدقيق",
+        "chain_label": "سلسلة المستندات المرتبطة",
+        "upstream": "المستندات السابقة",
+        "downstream": "المستندات اللاحقة",
+        "timeline": "سجل النشاط",
+        "empty": "لا توجد مستندات مرتبطة أو نشاط مسجل بعد."
+      }
     }
   }
 }

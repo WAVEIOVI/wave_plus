@@ -1,16 +1,18 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
-  AppBottomNav,
   AppQuickActionsSheet,
   WpDeleteDialog,
   WpImageDialog,
   WpJournalNav,
+  WpKpiCard,
+  WpKpiGroup,
   WpMediaViewerDialog,
   WpUnsavedChangesDialog,
 } from '@/components/shared'
 import AppBreadcrumb from '@/components/shared/AppBreadcrumb.vue'
 import { useWorkwearItemEdit } from '@/composables/client-assets/workwear/useWorkwearItemEdit'
+import { resolveSilhouetteDisplay } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import { useUnsavedChangesGuard } from '@/composables/dialog/useUnsavedChangesGuard'
 import AssignItemDialog from '@/views/client-assets/workwear/items/components/AssignItemDialog.vue'
 import FlagStolenItemDialog from '@/views/client-assets/workwear/items/components/FlagStolenItemDialog.vue'
@@ -18,9 +20,9 @@ import WorkwearItemBioSection from '@/views/client-assets/workwear/items/compone
 import WorkwearItemHistorySection from '@/views/client-assets/workwear/items/components/WorkwearItemHistorySection.vue'
 import WorkwearItemMediaSection from '@/views/client-assets/workwear/items/components/WorkwearItemMediaSection.vue'
 import WorkwearItemNotesSection from '@/views/client-assets/workwear/items/components/WorkwearItemNotesSection.vue'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
 const props = defineProps({
@@ -28,8 +30,7 @@ const props = defineProps({
 })
 
 const route = useRoute()
-const router = useRouter()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { smAndDown } = useDisplay()
 
 const itemId = computed(() => props.id || route.params.id)
@@ -42,7 +43,6 @@ const {
   error,
   itemData,
   activeSection,
-  supplierOptions,
   modelStockMatrix,
   employeeOptions,
   assignments,
@@ -78,13 +78,22 @@ const {
   openStolenDialog,
   handleFlagStolen,
   handleQr,
-  loadSupplierOptions,
 } = useWorkwearItemEdit(itemId)
 
 const { unsavedDialogVisible, confirmLeave } = useUnsavedChangesGuard(isDirty)
 
+const resolvedModel = computed(() => itemData.value?.model || itemData.value?.workwear_model || null)
+
+const garmentTypeTitle = computed(() => {
+  if (resolvedModel.value) {
+    return resolveSilhouetteDisplay(resolvedModel.value, { locale: locale.value, t }).itemTitle
+  }
+
+  return (itemData.value?.garment_type || '').replace(/_/g, ' ') || '—'
+})
+
 const sections = computed(() => [
-  { id: 'bio', label: t('General Info & SKU'), icon: 'tabler-info-circle' },
+  { id: 'bio', label: t('General Info & Variant'), icon: 'tabler-info-circle' },
   { id: 'media', label: t('Product Media & Model'), icon: 'tabler-photo', badge: itemData.value?.photos?.length || undefined },
   { id: 'history', label: t('Assignment History'), icon: 'tabler-history', badge: assignments.value.length || undefined },
   { id: 'notes', label: t('Notes'), icon: 'tabler-notes' },
@@ -97,13 +106,6 @@ const breadcrumbItems = computed(() => [
   { title: itemData.value?.item_code || t('Edit Item'), icon: 'tabler-edit' },
 ])
 
-const scrollToSection = sectionId => {
-  activeSection.value = sectionId
-
-  const el = document.getElementById(`section-${sectionId}`)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
 const quickActions = computed(() => [
   {
     id: 'save-item',
@@ -115,7 +117,7 @@ const quickActions = computed(() => [
   },
   {
     id: 'assign-item',
-    title: t('Assign to Staff'),
+    title: t('Assign to Employee'),
     icon: 'tabler-user-plus',
     color: 'info',
     disabled: itemData.value?.status === 'assigned',
@@ -146,30 +148,11 @@ const quickActions = computed(() => [
 
 onMounted(async () => {
   await fetchItem()
-  loadSupplierOptions()
-
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          activeSection.value = entry.target.id.replace('section-', '')
-        }
-      })
-    },
-    { threshold: 0.2, rootMargin: '-80px 0px -50% 0px' },
-  )
-
-  nextTick(() => {
-    sections.value.forEach(s => {
-      const el = document.getElementById(`section-${s.id}`)
-      if (el) observer.observe(el)
-    })
-  })
 })
 </script>
 
 <template>
-  <div>
+  <div class="workwear-item-editor-page">
     <!-- 👉 Breadcrumb -->
     <AppBreadcrumb
       :items="breadcrumbItems"
@@ -204,212 +187,241 @@ onMounted(async () => {
       </div>
     </VAlert>
 
-    <!-- 👉 Journal Layout -->
-    <div
-      v-else-if="itemData"
-      class="journal-layout"
-    >
-      <!-- Desktop Navigation Sidebar -->
-      <WpJournalNav
-        v-if="!smAndDown"
-        v-model="activeSection"
-        :sections="sections"
-        :title="itemData.item_code"
-        :subtitle="itemData.sku || itemData.model?.name || ''"
-        id-prefix="section-"
-        @update:model-value="scrollToSection"
+    <template v-else-if="itemData">
+      <!-- 👉 Top KPI Strip (Standardized with Client Site & Model Edit) -->
+      <WpKpiGroup
+        :item-count="4"
+        class="mb-6"
       >
-        <template #avatar>
-          <VAvatar
-            rounded="lg"
-            :size="40"
-            :color="itemData.is_stolen ? 'error' : 'primary'"
-            variant="tonal"
-          >
-            <VIcon
-              :icon="itemData.is_stolen ? 'tabler-alert-octagon' : 'tabler-hanger'"
-              size="22"
+        <template #default="{ getColProps }">
+          <VCol v-bind="getColProps(0)">
+            <WpKpiCard
+              :title="$t('Item Code')"
+              :value="itemData.item_code || '—'"
+              icon="tabler-qrcode"
+              icon-color="primary"
             />
-          </VAvatar>
+          </VCol>
+          <VCol v-bind="getColProps(1)">
+            <WpKpiCard
+              :title="$t('Size & Color')"
+              :value="[itemData.size, itemData.color].filter(Boolean).join(' · ') || '—'"
+              icon="tabler-ruler-2"
+              icon-color="info"
+            />
+          </VCol>
+          <VCol v-bind="getColProps(2)">
+            <WpKpiCard
+              :title="$t('Garment Type')"
+              :value="garmentTypeTitle"
+              icon="tabler-shirt"
+              icon-color="secondary"
+            />
+          </VCol>
+          <VCol v-bind="getColProps(3)">
+            <WpKpiCard
+              :title="$t('Assigned Employee')"
+              :value="itemData.current_assignment?.employee?.full_name || $t('In Stock / Available')"
+              icon="tabler-user-check"
+              :icon-color="itemData.current_assignment?.employee ? 'success' : 'warning'"
+            />
+          </VCol>
         </template>
+      </WpKpiGroup>
 
-        <template #footer>
-          <div class="pt-4">
-            <div class="d-flex gap-1 mb-3 flex-wrap">
-              <VChip
-                v-if="itemData.is_stolen"
-                color="error"
-                label
-                size="x-small"
-              >
-                STOLEN
-              </VChip>
-              <VChip
-                :color="statusMap[itemData.status] || 'secondary'"
-                size="x-small"
-                label
-                class="text-capitalize"
-              >
-                {{ itemData.status?.replace(/_/g, ' ') }}
-              </VChip>
-            </div>
-
-            <VDivider class="mb-4" />
-
-            <!-- Secondary Actions -->
-            <div class="d-flex flex-column gap-2 mb-4">
-              <VBtn
-                block
-                color="info"
-                variant="tonal"
-                prepend-icon="tabler-user-plus"
-                :disabled="itemData.status === 'assigned'"
-                @click="openAssignDialog"
-              >
-                {{ $t('Assign to Staff') }}
-              </VBtn>
-              <VBtn
-                block
-                color="warning"
-                variant="tonal"
-                prepend-icon="tabler-qrcode"
-                @click="handleQr"
-              >
-                {{ $t('Download QR') }}
-              </VBtn>
-              <VBtn
-                v-if="!itemData.is_stolen"
-                block
-                color="error"
-                variant="tonal"
-                prepend-icon="tabler-alert-octagon"
-                @click="openStolenDialog"
-              >
-                {{ $t('Flag Stolen') }}
-              </VBtn>
-            </div>
-
-            <div
-              v-if="isDirty"
-              class="d-flex align-center gap-2 mb-3 text-caption text-warning"
-              role="status"
+      <!-- 👉 Journal Layout -->
+      <div class="journal-layout">
+        <!-- Navigation Sidebar + Mobile Drawer handled by WpJournalNav -->
+        <WpJournalNav
+          v-model="activeSection"
+          :sections="sections"
+          :title="itemData.item_code"
+          :subtitle="resolvedModel?.name || ''"
+          id-prefix="section-"
+        >
+          <template #avatar>
+            <VAvatar
+              rounded="lg"
+              :size="40"
+              :color="itemData.is_stolen ? 'error' : 'primary'"
+              variant="tonal"
             >
               <VIcon
-                icon="tabler-point-filled"
-                size="16"
+                :icon="itemData.is_stolen ? 'tabler-alert-octagon' : 'tabler-hanger'"
+                size="22"
               />
-              {{ $t('Unsaved changes') }}
-            </div>
+            </VAvatar>
+          </template>
 
-            <!-- Primary Commit Actions -->
+          <template #footer>
+            <div class="pt-4">
+              <div class="d-flex gap-1 mb-3 flex-wrap">
+                <VChip
+                  v-if="itemData.is_stolen"
+                  color="error"
+                  label
+                  size="x-small"
+                >
+                  {{ $t('STOLEN') }}
+                </VChip>
+                <VChip
+                  :color="statusMap[itemData.status] || 'secondary'"
+                  size="x-small"
+                  label
+                  class="text-capitalize"
+                >
+                  {{ itemData.status?.replace(/_/g, ' ') }}
+                </VChip>
+              </div>
+
+              <VDivider class="mb-4" />
+
+              <!-- Secondary Actions -->
+              <div class="d-flex flex-column gap-2 mb-4">
+                <VBtn
+                  block
+                  color="info"
+                  variant="tonal"
+                  prepend-icon="tabler-user-plus"
+                  :disabled="itemData.status === 'assigned'"
+                  @click="openAssignDialog"
+                >
+                  {{ $t('Assign to Employee') }}
+                </VBtn>
+                <VBtn
+                  block
+                  color="warning"
+                  variant="tonal"
+                  prepend-icon="tabler-qrcode"
+                  @click="handleQr"
+                >
+                  {{ $t('Download QR') }}
+                </VBtn>
+                <VBtn
+                  v-if="!itemData.is_stolen"
+                  block
+                  color="error"
+                  variant="tonal"
+                  prepend-icon="tabler-alert-octagon"
+                  @click="openStolenDialog"
+                >
+                  {{ $t('Flag Stolen') }}
+                </VBtn>
+              </div>
+
+              <div
+                v-if="isDirty"
+                class="d-flex align-center gap-2 mb-3 text-caption text-warning"
+                role="status"
+              >
+                <VIcon
+                  icon="tabler-point-filled"
+                  size="16"
+                />
+                {{ $t('Unsaved changes') }}
+              </div>
+
+              <!-- Primary Commit Actions -->
+              <VBtn
+                block
+                color="primary"
+                :disabled="saving || !isDirty"
+                :loading="saving"
+                class="mb-2 font-weight-semibold"
+                @click="handleUpdate"
+              >
+                <VIcon
+                  start
+                  icon="tabler-device-floppy"
+                />
+                {{ $t('Save Changes') }}
+              </VBtn>
+
+              <VBtn
+                block
+                variant="text"
+                color="error"
+                size="small"
+                @click="isDeleteDialogVisible = true"
+              >
+                <VIcon
+                  start
+                  icon="tabler-trash"
+                />
+                {{ $t('Delete Item') }}
+              </VBtn>
+            </div>
+          </template>
+        </WpJournalNav>
+
+        <!-- Main Feed -->
+        <main class="journal-feed">
+          <!-- Mobile Header Bar -->
+          <div
+            v-if="smAndDown"
+            class="d-flex align-center gap-3 w-100 mb-2"
+          >
+            <VAvatar
+              rounded="lg"
+              :size="40"
+              :color="itemData.is_stolen ? 'error' : 'primary'"
+              variant="tonal"
+            >
+              <VIcon
+                :icon="itemData.is_stolen ? 'tabler-alert-octagon' : 'tabler-hanger'"
+                size="22"
+              />
+            </VAvatar>
+            <div class="min-w-0 flex-grow-1">
+              <h1 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
+                {{ itemData.item_code }}
+              </h1>
+              <span class="text-caption font-mono text-disabled">{{ resolvedModel?.name }}</span>
+            </div>
             <VBtn
-              block
               color="primary"
-              :disabled="saving || !isDirty"
+              size="small"
               :loading="saving"
-              class="mb-2 font-weight-semibold"
+              :disabled="saving || !isDirty"
               @click="handleUpdate"
             >
-              <VIcon
-                start
-                icon="tabler-device-floppy"
-              />
-              {{ $t('Save Changes') }}
-            </VBtn>
-
-            <VBtn
-              block
-              variant="text"
-              color="error"
-              size="small"
-              @click="isDeleteDialogVisible = true"
-            >
-              <VIcon
-                start
-                icon="tabler-trash"
-              />
-              {{ $t('Delete Item') }}
+              {{ $t('Save') }}
             </VBtn>
           </div>
-        </template>
-      </WpJournalNav>
 
-      <!-- Main Feed -->
-      <main class="journal-feed">
-        <!-- Mobile Header Bar -->
-        <div
-          v-if="smAndDown"
-          class="d-flex align-center gap-3 w-100 mb-2"
-        >
-          <VAvatar
-            rounded="lg"
-            :size="40"
-            :color="itemData.is_stolen ? 'error' : 'primary'"
-            variant="tonal"
-          >
-            <VIcon
-              :icon="itemData.is_stolen ? 'tabler-alert-octagon' : 'tabler-hanger'"
-              size="22"
-            />
-          </VAvatar>
-          <div class="min-w-0 flex-grow-1">
-            <h1 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
-              {{ itemData.item_code }}
-            </h1>
-            <span class="text-caption font-mono text-disabled">{{ itemData.sku || itemData.model?.name }}</span>
-          </div>
-          <VBtn
-            color="primary"
-            size="small"
-            :loading="saving"
-            :disabled="saving || !isDirty"
-            @click="handleUpdate"
-          >
-            {{ $t('Save') }}
-          </VBtn>
-        </div>
+          <!-- Section 1: General Info & Variant -->
+          <WorkwearItemBioSection
+            :item-data="itemData"
+            :sales-order-items="salesOrderItems"
+            :delivery-note-items="deliveryNoteItems"
+            :documents-loading="documentsLoading"
+            :status-options="statusOptions"
+            :condition-options="conditionOptions"
+            :field-errors="fieldErrors"
+          />
 
-        <!-- Section 1: General Info & SKU -->
-        <WorkwearItemBioSection
-          :item-data="itemData"
-          :supplier-options="supplierOptions"
-          :sales-order-items="salesOrderItems"
-          :delivery-note-items="deliveryNoteItems"
-          :documents-loading="documentsLoading"
-          :status-options="statusOptions"
-          :condition-options="conditionOptions"
-          :field-errors="fieldErrors"
-        />
+          <!-- Section 2: Product Media & Linked Model -->
+          <WorkwearItemMediaSection
+            :item-data="itemData"
+            :model-stock-matrix="modelStockMatrix"
+            :is-uploading-photo="isUploadingPhoto"
+            @open-photo-dialog="isImageDialogOpen = true"
+            @preview-photo="handlePreviewPhoto"
+            @delete-photo="handleDeletePhoto"
+          />
 
-        <!-- Section 2: Product Media & Linked Model -->
-        <WorkwearItemMediaSection
-          :item-data="itemData"
-          :model-stock-matrix="modelStockMatrix"
-          :is-uploading-photo="isUploadingPhoto"
-          @open-photo-dialog="isImageDialogOpen = true"
-          @preview-photo="handlePreviewPhoto"
-          @delete-photo="handleDeletePhoto"
-        />
+          <!-- Section 3: Assignment History -->
+          <WorkwearItemHistorySection
+            :assignments="assignments"
+            :item-data="itemData"
+            @assign="openAssignDialog"
+          />
 
-        <!-- Section 3: Assignment History -->
-        <WorkwearItemHistorySection
-          :assignments="assignments"
-          :item-data="itemData"
-          @assign="openAssignDialog"
-        />
-
-        <!-- Section 4: Notes -->
-        <WorkwearItemNotesSection :item-data="itemData" />
-      </main>
-    </div>
-
-    <!-- Mobile Navigation Bar -->
-    <AppBottomNav
-      v-if="smAndDown && itemData"
-      v-model="activeSection"
-      :items="sections"
-      @update:model-value="scrollToSection"
-    />
+          <!-- Section 4: Notes -->
+          <WorkwearItemNotesSection :item-data="itemData" />
+        </main>
+      </div>
+    </template>
 
     <!-- Mobile Quick Actions FAB -->
     <div
@@ -476,6 +488,12 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
+.workwear-item-editor-page {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  overflow-x: clip;
+}
+
 .journal-layout {
   display: flex;
   flex-direction: row;

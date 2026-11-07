@@ -2,7 +2,6 @@
 /* eslint-disable camelcase */
 import {
   WpActiveFilters,
-  WpBulkActions,
   WpDeleteDialog,
   WpFilterDialog,
   WpMobileCard,
@@ -16,7 +15,7 @@ import { useWorkwearEmployeeList } from '@/composables/client-assets/workwear/us
 import AddNewEmployeeDialog from '@/views/client-assets/workwear/employees/list/AddNewEmployeeDialog.vue'
 import BatchCreateEmployeesDialog from '@/views/client-assets/workwear/employees/list/BatchCreateEmployeesDialog.vue'
 import ViewEmployeeDialog from '@/views/client-assets/workwear/employees/list/ViewEmployeeDialog.vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -29,12 +28,10 @@ const {
   totalItems,
   loading,
   error,
-  searchQuery,
-  filters,
+  search,
   stagedFilters,
   activeFilters,
   activeFilterCount,
-  setFilter,
   removeFilter,
   resetFilters,
   applyStaged,
@@ -47,12 +44,20 @@ const {
   clientOptions,
   statusOptions,
   statusMap,
-  selectedIds,
-  clearSelection,
   loadFilterOptions,
 } = useWorkwearEmployeeList()
 
 const isFilterDialogOpen = ref(false)
+
+const filterLabels = computed(() => ({
+  client_id: t('Client'),
+  status: t('Status'),
+}))
+
+const filterFormatters = computed(() => ({
+  client_id: val => clientOptions.value.find(c => c.value === val)?.title || val,
+  status: val => statusOptions.find(s => s.value === val)?.title || val,
+}))
 
 onMounted(() => {
   loadFilterOptions()
@@ -88,17 +93,10 @@ const handleConfirmDelete = async () => {
   }
 }
 
-const handleBulkDelete = async () => {
-  for (const id of selectedIds.value) {
-    await actions.deleteEmployee(id)
-  }
-  clearSelection()
-}
-
 // ── Row Actions Standard Contract ──────────────────────────────────────────
 const getRowActions = () => [
   { label: t('View Details'), icon: 'tabler-eye', emit: 'view' },
-  { label: t('Edit Profile'), icon: 'tabler-pencil', emit: 'edit' },
+  { label: t('Edit Profile & Issue Items'), icon: 'tabler-pencil', emit: 'edit' },
   { label: t('Delete'), icon: 'tabler-trash', emit: 'delete', color: 'error', dividerBefore: true },
 ]
 
@@ -112,8 +110,8 @@ defineExpose({
 <template>
   <!-- 👉 Toolbar -->
   <WpPageToolbar
-    v-model:search="searchQuery"
-    :search-placeholder="$t('Search employees by name, ref, role...')"
+    v-model:search="search"
+    :search-placeholder="$t('Search employees by name, ref, department, role...')"
     :create-label="$t('New Employee')"
     hide-create-on-mobile
     show-filter
@@ -126,34 +124,14 @@ defineExpose({
     @refresh="refresh"
   >
     <template #prepend>
-      <VAutocomplete
-        :model-value="filters.client_id"
-        :label="$t('Filter by Client')"
-        :items="clientOptions"
-        density="compact"
-        clearable
-        style="inline-size: 210px;"
-        class="me-2"
-        @update:model-value="val => setFilter('client_id', val)"
-      />
-      <VSelect
-        :model-value="filters.status"
-        :label="$t('Filter by Status')"
-        :items="statusOptions"
-        density="compact"
-        clearable
-        style="inline-size: 170px;"
-        class="me-2"
-        @update:model-value="val => setFilter('status', val)"
-      />
       <VBtn
         color="primary"
         variant="tonal"
         prepend-icon="tabler-users-plus"
-        class="me-2 d-none d-sm-inline-flex"
+        class="me-2"
         @click="isBatchCreateDialogOpen = true"
       >
-        {{ $t('Batch Import') }}
+        {{ $t('Batch Create Employees') }}
       </VBtn>
     </template>
 
@@ -161,36 +139,25 @@ defineExpose({
       <WpActiveFilters
         v-if="activeFilters.length"
         :filters="activeFilters"
-        @remove="removeFilter"
+        :labels="filterLabels"
+        :formatters="filterFormatters"
+        @remove="f => removeFilter(f.key || f)"
         @clear-all="resetFilters"
       />
     </template>
   </WpPageToolbar>
-
-  <!-- 👉 Bulk Actions Bar -->
-  <div
-    v-if="selectedIds?.length"
-    class="px-4 pb-2"
-  >
-    <WpBulkActions
-      :selected-count="selectedIds?.length || 0"
-      @clear="clearSelection"
-      @delete="handleBulkDelete"
-    />
-  </div>
 
   <!-- 👉 Responsive List -->
   <WpResponsiveList
     v-model:page="page"
     v-model:items-per-page="itemsPerPage"
     v-model:sort-by="sortBy"
-    v-model:selected="selectedIds"
     :headers="headers"
     :items="items"
     :total-items="totalItems"
     :loading="loading"
     :error="error"
-    show-select
+    :show-select="false"
     item-value="id"
     @retry="refresh"
   >
@@ -213,13 +180,13 @@ defineExpose({
             class="font-weight-medium text-high-emphasis cursor-pointer text-link"
             @click="handleView(item)"
           >
-            {{ item.full_name }}
+            {{ item.full_name || `${item.first_name || ''} ${item.last_name || ''}` }}
           </span>
           <span
-            v-if="item.job_title"
+            v-if="item.position || item.role"
             class="text-caption text-disabled"
           >
-            {{ item.job_title }}
+            {{ item.position || item.role }}
           </span>
         </div>
       </div>
@@ -227,47 +194,90 @@ defineExpose({
 
     <!-- Ref column -->
     <template #item.employee_ref="{ item }">
-      <span class="font-mono text-caption">
+      <span class="font-mono text-caption font-weight-medium">
         {{ item.employee_ref || '—' }}
       </span>
     </template>
 
     <!-- Client column -->
     <template #item.client="{ item }">
-      <span class="text-medium-emphasis">
+      <span class="text-medium-emphasis font-weight-medium">
         {{ item.client?.legal_name || item.client?.name || '—' }}
       </span>
     </template>
 
-    <!-- Department / Role column -->
+    <!-- Department & Contact column -->
     <template #item.department="{ item }">
-      <span class="text-caption text-medium-emphasis">
-        {{ item.department || '—' }}
-      </span>
+      <div class="d-flex flex-column gap-1 py-1">
+        <span
+          v-if="item.department"
+          class="text-body-2 font-weight-medium"
+        >
+          {{ item.department }}
+        </span>
+        <div
+          v-if="item.email || item.phone"
+          class="d-flex align-center gap-2 text-caption text-medium-emphasis"
+        >
+          <span v-if="item.email">{{ item.email }}</span>
+          <span v-if="item.phone">{{ item.phone }}</span>
+        </div>
+        <span
+          v-if="!item.department && !item.email && !item.phone"
+          class="text-disabled"
+        >—</span>
+      </div>
     </template>
 
-    <!-- Assigned Models count -->
-    <template #item.model_assignments_count="{ item }">
-      <div class="text-center">
+    <!-- Sizes Summary column -->
+    <template #item.sizes="{ item }">
+      <div
+        v-if="item.sizes && Object.values(item.sizes).some(Boolean)"
+        class="d-flex flex-wrap gap-1"
+      >
         <VChip
+          v-if="item.sizes.top"
+          size="x-small"
+          variant="tonal"
+          color="primary"
+          class="font-mono"
+        >
+          {{ $t('Top:') }} {{ item.sizes.top }}
+        </VChip>
+        <VChip
+          v-if="item.sizes.bottom"
           size="x-small"
           variant="tonal"
           color="info"
+          class="font-mono"
         >
-          {{ item.model_assignments_count ?? item.assigned_models?.length ?? 0 }}
+          {{ $t('Bottom:') }} {{ item.sizes.bottom }}
+        </VChip>
+        <VChip
+          v-if="item.sizes.shoes"
+          size="x-small"
+          variant="tonal"
+          color="secondary"
+          class="font-mono"
+        >
+          {{ $t('Shoes:') }} {{ item.sizes.shoes }}
         </VChip>
       </div>
+      <span
+        v-else
+        class="text-caption text-disabled"
+      >—</span>
     </template>
 
     <!-- Issued Garments count -->
     <template #item.assignments_count="{ item }">
       <div class="text-center">
         <VChip
-          size="x-small"
+          size="small"
           variant="tonal"
           :color="(item.assignments_count || item.active_assignments?.length || 0) > 0 ? 'success' : 'secondary'"
         >
-          {{ item.assignments_count ?? item.active_assignments?.length ?? 0 }}
+          {{ item.assignments_count ?? item.active_assignments?.length ?? 0 }} {{ $t('items') }}
         </VChip>
       </div>
     </template>
@@ -280,7 +290,7 @@ defineExpose({
         label
         class="text-capitalize font-weight-medium"
       >
-        {{ item.status || 'active' }}
+        {{ $t(item.status || 'active') }}
       </VChip>
     </template>
 
@@ -297,8 +307,8 @@ defineExpose({
     <!-- Mobile Card slot -->
     <template #mobile-card="{ item }">
       <WpMobileCard
-        :title="item.full_name"
-        :subtitle="item.employee_ref || item.job_title || $t('Employee')"
+        :title="item.full_name || `${item.first_name || ''} ${item.last_name || ''}`"
+        :subtitle="item.employee_ref || item.position || $t('Employee')"
         icon="tabler-user"
         :status="item.status || 'active'"
         :status-color="statusMap[item.status] || 'secondary'"
@@ -308,8 +318,9 @@ defineExpose({
           <VChip
             size="x-small"
             variant="tonal"
+            color="success"
           >
-            {{ item.assignments_count ?? item.active_assignments?.length ?? 0 }} {{ $t('garments') }}
+            {{ item.assignments_count ?? item.active_assignments?.length ?? 0 }} {{ $t('items') }}
           </VChip>
         </template>
 

@@ -29,12 +29,6 @@ class WorkwearService
     /**
      * Validate that a workwear item's related records are consistent.
      *
-     * - the model belongs to the item's client
-     * - the optional Sales Order / Delivery Note belong to the same client
-     * - every selected option value belongs to the item's model, one per option
-     *
-     * SO/DN are optional: null / empty values are never an error.
-     *
      * @param  array<int, string>  $optionValueIds
      * @return array<string, string> field => message (empty when valid)
      */
@@ -143,21 +137,19 @@ class WorkwearService
     /**
      * Create multiple items in a single transaction.
      *
-     * All rows are validated first and persisted atomically: if any row is
-     * invalid nothing is created (the previous implementation swallowed row
-     * exceptions inside one transaction, which could leave partial data).
-     *
-     * @param  array  $payload  {model_id, client_id, sales_order_id?, delivery_note_id?, items: [{garment_type, size, item_condition?, option_value_ids?}]}
+     * @param  array  $payload  {model_id, client_id, sales_order_id?, delivery_note_id?, items: [{garment_type?, size, color?, item_condition?, option_value_ids?}]}
      * @return array{created: WorkwearItem[], errors: array}
      */
     public function batchCreateItems(array $payload): array
     {
         $modelId = $payload['model_id'];
-        $clientId = $payload['client_id'];
+        $model = WorkwearModel::with('catalogItem')->findOrFail($modelId);
+        $clientId = $payload['client_id'] ?? $model->client_id;
         $salesOrderId = $payload['sales_order_id'] ?? null;
         $deliveryNoteId = $payload['delivery_note_id'] ?? null;
 
-        WorkwearModel::findOrFail($modelId);
+        $inheritedSupplierId = $model->supplier_id ?? $model->catalogItem?->preferred_supplier_id;
+        $inheritedGarmentType = $model->silhouette_item ?? $model->silhouette ?? ($model->garment_types[0] ?? null);
 
         // Header-level ownership (model + optional SO/DN)
         $this->assertReferences($clientId, $modelId, $salesOrderId, $deliveryNoteId);
@@ -167,22 +159,21 @@ class WorkwearService
             $this->assertReferences($clientId, $modelId, null, null, $itemData['option_value_ids'] ?? [], "items.{$idx}.");
         }
 
-        // validated() may emit rows out of order (keys are set in rule order); keep the submitted order.
         $rows = $payload['items'];
         ksort($rows);
 
-        $created = DB::transaction(function () use ($rows, $payload, $modelId, $clientId, $salesOrderId, $deliveryNoteId) {
+        $created = DB::transaction(function () use ($rows, $payload, $modelId, $clientId, $salesOrderId, $deliveryNoteId, $inheritedSupplierId, $inheritedGarmentType) {
             $created = [];
 
             foreach ($rows as $itemData) {
                 $item = WorkwearItem::create([
                     'model_id' => $modelId,
                     'client_id' => $clientId,
-                    'garment_type' => $itemData['garment_type'] ?? null,
+                    'garment_type' => $itemData['garment_type'] ?? $inheritedGarmentType,
                     'size' => $itemData['size'] ?? null,
                     'color' => $itemData['color'] ?? null,
                     'sku' => $itemData['sku'] ?? null,
-                    'supplier_id' => $itemData['supplier_id'] ?? $payload['supplier_id'] ?? null,
+                    'supplier_id' => $itemData['supplier_id'] ?? $payload['supplier_id'] ?? $inheritedSupplierId,
                     'item_condition' => $itemData['item_condition'] ?? WorkwearItemCondition::NEW->value,
                     'status' => WorkwearItemStatus::IN_STOCK->value,
                     'unit_cost' => $itemData['unit_cost'] ?? null,
@@ -196,7 +187,7 @@ class WorkwearService
                     $this->syncItemOptionValues($item, $itemData['option_value_ids']);
                 }
 
-                $item->load(['workwearModel', 'client', 'salesOrder', 'deliveryNote', 'itemOptionValues.option', 'itemOptionValues.optionValue']);
+                $item->load(['workwearModel.supplier', 'client', 'supplier', 'salesOrder', 'deliveryNote', 'itemOptionValues.option', 'itemOptionValues.optionValue']);
                 $created[] = $item;
             }
 
@@ -279,7 +270,6 @@ class WorkwearService
                 try {
                     $item = WorkwearItem::lockForUpdate()->findOrFail($itemId);
 
-                    // Check item is available for assignment
                     if (! $item->isAvailableForAssignment()) {
                         $errors[] = [
                             'item_id' => $itemId,
@@ -289,7 +279,6 @@ class WorkwearService
                         continue;
                     }
 
-                    // Prevent duplicate active assignment
                     $existingActive = WorkwearAssignment::where('item_id', $itemId)
                         ->whereNull('returned_at')
                         ->exists();
@@ -303,7 +292,6 @@ class WorkwearService
                         continue;
                     }
 
-                    // Enforce client consistency
                     if ($item->client_id !== $employee->client_id) {
                         $errors[] = [
                             'item_id' => $itemId,
@@ -323,7 +311,7 @@ class WorkwearService
                     ]);
 
                     $item->update(['status' => WorkwearItemStatus::ASSIGNED->value]);
-                    $assignment->load(['item', 'employee']);
+                    $assignment->load(['item.workwearModel', 'employee']);
                     $assignments[] = $assignment;
                 } catch (\Throwable $e) {
                     $errors[] = [
@@ -341,11 +329,6 @@ class WorkwearService
     //  RETURN
     // ═══════════════════════════════════════════════════════════════
 
-    /**
-     * Process a return for an assignment.
-     *
-     * @param  array  $payload  {condition_at_return, return_action, notes?}
-     */
     public function returnAssignment(string $assignmentId, array $payload): WorkwearAssignment
     {
         return DB::transaction(function () use ($assignmentId, $payload) {
@@ -362,7 +345,6 @@ class WorkwearService
             $returnAction = $payload['return_action'] ?? 'restock';
             $conditionAtReturn = $payload['condition_at_return'] ?? null;
 
-            // Determine new item status based on return action
             $newStatus = match ($returnAction) {
                 'restock' => WorkwearItemStatus::AVAILABLE,
                 'repair' => WorkwearItemStatus::REPAIR_NEEDED,
@@ -372,7 +354,6 @@ class WorkwearService
                 default => WorkwearItemStatus::RETURNED,
             };
 
-            // Update assignment
             $assignment->update([
                 'returned_at' => now(),
                 'condition_at_return' => $conditionAtReturn,
@@ -381,7 +362,6 @@ class WorkwearService
                 'notes' => $payload['notes'] ?? $assignment->notes,
             ]);
 
-            // Update item
             $updateData = ['status' => $newStatus->value];
             if ($conditionAtReturn) {
                 $updateData['item_condition'] = $conditionAtReturn;
@@ -410,19 +390,9 @@ class WorkwearService
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  KPI / STATS
-    // ═══════════════════════════════════════════════════════════════
-
-    // ═══════════════════════════════════════════════════════════════
     //  MODEL STUDIO — placements, revisions
     // ═══════════════════════════════════════════════════════════════
 
-    /**
-     * Replace-sync the customization placements of a model.
-     * Rows carrying a known id are updated, new rows created, omitted rows removed.
-     *
-     * @param  array<int, array<string, mixed>>  $placements
-     */
     public function syncModelPlacements(WorkwearModel $model, array $placements): void
     {
         $existing = $model->placements()->get()->keyBy('id');
@@ -460,9 +430,6 @@ class WorkwearService
         $model->placements()->whereNotIn('id', $keep)->delete();
     }
 
-    /**
-     * Persist a revision of the model (specification, options and placements).
-     */
     public function recordModelVersion(WorkwearModel $model, ?string $summary = null): WorkwearModelVersion
     {
         $snapshot = $model->fresh(['options.values', 'placements'])->toArray();
@@ -477,18 +444,9 @@ class WorkwearService
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  EMPLOYEE MODEL ENTITLEMENTS (assignment ≠ issuance)
+    //  EMPLOYEE MODEL ENTITLEMENTS
     // ═══════════════════════════════════════════════════════════════
 
-    /**
-     * Synchronise the models assigned to an employee.
-     *
-     * Entitlements describe what the employee is meant to wear (model, size, quantity);
-     * they never change item stock. Removed entitlements are ended, not deleted,
-     * so the assignment history is kept.
-     *
-     * @param  array<int, array{model_id: string, quantity?: int, size?: string|null, notes?: string|null}>  $assignments
-     */
     public function syncEmployeeModels(WorkwearEmployee $employee, array $assignments): void
     {
         $modelIds = array_column($assignments, 'model_id');
@@ -534,14 +492,9 @@ class WorkwearService
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  STOCK AVAILABILITY (read-only — never touches the inventory module)
+    //  STOCK AVAILABILITY
     // ═══════════════════════════════════════════════════════════════
 
-    /**
-     * Per-variant (model / sku / size / colour) stock availability of workwear items.
-     *
-     * @return array<int, array<string, mixed>>
-     */
     public function stockSummary(?string $clientId = null, ?string $modelId = null, ?string $supplierId = null): array
     {
         $assignable = "'".implode("','", WorkwearItemStatus::assignableStatuses())."'";
@@ -556,9 +509,9 @@ class WorkwearService
             ->when($clientId, fn ($q) => $q->where('workwear_items.client_id', $clientId))
             ->when($modelId, fn ($q) => $q->where('workwear_items.model_id', $modelId))
             ->when($supplierId, fn ($q) => $q->where('workwear_items.supplier_id', $supplierId))
-            ->groupBy('workwear_items.model_id', 'wm.name', 'wm.model_ref', 'workwear_items.sku', 'workwear_items.size', 'workwear_items.color')
+            ->groupBy('workwear_items.model_id', 'wm.name', 'wm.model_ref', 'workwear_items.size', 'workwear_items.color')
             ->orderBy('wm.name')->orderBy('workwear_items.size')
-            ->selectRaw('workwear_items.model_id, wm.name as model_name, wm.model_ref, workwear_items.sku, workwear_items.size, workwear_items.color')
+            ->selectRaw('workwear_items.model_id, wm.name as model_name, wm.model_ref, workwear_items.size, workwear_items.color')
             ->selectRaw("SUM(CASE WHEN workwear_items.status NOT IN ({$inactive}) THEN 1 ELSE 0 END) as total")
             ->selectRaw("SUM(CASE WHEN workwear_items.status IN ({$assignable}) THEN 1 ELSE 0 END) as available")
             ->selectRaw("SUM(CASE WHEN workwear_items.status = 'assigned' THEN 1 ELSE 0 END) as assigned")
@@ -568,7 +521,6 @@ class WorkwearService
                 'model_id' => $r->model_id,
                 'model_name' => $r->model_name,
                 'model_ref' => $r->model_ref,
-                'sku' => $r->sku,
                 'size' => $r->size,
                 'color' => $r->color,
                 'total' => (int) $r->total,
@@ -579,9 +531,6 @@ class WorkwearService
             ->all();
     }
 
-    /**
-     * Gather server-side workwear KPI data.
-     */
     public function getKpis(?string $clientId = null): array
     {
         $itemQuery = WorkwearItem::query();

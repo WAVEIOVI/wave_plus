@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 import { useListPage } from '@/composables/list'
 import { useSelection } from '@/composables/list/useSelection'
+import { localizedValue } from '@/composables/useLocaleField'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import { useClientStore } from '@/stores/useClientStore'
 import { computed, onMounted, ref } from 'vue'
@@ -19,6 +20,7 @@ export function useSiteList() {
   const allowedSortFields = new Set([
     'id',
     'name',
+    'site_code',
     'site_type',
     'status',
     'risk_class',
@@ -28,36 +30,38 @@ export function useSiteList() {
   // ── Master options ───────────────────────────────────────────────────────
   const clientsList = ref([])
 
-  const siteTypeOptions = [
+  const siteTypeOptions = computed(() => [
     { title: t('Commercial'), value: 'commercial' },
     { title: t('Industrial'), value: 'industrial' },
     { title: t('Residential'), value: 'residential' },
     { title: t('Institutional'), value: 'institutional' },
+    { title: t('Logistics / Warehouse'), value: 'warehouse' },
     { title: t('Other'), value: 'other' },
-  ]
+  ])
 
-  const statusOptions = [
+  const statusOptions = computed(() => [
     { title: t('Active'), value: 'active' },
     { title: t('Inactive'), value: 'inactive' },
     { title: t('Under Construction'), value: 'under_construction' },
     { title: t('Decommissioned'), value: 'decommissioned' },
-  ]
+  ])
 
-  const riskOptions = [
+  const riskOptions = computed(() => [
     { title: t('Low Risk'), value: 'low' },
     { title: t('Medium Risk'), value: 'medium' },
     { title: t('High Risk'), value: 'high' },
     { title: t('Critical Risk'), value: 'critical' },
-  ]
+  ])
 
-  // ── Headers ──────────────────────────────────────────────────────────────
+  // ── Headers (Aligned with Business Partners Client List Standard) ────────
   const headers = computed(() => [
     { title: t('Site Name / Ref'), key: 'name', sortable: true },
     { title: t('Client'), key: 'client', sortable: false },
+    { title: t('Contact & Location'), key: 'contact_location', sortable: false },
     { title: t('Type'), key: 'site_type', sortable: true },
     { title: t('Status'), key: 'status', sortable: true },
     { title: t('Risk Class'), key: 'risk_class', sortable: true },
-    { title: t('Equipment Count'), key: 'equipment_count', sortable: false, align: 'center' },
+    { title: t('Equipment'), key: 'equipment_count', sortable: false, align: 'center' },
     { title: t('Actions'), key: 'actions', sortable: false, align: 'end' },
   ])
 
@@ -90,10 +94,40 @@ export function useSiteList() {
       industrial: 'warning',
       residential: 'primary',
       institutional: 'secondary',
+      warehouse: 'success',
       other: 'secondary',
     }
 
     return map[type?.toLowerCase()] || 'primary'
+  }
+
+  const resolvePrimaryContact = site => {
+    const contacts = site?.address?.contacts || []
+    if (!contacts.length) return null
+
+    return contacts.find(c => c.is_primary_location || c.is_primary) || contacts[0]
+  }
+
+  const resolveSiteEmail = site => {
+    const contact = resolvePrimaryContact(site)
+
+    return contact?.email || site?.address?.email || site?.client?.primary_email || ''
+  }
+
+  const resolveSitePhone = site => {
+    const contact = resolvePrimaryContact(site)
+
+    return contact?.phone || contact?.mobile || site?.address?.phone || site?.client?.primary_phone || ''
+  }
+
+  const resolveSiteLocation = site => {
+    const street = localizedValue(site?.address?.address_street) || site?.address_line1 || ''
+    const city = localizedValue(site?.address?.city) || site?.city || ''
+    const postcode = site?.address?.postcode || site?.postal_code || ''
+
+    const cityPart = [city, postcode].filter(Boolean).join(' ')
+
+    return [street, cityPart].filter(Boolean).join(', ')
   }
 
   // ── List Orchestration ───────────────────────────────────────────────────
@@ -203,6 +237,10 @@ export function useSiteList() {
     resolveStatusVariant,
     resolveRiskVariant,
     resolveTypeVariant,
+    resolvePrimaryContact,
+    resolveSiteEmail,
+    resolveSitePhone,
+    resolveSiteLocation,
     selectedSites,
     allSelected,
     someSelected,

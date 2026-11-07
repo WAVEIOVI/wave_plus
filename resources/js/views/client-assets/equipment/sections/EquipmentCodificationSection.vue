@@ -72,10 +72,73 @@ const handleBrandSelect = brand => {
   <WpSectionCard
     icon="tabler-numbers"
     icon-color="primary"
-    :title="t('Physical Identification & Brand')"
-    :subtitle="t('Brand manufacturer, serial numbers, ERP references, and client asset tags')"
+    :title="t('Physical Identification, QR Code & Brand')"
+    :subtitle="t('Optical QR code identifier, brand manufacturer, serial numbers, and client asset tags')"
   >
-    <!-- Brand Selector Card (Point 3.1) -->
+    <!-- Active QR Code / Equipment Code Card (Managed strictly via Replace QR Dialog on saved records) -->
+    <div
+      v-if="!props.isNew"
+      class="qr-code-banner pa-3 rounded-lg border mb-4 d-flex align-center justify-space-between flex-wrap gap-3"
+    >
+      <div class="d-flex align-center gap-3 min-w-0">
+        <VAvatar
+          size="42"
+          color="primary"
+          variant="tonal"
+          rounded="lg"
+        >
+          <VIcon
+            icon="tabler-qrcode"
+            size="22"
+          />
+        </VAvatar>
+        <div class="min-w-0">
+          <div class="d-flex align-center gap-2 flex-wrap">
+            <span class="text-caption text-medium-emphasis text-uppercase font-weight-semibold">
+              {{ t('Active QR / Equipment Code') }}
+            </span>
+            <VChip
+              size="x-small"
+              color="success"
+              variant="tonal"
+              prepend-icon="tabler-lock"
+            >
+              {{ t('Protected') }}
+            </VChip>
+          </div>
+          <div class="text-subtitle-1 font-weight-bold font-mono text-primary text-truncate">
+            {{ props.form.equipment_code || '—' }}
+          </div>
+          <div class="text-caption text-medium-emphasis">
+            {{ t('Optical QR tag changes are logged via the Replace QR Code workflow.') }}
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex align-center gap-2 flex-wrap">
+        <VBtn
+          size="small"
+          variant="tonal"
+          color="secondary"
+          prepend-icon="tabler-download"
+          @click="emit('downloadQr')"
+        >
+          {{ t('Download QR') }}
+        </VBtn>
+        <VBtn
+          v-if="!props.isReadOnly"
+          size="small"
+          variant="tonal"
+          color="warning"
+          prepend-icon="tabler-qrcode"
+          @click="emit('openReplaceQr')"
+        >
+          {{ t('Replace QR Code') }}
+        </VBtn>
+      </div>
+    </div>
+
+    <!-- Brand Selector Card -->
     <div class="mb-4">
       <div class="text-body-2 font-weight-medium mb-2 d-flex align-center gap-1">
         <VIcon
@@ -156,10 +219,26 @@ const handleBrandSelect = brand => {
         md="6"
       >
         <AppTextField
+          :model-value="props.form.model_name"
+          :label="t('Model / Designation')"
+          :placeholder="t('Equipment model name or designation')"
+          prepend-inner-icon="tabler-tag"
+          :readonly="props.isReadOnly"
+          clearable
+          @update:model-value="v => emit('update:field', 'model_name', v)"
+        />
+      </VCol>
+
+      <VCol
+        cols="12"
+        md="6"
+      >
+        <AppTextField
           :model-value="props.form.serial_number"
           :label="t('Serial Number')"
           :placeholder="t('Manufacturer serial number')"
           prepend-inner-icon="tabler-numbers"
+          :readonly="props.isReadOnly"
           clearable
           @update:model-value="v => emit('update:field', 'serial_number', v)"
         />
@@ -167,13 +246,14 @@ const handleBrandSelect = brand => {
 
       <VCol
         cols="12"
-        md="6"
+        md="4"
       >
         <AppTextField
           :model-value="props.form.manufacturer_part_number"
           :label="t('Part Number (MPN)')"
           :placeholder="t('Manufacturer Part #')"
           prepend-inner-icon="tabler-cpu"
+          :readonly="props.isReadOnly"
           clearable
           @update:model-value="v => emit('update:field', 'manufacturer_part_number', v)"
         />
@@ -181,13 +261,14 @@ const handleBrandSelect = brand => {
 
       <VCol
         cols="12"
-        md="6"
+        md="4"
       >
         <AppTextField
           :model-value="props.form.internal_number"
           :label="t('Internal ERP Reference')"
           :placeholder="t('Internal ID')"
           prepend-inner-icon="tabler-hash"
+          :readonly="props.isReadOnly"
           clearable
           @update:model-value="v => emit('update:field', 'internal_number', v)"
         />
@@ -195,13 +276,14 @@ const handleBrandSelect = brand => {
 
       <VCol
         cols="12"
-        md="6"
+        md="4"
       >
         <AppTextField
           :model-value="props.form.asset_tag"
           :label="t('Client Asset Tag')"
           :placeholder="t('Client barcode/tag #')"
           prepend-inner-icon="tabler-tag-starred"
+          :readonly="props.isReadOnly"
           clearable
           @update:model-value="v => emit('update:field', 'asset_tag', v)"
         />
@@ -220,6 +302,15 @@ const handleBrandSelect = brand => {
 </template>
 
 <style lang="scss" scoped>
+.qr-code-banner {
+  background: rgba(var(--v-theme-primary), 0.035);
+  border-color: rgba(var(--v-theme-primary), 0.2) !important;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
 .brand-selector-card {
   transition: all 0.2s ease;
 

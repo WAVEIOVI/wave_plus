@@ -12,6 +12,48 @@
       "grn": "Goods Received Notes",
       "grn_short": "GRN"
     },
+    "status": {
+      "draft": "Draft",
+      "pending_approval": "Pending Approval",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "merged": "Merged",
+      "converted_to_po": "Converted to PO",
+      "cancelled": "Cancelled",
+      "sent": "Sent",
+      "awaiting_responses": "Awaiting Responses",
+      "under_evaluation": "Under Evaluation",
+      "awarded": "Awarded",
+      "acknowledged": "Acknowledged",
+      "in_delivery": "In Delivery",
+      "partially_received": "Partially Received",
+      "fully_received": "Fully Received",
+      "closed": "Closed",
+      "under_qc": "Under QC",
+      "confirmed": "Confirmed",
+      "partially_rejected": "Partially Rejected",
+      "fully_rejected": "Fully Rejected",
+      "stocked": "Stocked"
+    },
+    "urgency": {
+      "low": "Low",
+      "normal": "Normal",
+      "urgent": "Urgent",
+      "critical": "Critical"
+    },
+    "payment_terms": {
+      "immediate": "Immediate",
+      "cod": "Cash on Delivery (COD)",
+      "upfront": "Upfront Payment",
+      "net_7": "Net 7 Days",
+      "net_15": "Net 15 Days",
+      "net_30": "Net 30 Days",
+      "net_45": "Net 45 Days",
+      "net_60": "Net 60 Days",
+      "net_90": "Net 90 Days",
+      "advance_100": "100% Advance",
+      "split_50_50": "50% Advance / 50% Delivery"
+    },
     "common": {
       "reference": "Reference",
       "status": "Status",
@@ -59,7 +101,7 @@
       "accept_all": "Accept All",
       "reject_all": "Reject All",
       "clear_selection": "Clear Selection",
-      "open_match_page": "Open Match Page",
+      "open_match_page": "Open 3-Way Match",
       "execute_match": "Execute Match",
       "remove_line": "Remove Line",
       "add_line": "Add Line",
@@ -75,6 +117,21 @@
       "new_title": "New GRN",
       "edit_title": "Edit GRN",
       "subtitle": "Goods receiving and quality control.",
+      "search_placeholder": "Search by GRN number, PO, or delivery note...",
+      "kpi": {
+        "total": "Total GRNs",
+        "pending_qc": "Draft / Under QC",
+        "confirmed": "Confirmed & Stocked",
+        "discrepancies": "Rejected / Partial"
+      },
+      "wizard": {
+        "step_po": "Source Purchase Order",
+        "step_po_desc": "Select the receivable PO and receiving warehouse",
+        "step_lines": "Receive Quantities",
+        "step_lines_desc": "Enter received and rejected quantities per item",
+        "step_delivery_note": "Delivery Note & Confirm",
+        "step_delivery_note_desc": "Record supplier delivery note reference and QC summary"
+      },
       "fields": {
         "grn_number": "GRN Number",
         "linked_po": "Source Purchase Order",
@@ -90,6 +147,7 @@
         "received_by": "Received By",
         "received_at": "Received Date",
         "partial_delivery": "Partial Delivery",
+        "allow_over_receive": "Allow Over-Receiving",
         "delivery_on_time": "Delivered On Time",
         "overall_qc_result": "Overall QC Result",
         "qc_performed_by": "QC Performed By",
@@ -97,9 +155,10 @@
         "qc_findings": "QC Findings & Notes",
         "storage_location": "Storage Location",
         "zone": "Zone",
-        "batch_number": "Batch Number",
+        "batch_number": "Lot / Batch Number",
+        "expiry_date": "Expiry Date",
         "serial_numbers": "Serial Numbers",
-        "line_notes": "Line Notes",
+        "line_notes": "Line QC Notes",
         "qc_result": "QC Result",
         "rejection_reason": "Rejection Reason",
         "rejection_photos": "Rejection Photos",
@@ -114,15 +173,18 @@
       },
       "action": {
         "receive_qc": "Receive & QC",
+        "receive_all_remaining": "Receive All Remaining",
+        "start_qc": "Submit for QC",
+        "confirm_receipt": "Confirm Receipt & Update Stock",
         "view_details": "View Details",
         "batch_receive": "Batch Receive",
         "apply_batch": "Apply to All Lines",
-        "done": "Done",
+        "done": "Save Line",
         "close": "Close",
         "cancel": "Cancel"
       },
       "modal": {
-        "title_receive_qc": "Receive QC Line",
+        "title_receive_qc": "Receive & QC Line",
         "title_batch_receive": "Batch Receive",
         "subtitle_batch_receive": "Receive multiple lines at once with shared storage routing.",
         "section_quantities": "Quantities",
@@ -160,7 +222,7 @@
         "delivery_performance": "Delivery Performance"
       },
       "variance": {
-        "on_target": "On Target",
+        "on_target": "Matched",
         "over_received": "Over Received",
         "under_received": "Under Received",
         "variance_warning": "Received quantity differs from ordered"
@@ -197,7 +259,7 @@
       },
       "match": {
         "title": "3-Way Match",
-        "subtitle": "Connect PO → GRN → Invoice using the supplier delivery note reference.",
+        "subtitle": "Compare Purchase Order quantities and unit prices against confirmed Goods Receipt Notes.",
         "key_label": "Key"
       },
       "snackbar": {
@@ -215,8 +277,63 @@
     },
     "ipr": {
       "title": "Internal Purchase Request",
-      "new_title": "New IPR",
-      "subtitle": "Manage internal purchase request details.",
+      "new_title": "New Purchase Request",
+      "subtitle": "Manage internal purchase request details and approvals.",
+      "search_placeholder": "Search by IPR number, justification, or reference...",
+      "kpi": {
+        "total": "Total Requests",
+        "pending_approval": "Pending Approval",
+        "approved": "Approved",
+        "converted": "Converted to RFQ/PO"
+      },
+      "wizard": {
+        "step_context": "Requester & Urgency",
+        "step_context_desc": "Specify who is requesting, urgency level, and required date",
+        "step_lines": "Requested Items",
+        "step_lines_desc": "Add catalog or ad-hoc items with quantities and estimated cost",
+        "step_justification": "Justification & Review",
+        "step_justification_desc": "Provide operational justification and review total estimate"
+      },
+      "fields": {
+        "requested_by": "Requested By",
+        "assigned_to": "Assigned To (Approver)",
+        "urgency": "Priority / Urgency",
+        "needed_by_date": "Required Date",
+        "trigger_source": "Trigger Source",
+        "trigger_reference": "Source Reference",
+        "internal_justification": "Internal Justification",
+        "justification_placeholder": "Explain why these items or services are needed...",
+        "qty_requested": "Qty Requested",
+        "estimated_unit_cost": "Estimated Unit Cost",
+        "estimated_total": "Estimated Total"
+      },
+      "trigger_sources": {
+        "manual_user": "Manual Request",
+        "auto_stock_alert": "Automatic Stock Alert",
+        "auto_workshop": "Workshop Requirement",
+        "planned_project": "Planned Project"
+      },
+      "sections": {
+        "overview": "Request Overview & Justification",
+        "lines": "Requested Items",
+        "approval": "Workflow & Approval",
+        "traceability": "Document Traceability"
+      },
+      "actions": {
+        "submit_approval": "Submit for Approval",
+        "approve": "Approve",
+        "reject": "Reject",
+        "convert": "Convert to RFQ / PO"
+      },
+      "convert": {
+        "title": "Convert Purchase Request",
+        "description": "Choose the downstream procurement document to generate from this approved request:",
+        "to_po": "Create Purchase Order (PO)",
+        "to_po_desc": "Direct order when the supplier and pricing are already known.",
+        "to_rfq": "Create Request for Quotation (RFQ)",
+        "to_rfq_desc": "Invite multiple suppliers to bid and compare quotes before ordering.",
+        "proceed": "Continue"
+      },
       "snackbar": {
         "created_success": "IPR created successfully",
         "updated_success": "IPR updated successfully",
@@ -234,12 +351,83 @@
     "rfq": {
       "title": "Request for Quotation",
       "new_title": "New RFQ",
-      "subtitle": "Manage request for quotation details.",
+      "subtitle": "Manage quotation requests, supplier invitations, and bid comparison.",
+      "search_placeholder": "Search by RFQ number or title...",
+      "bid_received": "Bid Received",
+      "awaiting_bid": "Awaiting Bid",
+      "days": "days",
+      "kpi": {
+        "total": "Total RFQs",
+        "open": "Sent / Open",
+        "under_evaluation": "Under Evaluation",
+        "awarded": "Awarded"
+      },
+      "wizard": {
+        "step_general": "General Information",
+        "step_general_desc": "Title, deadlines, and linked purchase requests",
+        "step_lines": "Requested Items",
+        "step_lines_desc": "Items and target prices for quotation",
+        "step_suppliers": "Suppliers & Evaluation",
+        "step_suppliers_desc": "Invite suppliers and configure scoring weights"
+      },
+      "fields": {
+        "title": "RFQ Title",
+        "response_deadline": "Response Deadline",
+        "required_delivery_date": "Required Delivery Date",
+        "linked_iprs": "Linked Purchase Requests (IPRs)",
+        "invited_suppliers": "Invited Suppliers",
+        "target_price_ht": "Target Unit Price (HT)",
+        "target_total": "Target Total (HT)",
+        "awarded_supplier": "Awarded Supplier",
+        "terms_and_conditions": "Terms & Conditions"
+      },
+      "weights": {
+        "price": "Price Weight",
+        "lead_time": "Lead Time Weight",
+        "quality": "Quality Weight",
+        "technical": "Technical Weight",
+        "payment": "Payment Terms Weight"
+      },
+      "validation": {
+        "weights_sum_100": "Evaluation criteria weights must sum to 100%."
+      },
+      "sections": {
+        "overview": "RFQ Overview & Deadlines",
+        "invited_suppliers": "Invited Suppliers",
+        "lines": "Requested Items",
+        "responses": "Quotes Received",
+        "comparison": "Supplier Responses & Bid Comparison",
+        "evaluation_criteria": "Evaluation Criteria Weights"
+      },
+      "actions": {
+        "send_to_suppliers": "Send to Suppliers",
+        "record_bid": "Record Supplier Bid",
+        "start_evaluation": "Start Evaluation",
+        "award_decision": "Award Decision",
+        "award_supplier": "Award Supplier"
+      },
+      "response_dialog": {
+        "title": "Record Supplier Quotation",
+        "submit": "Save Supplier Bid",
+        "can_deliver_by": "Committed Delivery Date",
+        "validity_until": "Quote Valid Until",
+        "quoted_lines": "Quoted Line Prices & Lead Times",
+        "offered_qty": "Offered Qty",
+        "offered_price": "Unit Price (HT)",
+        "lead_time_days": "Lead Time (Days)",
+        "total_quoted_ht": "Total Quoted (HT)"
+      },
+      "empty": {
+        "no_suppliers": "No suppliers invited yet",
+        "no_responses": "No supplier bids recorded yet",
+        "no_responses_desc": "Record incoming supplier quotes to compare prices and award the RFQ."
+      },
       "snackbar": {
         "created_success": "RFQ created successfully",
         "updated_success": "RFQ updated successfully",
         "deleted_success": "RFQ deleted successfully",
         "status_updated": "Status updated successfully",
+        "response_submitted": "Supplier quotation recorded successfully",
         "error_save": "Failed to save RFQ",
         "error_delete": "Failed to delete RFQ",
         "error_status": "Failed to update status",
@@ -248,8 +436,53 @@
     },
     "po": {
       "title": "Purchase Order",
-      "new_title": "New PO",
-      "subtitle": "Manage purchase order details.",
+      "new_title": "New Purchase Order",
+      "subtitle": "Manage supplier purchase orders, commercial terms, and receiving.",
+      "search_placeholder": "Search by PO number or supplier reference...",
+      "kpi": {
+        "total": "Total POs",
+        "awaiting_delivery": "Awaiting Delivery",
+        "received": "Partially / Fully Received",
+        "total_value": "Total Order Value"
+      },
+      "wizard": {
+        "step_supplier": "Supplier & Delivery Site",
+        "step_supplier_desc": "Select supplier and target delivery warehouse",
+        "step_lines": "Order Lines",
+        "step_lines_desc": "Add ordered items, quantities, unit prices, and VAT",
+        "step_terms": "Commercial Terms",
+        "step_terms_desc": "Payment terms, Incoterms, currency, and notes"
+      },
+      "fields": {
+        "committed_delivery_date": "Expected Delivery Date",
+        "delivery_address": "Delivery Address",
+        "approval_required": "Requires Manager Approval Before Sending",
+        "qty_ordered": "Qty Ordered",
+        "qty_received": "Qty Received",
+        "unit_price_ht": "Unit Price (HT)",
+        "receiving_progress": "Receiving Progress"
+      },
+      "sections": {
+        "overview": "Supplier & Delivery Site",
+        "lines": "Order Lines"
+      },
+      "actions": {
+        "mark_sent": "Send to Supplier",
+        "mark_acknowledged": "Mark Acknowledged",
+        "mark_in_delivery": "Mark In Delivery",
+        "create_grn": "Create Goods Receipt (GRN)",
+        "close_po": "Close Order",
+        "back_to_po": "Back to Purchase Order"
+      },
+      "match": {
+        "variances": "Lines with Variance",
+        "comparison_table": "PO vs GRN Line Comparison",
+        "status_matched": "Matched",
+        "status_pending_receipt": "Pending Receipt",
+        "status_over_received": "Over Received",
+        "status_under_received": "Under Received",
+        "status_variance": "Price / QC Variance"
+      },
       "snackbar": {
         "created_success": "PO created successfully",
         "updated_success": "PO updated successfully",
@@ -262,8 +495,8 @@
       }
     },
     "dashboard": {
-      "title": "Procurement Dashboard",
-      "subtitle": "Overview of procurement activities and performance",
+      "title": "Supply Chain & Procurement",
+      "subtitle": "Overview of purchase requests, quotations, orders, receipts, and supplier performance",
       "filter": {
         "date_range": "Date Range",
         "warehouse": "Warehouse",
@@ -271,18 +504,21 @@
         "to": "To"
       },
       "kpi": {
-        "open_iprs": "Open IPRs",
-        "open_iprs_desc": "Draft & submitted requests",
-        "pending_rfqs": "Pending RFQs",
-        "pending_rfqs_desc": "Published quotation requests",
-        "active_pos": "Active POs",
-        "active_pos_desc": "Issued & partially received",
-        "pending_grns": "Pending GRNs",
-        "pending_grns_desc": "POs issued but no GRN"
+        "open_iprs": "Pending IPRs",
+        "open_iprs_desc": "Draft & awaiting approval",
+        "pending_rfqs": "Open RFQs",
+        "pending_rfqs_desc": "Active quotation requests",
+        "active_pos": "Active Purchase Orders",
+        "active_pos_desc": "Issued & in delivery",
+        "pending_grns": "Pending GRN Receipts",
+        "pending_grns_desc": "Awaiting QC or confirmation",
+        "committed_spend": "Total Committed Spend",
+        "this_month": "This month"
       },
       "pipeline": {
         "title": "Procurement Pipeline",
-        "subtitle": "Document flow across procurement stages"
+        "monthly_trends": "Monthly Spend & Volume",
+        "subtitle": "Document flow and spend across procurement stages"
       },
       "scorecard": {
         "title": "Supplier Scorecard",
@@ -310,7 +546,8 @@
         "title": "Quick Actions",
         "new_ipr": "New IPR",
         "new_rfq": "New RFQ",
-        "new_po": "New PO"
+        "new_po": "New PO",
+        "new_grn": "New GRN"
       }
     }
   }

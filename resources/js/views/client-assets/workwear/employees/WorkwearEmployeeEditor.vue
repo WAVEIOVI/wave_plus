@@ -1,10 +1,11 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
-  AppBottomNav,
   AppQuickActionsSheet,
   WpDeleteDialog,
   WpJournalNav,
+  WpKpiCard,
+  WpKpiGroup,
   WpUnsavedChangesDialog,
 } from '@/components/shared'
 import AppBreadcrumb from '@/components/shared/AppBreadcrumb.vue'
@@ -13,14 +14,13 @@ import { useUnsavedChangesGuard } from '@/composables/dialog/useUnsavedChangesGu
 import IssueEmployeeGarmentsDialog from '@/views/client-assets/workwear/employees/components/IssueEmployeeGarmentsDialog.vue'
 import WorkwearEmployeeBioSection from '@/views/client-assets/workwear/employees/components/WorkwearEmployeeBioSection.vue'
 import WorkwearEmployeeHistorySection from '@/views/client-assets/workwear/employees/components/WorkwearEmployeeHistorySection.vue'
-import WorkwearEmployeeModelsSection from '@/views/client-assets/workwear/employees/components/WorkwearEmployeeModelsSection.vue'
 import WorkwearEmployeeNotesSection from '@/views/client-assets/workwear/employees/components/WorkwearEmployeeNotesSection.vue'
 import WorkwearEmployeeRequirementsSection from '@/views/client-assets/workwear/employees/components/WorkwearEmployeeRequirementsSection.vue'
 import WorkwearEmployeeSizesSection from '@/views/client-assets/workwear/employees/components/WorkwearEmployeeSizesSection.vue'
 import ReturnWorkwearDialog from '@/views/client-assets/workwear/items/list/ReturnWorkwearDialog.vue'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
 const props = defineProps({
@@ -28,7 +28,6 @@ const props = defineProps({
 })
 
 const route = useRoute()
-const router = useRouter()
 const { t } = useI18n()
 const { smAndDown } = useDisplay()
 
@@ -61,13 +60,10 @@ const {
   isDirty,
   fieldErrors,
   coverageFor,
-  issuedCountForModel,
   filteredAvailableItems,
 
   // Actions
   fetchEmployee,
-  addModelEntitlement,
-  removeModelEntitlement,
   addRequirement,
   removeRequirement,
   openIssueGarmentDialog,
@@ -83,25 +79,17 @@ const { unsavedDialogVisible, confirmLeave } = useUnsavedChangesGuard(isDirty)
 const sections = computed(() => [
   { id: 'bio', label: t('Basic Information'), icon: 'tabler-info-circle' },
   { id: 'sizes', label: t('Sizes & Measurements'), icon: 'tabler-ruler-measure' },
-  { id: 'models', label: t('Model Entitlements'), icon: 'tabler-shirt', badge: employeeData.value?.model_assignments?.length || undefined },
+  { id: 'history', label: t('Issued Workwear Items'), icon: 'tabler-hanger', badge: currentAssignments.value.length || undefined },
   { id: 'requirements', label: t('Workwear Requirements'), icon: 'tabler-checklist', badge: employeeData.value?.workwear_requirements?.length || undefined },
-  { id: 'history', label: t('Issued Garments & History'), icon: 'tabler-hanger', badge: currentAssignments.value.length || undefined },
   { id: 'notes', label: t('Notes'), icon: 'tabler-notes' },
 ])
 
 const breadcrumbItems = computed(() => [
   { title: t('Home'), to: '/dashboard', icon: 'tabler-home' },
   { title: t('Client Assets'), to: listRoute, icon: 'tabler-shirt' },
-  { title: t('Employees'), to: listRoute, icon: 'tabler-users' },
+  { title: t('Client Employees'), to: listRoute, icon: 'tabler-users' },
   { title: employeeData.value?.first_name ? `${employeeData.value.first_name} ${employeeData.value.last_name || ''}` : t('Edit Employee'), icon: 'tabler-edit' },
 ])
-
-const scrollToSection = sectionId => {
-  activeSection.value = sectionId
-
-  const el = document.getElementById(`section-${sectionId}`)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
 
 const quickActions = computed(() => [
   {
@@ -114,17 +102,10 @@ const quickActions = computed(() => [
   },
   {
     id: 'issue-garment',
-    title: t('Issue Garment'),
+    title: t('Assign Workwear Item'),
     icon: 'tabler-package-export',
     color: 'success',
     onClick: () => openIssueGarmentDialog(null),
-  },
-  {
-    id: 'assign-model',
-    title: t('Assign Model'),
-    icon: 'tabler-shirt',
-    color: 'info',
-    onClick: addModelEntitlement,
   },
   {
     id: 'delete-employee',
@@ -137,29 +118,11 @@ const quickActions = computed(() => [
 
 onMounted(async () => {
   await fetchEmployee()
-
-  const observer = new IntersectionObserver(
-    entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          activeSection.value = entry.target.id.replace('section-', '')
-        }
-      })
-    },
-    { threshold: 0.2, rootMargin: '-80px 0px -50% 0px' },
-  )
-
-  nextTick(() => {
-    sections.value.forEach(s => {
-      const el = document.getElementById(`section-${s.id}`)
-      if (el) observer.observe(el)
-    })
-  })
 })
 </script>
 
 <template>
-  <div>
+  <div class="workwear-employee-editor-page">
     <!-- 👉 Breadcrumbs -->
     <AppBreadcrumb
       :items="breadcrumbItems"
@@ -194,217 +157,228 @@ onMounted(async () => {
       </div>
     </VAlert>
 
-    <!-- 👉 Main Workspace -->
-    <div
-      v-else-if="employeeData"
-      class="journal-layout"
-    >
-      <!-- Desktop Navigation Sidebar -->
-      <WpJournalNav
-        v-if="!smAndDown"
-        v-model="activeSection"
-        :sections="sections"
-        :title="`${employeeData.first_name || ''} ${employeeData.last_name || ''}`"
-        :subtitle="employeeData.employee_ref || employeeData.position || employeeData.department || ''"
-        id-prefix="section-"
-        @update:model-value="scrollToSection"
+    <template v-else-if="employeeData">
+      <!-- 👉 Top KPI Strip (Standardized with Client Site & Equipment Edit) -->
+      <WpKpiGroup
+        :item-count="4"
+        class="mb-6"
       >
-        <template #avatar>
-          <VAvatar
-            rounded="lg"
-            :size="40"
-            color="primary"
-            variant="tonal"
-          >
-            <span class="text-subtitle-2 font-weight-bold">
-              {{ (employeeData.first_name?.[0] || '') + (employeeData.last_name?.[0] || '') }}
-            </span>
-          </VAvatar>
+        <template #default="{ getColProps }">
+          <VCol v-bind="getColProps(0)">
+            <WpKpiCard
+              :title="$t('Employee Reference')"
+              :value="employeeData.employee_ref || '—'"
+              icon="tabler-id-badge-2"
+              icon-color="primary"
+            />
+          </VCol>
+          <VCol v-bind="getColProps(1)">
+            <WpKpiCard
+              :title="$t('Client Account')"
+              :value="employeeData.client?.legal_name || employeeData.client?.name || '—'"
+              icon="tabler-building"
+              icon-color="info"
+            />
+          </VCol>
+          <VCol v-bind="getColProps(2)">
+            <WpKpiCard
+              :title="$t('Department & Position')"
+              :value="[employeeData.department, employeeData.position].filter(Boolean).join(' · ') || '—'"
+              icon="tabler-briefcase"
+              icon-color="secondary"
+            />
+          </VCol>
+          <VCol v-bind="getColProps(3)">
+            <WpKpiCard
+              :title="$t('Issued Workwear Items')"
+              :value="currentAssignments.length"
+              icon="tabler-hanger"
+              icon-color="success"
+            />
+          </VCol>
         </template>
+      </WpKpiGroup>
 
-        <template #footer>
-          <div class="pt-4">
-            <div class="d-flex gap-1 mb-3 flex-wrap">
-              <VChip
-                :color="statusMap[employeeData.status] || 'secondary'"
-                size="x-small"
-                label
-                class="text-capitalize"
-              >
-                {{ employeeData.status }}
-              </VChip>
-              <VChip
-                size="x-small"
-                label
-                variant="tonal"
-                color="info"
-              >
-                {{ currentAssignments.length }} {{ $t('issued') }}
-              </VChip>
-            </div>
-
-            <VDivider class="mb-4" />
-
-            <!-- Actions Menu -->
-            <div class="d-flex flex-column gap-2 mb-4">
-              <VBtn
-                block
-                color="success"
-                variant="tonal"
-                prepend-icon="tabler-package-export"
-                @click="openIssueGarmentDialog(null)"
-              >
-                {{ $t('Issue Garment') }}
-              </VBtn>
-              <VBtn
-                block
-                color="info"
-                variant="tonal"
-                prepend-icon="tabler-shirt"
-                @click="addModelEntitlement"
-              >
-                {{ $t('Assign Model') }}
-              </VBtn>
-            </div>
-
-            <div
-              v-if="isDirty"
-              class="d-flex align-center gap-2 mb-3 text-caption text-warning"
-              role="status"
-            >
-              <VIcon
-                icon="tabler-point-filled"
-                size="16"
-              />
-              {{ $t('Unsaved changes') }}
-            </div>
-
-            <VBtn
-              block
+      <!-- 👉 Main Workspace -->
+      <div class="journal-layout">
+        <!-- Navigation Sidebar + Mobile Drawer handled by WpJournalNav -->
+        <WpJournalNav
+          v-model="activeSection"
+          :sections="sections"
+          :title="`${employeeData.first_name || ''} ${employeeData.last_name || ''}`"
+          :subtitle="employeeData.employee_ref || employeeData.position || employeeData.department || ''"
+          id-prefix="section-"
+        >
+          <template #avatar>
+            <VAvatar
+              rounded="lg"
+              :size="40"
               color="primary"
-              :disabled="saving || !isDirty"
+              variant="tonal"
+            >
+              <span class="text-subtitle-2 font-weight-bold">
+                {{ (employeeData.first_name?.[0] || '') + (employeeData.last_name?.[0] || '') }}
+              </span>
+            </VAvatar>
+          </template>
+
+          <template #footer>
+            <div class="pt-4">
+              <div class="d-flex gap-1 mb-3 flex-wrap">
+                <VChip
+                  :color="statusMap[employeeData.status] || 'secondary'"
+                  size="x-small"
+                  label
+                  class="text-capitalize"
+                >
+                  {{ $t(employeeData.status || 'active') }}
+                </VChip>
+                <VChip
+                  size="x-small"
+                  label
+                  variant="tonal"
+                  color="success"
+                >
+                  {{ currentAssignments.length }} {{ $t('items issued') }}
+                </VChip>
+              </div>
+
+              <VDivider class="mb-4" />
+
+              <!-- Actions Menu -->
+              <div class="d-flex flex-column gap-2 mb-4">
+                <VBtn
+                  block
+                  color="success"
+                  variant="tonal"
+                  prepend-icon="tabler-package-export"
+                  @click="openIssueGarmentDialog(null)"
+                >
+                  {{ $t('Assign Workwear Item') }}
+                </VBtn>
+              </div>
+
+              <div
+                v-if="isDirty"
+                class="d-flex align-center gap-2 mb-3 text-caption text-warning"
+                role="status"
+              >
+                <VIcon
+                  icon="tabler-point-filled"
+                  size="16"
+                />
+                {{ $t('Unsaved changes') }}
+              </div>
+
+              <VBtn
+                block
+                color="primary"
+                :disabled="saving || !isDirty"
+                :loading="saving"
+                class="mb-2 font-weight-semibold"
+                @click="handleUpdate"
+              >
+                <VIcon
+                  start
+                  icon="tabler-device-floppy"
+                />
+                {{ $t('Save Changes') }}
+              </VBtn>
+
+              <VBtn
+                block
+                variant="text"
+                color="error"
+                size="small"
+                @click="isDeleteDialogVisible = true"
+              >
+                <VIcon
+                  start
+                  icon="tabler-trash"
+                />
+                {{ $t('Delete Employee') }}
+              </VBtn>
+            </div>
+          </template>
+        </WpJournalNav>
+
+        <!-- Main Feed -->
+        <main class="journal-feed">
+          <!-- Mobile Header Bar -->
+          <div
+            v-if="smAndDown"
+            class="d-flex align-center gap-3 w-100 mb-2"
+          >
+            <VAvatar
+              rounded="lg"
+              :size="40"
+              color="primary"
+              variant="tonal"
+            >
+              <span class="text-subtitle-2 font-weight-bold">
+                {{ (employeeData.first_name?.[0] || '') + (employeeData.last_name?.[0] || '') }}
+              </span>
+            </VAvatar>
+            <div class="min-w-0 flex-grow-1">
+              <h1 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
+                {{ employeeData.first_name }} {{ employeeData.last_name }}
+              </h1>
+              <span class="text-caption font-mono text-disabled">{{ employeeData.employee_ref || employeeData.department }}</span>
+            </div>
+            <VBtn
+              color="primary"
+              size="small"
               :loading="saving"
-              class="mb-2 font-weight-semibold"
+              :disabled="saving || !isDirty"
               @click="handleUpdate"
             >
-              <VIcon
-                start
-                icon="tabler-device-floppy"
-              />
-              {{ $t('Save Changes') }}
-            </VBtn>
-
-            <VBtn
-              block
-              variant="text"
-              color="error"
-              size="small"
-              @click="isDeleteDialogVisible = true"
-            >
-              <VIcon
-                start
-                icon="tabler-trash"
-              />
-              {{ $t('Delete Employee') }}
+              {{ $t('Save') }}
             </VBtn>
           </div>
-        </template>
-      </WpJournalNav>
 
-      <!-- Main Feed -->
-      <main class="journal-feed">
-        <!-- Mobile Header Bar -->
-        <div
-          v-if="smAndDown"
-          class="d-flex align-center gap-3 w-100 mb-2"
-        >
-          <VAvatar
-            rounded="lg"
-            :size="40"
-            color="primary"
-            variant="tonal"
-          >
-            <span class="text-subtitle-2 font-weight-bold">
-              {{ (employeeData.first_name?.[0] || '') + (employeeData.last_name?.[0] || '') }}
-            </span>
-          </VAvatar>
-          <div class="min-w-0 flex-grow-1">
-            <h1 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
-              {{ employeeData.first_name }} {{ employeeData.last_name }}
-            </h1>
-            <span class="text-caption font-mono text-disabled">{{ employeeData.employee_ref || employeeData.department }}</span>
-          </div>
-          <VBtn
-            color="primary"
-            size="small"
-            :loading="saving"
-            :disabled="saving || !isDirty"
-            @click="handleUpdate"
-          >
-            {{ $t('Save') }}
-          </VBtn>
-        </div>
+          <!-- 1. Basic Information -->
+          <WorkwearEmployeeBioSection
+            :employee-data="employeeData"
+            :status-options="statusOptions"
+            :field-errors="fieldErrors"
+          />
 
-        <!-- 1. Basic Information -->
-        <WorkwearEmployeeBioSection
-          :employee-data="employeeData"
-          :status-options="statusOptions"
-          :field-errors="fieldErrors"
-        />
+          <!-- 2. Sizes & Measurements -->
+          <WorkwearEmployeeSizesSection
+            :employee-data="employeeData"
+            :garment-size-fields="garmentSizeFields"
+            :measurement-fields="measurementFields"
+            :field-errors="fieldErrors"
+          />
 
-        <!-- 2. Sizes & Measurements -->
-        <WorkwearEmployeeSizesSection
-          :employee-data="employeeData"
-          :garment-size-fields="garmentSizeFields"
-          :measurement-fields="measurementFields"
-          :field-errors="fieldErrors"
-        />
+          <!-- 3. Issued Workwear Items & Handover History (Attached strictly via WorkwearItem -> WorkwearModel) -->
+          <WorkwearEmployeeHistorySection
+            v-model:assignment-tab="assignmentTab"
+            :current-assignments="currentAssignments"
+            :returned-assignments="returnedAssignments"
+            :return-action-color="returnActionColor"
+            @issue-garment="openIssueGarmentDialog"
+            @return-assignment="openReturn"
+          />
 
-        <!-- 3. Model Entitlements -->
-        <WorkwearEmployeeModelsSection
-          :employee-data="employeeData"
-          :client-models="clientModels"
-          :issued-count-for-model="issuedCountForModel"
-          @add-model-entitlement="addModelEntitlement"
-          @remove-model-entitlement="removeModelEntitlement"
-          @open-issue-garment="openIssueGarmentDialog"
-        />
+          <!-- 4. Workwear Requirements -->
+          <WorkwearEmployeeRequirementsSection
+            :employee-data="employeeData"
+            :garment-type-options="garmentTypeOptions"
+            :coverage-for="coverageFor"
+            :field-errors="fieldErrors"
+            @add-requirement="addRequirement"
+            @remove-requirement="removeRequirement"
+          />
 
-        <!-- 4. Workwear Requirements -->
-        <WorkwearEmployeeRequirementsSection
-          :employee-data="employeeData"
-          :garment-type-options="garmentTypeOptions"
-          :coverage-for="coverageFor"
-          :field-errors="fieldErrors"
-          @add-requirement="addRequirement"
-          @remove-requirement="removeRequirement"
-        />
-
-        <!-- 5. Issued Garments & History -->
-        <WorkwearEmployeeHistorySection
-          v-model:assignment-tab="assignmentTab"
-          :current-assignments="currentAssignments"
-          :returned-assignments="returnedAssignments"
-          :return-action-color="returnActionColor"
-          @issue-garment="openIssueGarmentDialog"
-          @return-assignment="openReturn"
-        />
-
-        <!-- 6. Internal Notes -->
-        <WorkwearEmployeeNotesSection
-          :employee-data="employeeData"
-          :field-errors="fieldErrors"
-        />
-      </main>
-    </div>
-
-    <!-- Mobile Navigation Bar -->
-    <AppBottomNav
-      v-if="smAndDown && employeeData"
-      v-model="activeSection"
-      :items="sections"
-      @update:model-value="scrollToSection"
-    />
+          <!-- 5. Internal Notes -->
+          <WorkwearEmployeeNotesSection
+            :employee-data="employeeData"
+            :field-errors="fieldErrors"
+          />
+        </main>
+      </div>
+    </template>
 
     <!-- Mobile Quick Actions Launcher -->
     <div
@@ -459,6 +433,12 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
+.workwear-employee-editor-page {
+  inline-size: 100%;
+  max-inline-size: 100%;
+  overflow-x: clip;
+}
+
 .journal-layout {
   display: flex;
   flex-direction: row;

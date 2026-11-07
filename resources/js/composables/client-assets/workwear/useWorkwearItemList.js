@@ -9,7 +9,7 @@ export function useWorkwearItemList() {
   const store = useClientAssetStore()
   const { t } = useI18n()
 
-  const allowedSortFields = new Set(['id', 'item_code', 'sku', 'status', 'created_at'])
+  const allowedSortFields = new Set(['id', 'item_code', 'size', 'color', 'status', 'created_at'])
 
   const clientOptions = ref([])
   const modelOptions = ref([])
@@ -55,13 +55,13 @@ export function useWorkwearItemList() {
   ]
 
   const headers = computed(() => [
-    { title: t('Item Code / SKU'), key: 'item_code', sortable: true },
-    { title: t('Model & Client'), key: 'workwear_model', sortable: false },
-    { title: t('Variant (Color / Size)'), key: 'size', sortable: false },
-    { title: t('Supplier / Cost'), key: 'supplier', sortable: false },
+    { title: t('Item Code'), key: 'item_code', sortable: true },
+    { title: t('Workwear Model & Client'), key: 'workwear_model', sortable: false },
+    { title: t('Garment Type & Variant (Size / Color)'), key: 'size', sortable: false },
+    { title: t('Supplier / Manufacturer'), key: 'supplier', sortable: false },
     { title: t('Status'), key: 'status', sortable: true },
     { title: t('Condition'), key: 'item_condition', sortable: false },
-    { title: t('Issued Staff'), key: 'current_assignment', sortable: false },
+    { title: t('Assigned Employee'), key: 'current_assignment', sortable: false },
     { title: t('Actions'), key: 'actions', sortable: false, align: 'end' },
   ])
 
@@ -77,6 +77,13 @@ export function useWorkwearItemList() {
       console.error('Failed to load stock matrix:', err)
     } finally {
       loadingStockMatrix.value = false
+    }
+  }
+
+  const toggleStockMatrix = () => {
+    showStockMatrix.value = !showStockMatrix.value
+    if (showStockMatrix.value) {
+      fetchStockSummary()
     }
   }
 
@@ -156,6 +163,7 @@ export function useWorkwearItemList() {
     stockMatrix,
     loadingStockMatrix,
     fetchStockSummary,
+    toggleStockMatrix,
     selectedIds: selection.selected,
     selectedItems: selection.selected,
     selectionCount: selection.selectionCount,

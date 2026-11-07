@@ -1,0 +1,555 @@
+{
+  "scp": {
+    "nav": {
+      "title": "Achats & Approvisionnements",
+      "dashboard": "Tableau de bord",
+      "ipr": "Demandes d'achat internes",
+      "ipr_short": "DAI",
+      "rfq": "Demandes de cotation",
+      "rfq_short": "AO / RFQ",
+      "po": "Bons de commande",
+      "po_short": "BC",
+      "grn": "Bons de réception",
+      "grn_short": "BR"
+    },
+    "status": {
+      "draft": "Brouillon",
+      "pending_approval": "En attente d'approbation",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "merged": "Fusionné",
+      "converted_to_po": "Converti en BC",
+      "cancelled": "Annulé",
+      "sent": "Envoyé",
+      "awaiting_responses": "En attente de réponses",
+      "under_evaluation": "En évaluation",
+      "awarded": "Adjugé",
+      "acknowledged": "Accusé de réception",
+      "in_delivery": "En cours de livraison",
+      "partially_received": "Partiellement reçu",
+      "fully_received": "Entièrement reçu",
+      "closed": "Clôturé",
+      "under_qc": "Sous contrôle qualité",
+      "confirmed": "Confirmé",
+      "partially_rejected": "Partiellement rejeté",
+      "fully_rejected": "Totalement rejeté",
+      "stocked": "Mis en stock"
+    },
+    "urgency": {
+      "low": "Basse",
+      "normal": "Normale",
+      "urgent": "Urgente",
+      "critical": "Critique"
+    },
+    "payment_terms": {
+      "immediate": "Comptant immédiat",
+      "cod": "Paiement à la livraison (COD)",
+      "upfront": "Paiement d'avance",
+      "net_7": "Net 7 jours",
+      "net_15": "Net 15 jours",
+      "net_30": "Net 30 jours",
+      "net_45": "Net 45 jours",
+      "net_60": "Net 60 jours",
+      "net_90": "Net 90 jours",
+      "advance_100": "100% d'avance",
+      "split_50_50": "50% commande / 50% livraison"
+    },
+    "common": {
+      "reference": "Référence",
+      "status": "Statut",
+      "supplier": "Fournisseur",
+      "warehouse": "Entrepôt / Site",
+      "date_range": "Période",
+      "created_at": "Créé le",
+      "updated_at": "Mis à jour le",
+      "auto_generated": "Auto-généré",
+      "not_set": "Non défini",
+      "loading": "Chargement...",
+      "no_data": "Aucune donnée disponible",
+      "lines": "Lignes",
+      "notes": "Notes",
+      "overview": "Aperçu",
+      "details": "Détails",
+      "currency": "Devise",
+      "total": "Total",
+      "on_time": "À temps",
+      "late": "En retard",
+      "days_late": "Jours de retard",
+      "score": "Score",
+      "yes": "Oui",
+      "no": "Non",
+      "all": "Tous",
+      "none": "Aucun",
+      "item": "Article",
+      "name": "Nom",
+      "sku": "SKU",
+      "description": "Description",
+      "unit_cost": "Coût unitaire"
+    },
+    "action": {
+      "save": "Enregistrer",
+      "save_draft": "Enregistrer le brouillon",
+      "submit": "Soumettre",
+      "delete": "Supprimer",
+      "cancel": "Annuler",
+      "edit": "Modifier",
+      "view": "Voir",
+      "export_pdf": "Exporter PDF",
+      "change_status": "Changer le statut",
+      "convert_to_po": "Convertir en BC",
+      "select_all": "Tout sélectionner",
+      "accept_all": "Tout accepter",
+      "reject_all": "Tout rejeter",
+      "clear_selection": "Effacer la sélection",
+      "open_match_page": "Rapprochement 3 voies",
+      "execute_match": "Exécuter le rapprochement",
+      "remove_line": "Supprimer la ligne",
+      "add_line": "Ajouter une ligne",
+      "select_multiple": "Sélection multiple depuis le catalogue",
+      "view_all": "Voir tout",
+      "new": "Nouveau",
+      "back_to_list": "Retour à la liste",
+      "apply_filters": "Appliquer les filtres",
+      "reset_filters": "Réinitialiser"
+    },
+    "grn": {
+      "title": "Bon de réception (GRN)",
+      "new_title": "Nouveau bon de réception",
+      "edit_title": "Modifier le bon de réception",
+      "subtitle": "Réception des marchandises et contrôle qualité.",
+      "search_placeholder": "Rechercher par numéro BR, BC ou bon de livraison...",
+      "kpi": {
+        "total": "Total BR",
+        "pending_qc": "Brouillon / En contrôle QC",
+        "confirmed": "Confirmés & Stockés",
+        "discrepancies": "Rejetés / Partiels"
+      },
+      "wizard": {
+        "step_po": "Bon de commande source",
+        "step_po_desc": "Sélectionnez le BC à réceptionner et l'entrepôt cible",
+        "step_lines": "Quantités reçues",
+        "step_lines_desc": "Saisissez les quantités reçues et rejetées par article",
+        "step_delivery_note": "Bon de livraison & Validation",
+        "step_delivery_note_desc": "Renseignez la référence du BL fournisseur et le résultat QC"
+      },
+      "fields": {
+        "grn_number": "Numéro BR",
+        "linked_po": "Bon de commande source",
+        "supplier": "Fournisseur",
+        "reception_date": "Date de réception",
+        "expected_date": "Date prévue",
+        "delivery_status": "Statut de livraison",
+        "warehouse": "Entrepôt",
+        "carrier": "Transporteur",
+        "delivery_note_ref": "Réf. Bon de livraison",
+        "delivery_note_file": "Fichier BL",
+        "internal_notes": "Notes internes",
+        "received_by": "Réceptionné par",
+        "received_at": "Date de réception",
+        "partial_delivery": "Livraison partielle",
+        "allow_over_receive": "Autoriser la sur-réception",
+        "delivery_on_time": "Livré à temps",
+        "overall_qc_result": "Résultat QC global",
+        "qc_performed_by": "Contrôle QC par",
+        "qc_performed_at": "Date du contrôle QC",
+        "qc_findings": "Observations & Notes QC",
+        "storage_location": "Emplacement de stockage",
+        "zone": "Zone",
+        "batch_number": "Numéro de lot",
+        "expiry_date": "Date d'expiration",
+        "serial_numbers": "Numéros de série",
+        "line_notes": "Notes QC de ligne",
+        "qc_result": "Résultat QC",
+        "rejection_reason": "Motif de rejet",
+        "rejection_photos": "Photos de rejet",
+        "qc_photos": "Photos QC",
+        "certificates_received": "Certificats reçus",
+        "certificate_files": "Fichiers certificats",
+        "non_stockable": "Non stockable",
+        "unit_cost_ht": "Coût unitaire (HT)",
+        "qc_status": "Statut QC",
+        "no_zone": "Aucune zone",
+        "no_path": "Aucun chemin"
+      },
+      "action": {
+        "receive_qc": "Réception & QC",
+        "receive_all_remaining": "Tout recevoir",
+        "start_qc": "Soumettre au contrôle QC",
+        "confirm_receipt": "Confirmer la réception & Mettre en stock",
+        "view_details": "Voir les détails",
+        "batch_receive": "Réception groupée",
+        "apply_batch": "Appliquer à toutes les lignes",
+        "done": "Enregistrer la ligne",
+        "close": "Fermer",
+        "cancel": "Annuler"
+      },
+      "modal": {
+        "title_receive_qc": "Réception & Contrôle qualité de la ligne",
+        "title_batch_receive": "Réception groupée",
+        "subtitle_batch_receive": "Réceptionner plusieurs lignes simultanément.",
+        "section_quantities": "Quantités",
+        "section_logistics": "Logistique & Finances",
+        "section_global_routing": "Routage de stockage global",
+        "section_storage_routing": "Routage de stockage",
+        "col_variant_item": "Variante / Article",
+        "lines_pending": "lignes en attente",
+        "batch_all_processed": "Toutes les lignes ont été traitées."
+      },
+      "qc_results": {
+        "passed": "Conforme",
+        "partial": "Partiel",
+        "failed": "Non conforme",
+        "passed_with_remarks": "Conforme avec réserves",
+        "rejected": "Rejeté",
+        "pending": "En attente"
+      },
+      "validation": {
+        "location_required": "L'emplacement de stockage est requis"
+      },
+      "qty": {
+        "ordered": "Qté commandée",
+        "received": "Qté reçue",
+        "accepted": "Qté acceptée",
+        "rejected": "Qté rejetée",
+        "units": "unités"
+      },
+      "timing": {
+        "reception_date": "Date de réception",
+        "expected_date": "Date prévue",
+        "days_late": "Jours de retard",
+        "on_time": "À temps",
+        "late": "En retard",
+        "delivery_performance": "Performance de livraison"
+      },
+      "variance": {
+        "on_target": "Conforme",
+        "over_received": "Sur-réception",
+        "under_received": "Sous-réception",
+        "variance_warning": "La quantité reçue diffère de la quantité commandée"
+      },
+      "tabs": {
+        "lines": "Lignes & Quantités",
+        "qc": "Contrôle qualité",
+        "match": "Rapprochement 3 voies",
+        "rejected": "Articles rejetés",
+        "logs": "Journal d'activité"
+      },
+      "sections": {
+        "reference_context": "Référence & Contexte",
+        "receiving_details": "Détails de réception",
+        "receiving_qc": "Réception & QC par ligne",
+        "delivery_header": "En-tête de livraison",
+        "supplier_info": "Infos fournisseur",
+        "reception_info": "Détails de réception",
+        "delivery_performance": "Performance de livraison",
+        "qc_summary": "Résumé du contrôle qualité",
+        "notes_remarks": "Notes & Remarques QC",
+        "rejected_goods": "Marchandises rejetées"
+      },
+      "empty": {
+        "no_lines": "Aucune ligne",
+        "select_po": "Sélectionnez un bon de commande pour charger les lignes.",
+        "no_rejected": "Aucun article rejeté"
+      },
+      "alerts": {
+        "locked": "Ce bon de réception est confirmé et verrouillé.",
+        "qc_review": "Ce BR est actuellement {status}. Vérifiez les résultats QC avant de continuer.",
+        "missing_location": "Impossible de confirmer le BR : certaines lignes n'ont pas d'emplacement de stockage.",
+        "required_fields": "Le BC, le fournisseur et au moins une ligne sont obligatoires."
+      },
+      "match": {
+        "title": "Rapprochement 3 voies",
+        "subtitle": "Comparez les quantités et prix du Bon de Commande avec les Bons de Réception confirmés.",
+        "key_label": "Clé"
+      },
+      "snackbar": {
+        "created_success": "Bon de réception créé avec succès",
+        "updated_success": "Bon de réception mis à jour avec succès",
+        "deleted_success": "Bon de réception supprimé avec succès",
+        "status_updated": "Statut mis à jour avec succès",
+        "error_save": "Échec de l'enregistrement du BR",
+        "error_delete": "Échec de la suppression du BR",
+        "error_status": "Échec de la mise à jour du statut",
+        "error_load": "Échec du chargement des détails du BR",
+        "error_po_populate": "Erreur lors du pré-remplissage depuis le BC",
+        "error_generic": "Une erreur est survenue"
+      }
+    },
+    "ipr": {
+      "title": "Demande d'achat interne",
+      "new_title": "Nouvelle demande d'achat",
+      "subtitle": "Gérez les demandes d'achat internes et leur circuit d'approbation.",
+      "search_placeholder": "Rechercher par numéro DAI, justification ou référence...",
+      "kpi": {
+        "total": "Total Demandes",
+        "pending_approval": "En attente d'approbation",
+        "approved": "Approuvées",
+        "converted": "Converties en AO / BC"
+      },
+      "wizard": {
+        "step_context": "Demandeur & Urgence",
+        "step_context_desc": "Indiquez le demandeur, le niveau d'urgence et la date souhaitée",
+        "step_lines": "Articles demandés",
+        "step_lines_desc": "Ajoutez des articles du catalogue ou hors-catalogue avec quantités",
+        "step_justification": "Justification & Validation",
+        "step_justification_desc": "Précisez la justification opérationnelle et vérifiez le montant estimé"
+      },
+      "fields": {
+        "requested_by": "Demandé par",
+        "assigned_to": "Assigné à (Approbateur)",
+        "urgency": "Priorité / Urgence",
+        "needed_by_date": "Date souhaitée",
+        "trigger_source": "Origine du besoin",
+        "trigger_reference": "Référence d'origine",
+        "internal_justification": "Justification interne",
+        "justification_placeholder": "Expliquez le besoin opérationnel pour ces articles ou services...",
+        "qty_requested": "Qté demandée",
+        "estimated_unit_cost": "Coût unitaire estimé",
+        "estimated_total": "Total estimé"
+      },
+      "trigger_sources": {
+        "manual_user": "Demande manuelle",
+        "auto_stock_alert": "Alerte de stock automatique",
+        "auto_workshop": "Besoin atelier",
+        "planned_project": "Projet planifié"
+      },
+      "sections": {
+        "overview": "Aperçu de la demande & Justification",
+        "lines": "Articles demandés",
+        "approval": "Workflow & Approbation",
+        "traceability": "Traçabilité du document"
+      },
+      "actions": {
+        "submit_approval": "Soumettre pour approbation",
+        "approve": "Approuver",
+        "reject": "Rejeter",
+        "convert": "Convertir en AO / BC"
+      },
+      "convert": {
+        "title": "Convertir la demande d'achat",
+        "description": "Choisissez le document d'achat aval à générer depuis cette demande approuvée :",
+        "to_po": "Créer un Bon de Commande (BC)",
+        "to_po_desc": "Commande directe lorsque le fournisseur et les prix sont déjà convenus.",
+        "to_rfq": "Créer une Demande de Cotation (AO / RFQ)",
+        "to_rfq_desc": "Consulter plusieurs fournisseurs et comparer les offres avant de commander.",
+        "proceed": "Continuer"
+      },
+      "snackbar": {
+        "created_success": "DAI créée avec succès",
+        "updated_success": "DAI mise à jour avec succès",
+        "deleted_success": "DAI supprimée avec succès",
+        "status_updated": "Statut mis à jour avec succès",
+        "error_save": "Échec de l'enregistrement de la DAI.",
+        "error_delete": "Échec de la suppression de la DAI",
+        "error_status": "Échec de la mise à jour du statut",
+        "error_generic": "Une erreur est survenue",
+        "error_requested_by": "Le demandeur est obligatoire",
+        "error_no_lines": "Au moins une ligne est obligatoire.",
+        "error_variant_load": "Échec du chargement des variantes."
+      }
+    },
+    "rfq": {
+      "title": "Demande de cotation",
+      "new_title": "Nouvelle demande de cotation",
+      "subtitle": "Gérez les appels d'offres, invitations fournisseurs et comparatifs.",
+      "search_placeholder": "Rechercher par numéro RFQ ou titre...",
+      "bid_received": "Offre reçue",
+      "awaiting_bid": "En attente d'offre",
+      "days": "jours",
+      "kpi": {
+        "total": "Total RFQ",
+        "open": "Envoyées / Ouvertes",
+        "under_evaluation": "En évaluation",
+        "awarded": "Adjugées"
+      },
+      "wizard": {
+        "step_general": "Informations générales",
+        "step_general_desc": "Titre, dates limites et demandes d'achat liées",
+        "step_lines": "Articles demandés",
+        "step_lines_desc": "Articles et prix cibles pour la consultation",
+        "step_suppliers": "Fournisseurs & Critères",
+        "step_suppliers_desc": "Invitez des fournisseurs et définissez les pondérations d'évaluation"
+      },
+      "fields": {
+        "title": "Titre de la consultation",
+        "response_deadline": "Date limite de réponse",
+        "required_delivery_date": "Date de livraison souhaitée",
+        "linked_iprs": "Demandes d'achat liées (DAI)",
+        "invited_suppliers": "Fournisseurs consultés",
+        "target_price_ht": "Prix unitaire cible (HT)",
+        "target_total": "Total cible (HT)",
+        "awarded_supplier": "Fournisseur retenu",
+        "terms_and_conditions": "Conditions générales"
+      },
+      "weights": {
+        "price": "Pondération Prix",
+        "lead_time": "Pondération Délai",
+        "quality": "Pondération Qualité",
+        "technical": "Pondération Technique",
+        "payment": "Pondération Paiement"
+      },
+      "validation": {
+        "weights_sum_100": "La somme des pondérations d'évaluation doit être égale à 100%."
+      },
+      "sections": {
+        "overview": "Aperçu & Échéances",
+        "invited_suppliers": "Fournisseurs consultés",
+        "lines": "Articles demandés",
+        "responses": "Offres reçues",
+        "comparison": "Comparatif des offres fournisseurs",
+        "evaluation_criteria": "Pondérations des critères d'évaluation"
+      },
+      "actions": {
+        "send_to_suppliers": "Envoyer aux fournisseurs",
+        "record_bid": "Saisir une offre fournisseur",
+        "start_evaluation": "Démarrer l'évaluation",
+        "award_decision": "Décision d'attribution",
+        "award_supplier": "Retenir ce fournisseur"
+      },
+      "response_dialog": {
+        "title": "Saisir une offre fournisseur",
+        "submit": "Enregistrer l'offre",
+        "can_deliver_by": "Date de livraison proposée",
+        "validity_until": "Validité de l'offre jusqu'au",
+        "quoted_lines": "Prix unitaires & délais proposés par ligne",
+        "offered_qty": "Qté proposée",
+        "offered_price": "Prix unitaire (HT)",
+        "lead_time_days": "Délai (jours)",
+        "total_quoted_ht": "Total de l'offre (HT)"
+      },
+      "empty": {
+        "no_suppliers": "Aucun fournisseur invité pour le moment",
+        "no_responses": "Aucune offre fournisseur enregistrée",
+        "no_responses_desc": "Saisissez les devis reçus des fournisseurs pour les comparer et attribuer le marché."
+      },
+      "snackbar": {
+        "created_success": "RFQ créée avec succès",
+        "updated_success": "RFQ mise à jour avec succès",
+        "deleted_success": "RFQ supprimée avec succès",
+        "status_updated": "Statut mis à jour avec succès",
+        "response_submitted": "Offre fournisseur enregistrée avec succès",
+        "error_save": "Échec de l'enregistrement de la RFQ",
+        "error_delete": "Échec de la suppression de la RFQ",
+        "error_status": "Échec de la mise à jour du statut",
+        "error_generic": "Une erreur est survenue"
+      }
+    },
+    "po": {
+      "title": "Bon de commande",
+      "new_title": "Nouveau bon de commande",
+      "subtitle": "Gérez les bons de commande fournisseurs, conditions commerciales et réceptions.",
+      "search_placeholder": "Rechercher par numéro BC ou référence fournisseur...",
+      "kpi": {
+        "total": "Total BC",
+        "awaiting_delivery": "En attente de livraison",
+        "received": "Reçus (Partiel / Total)",
+        "total_value": "Valeur totale"
+      },
+      "wizard": {
+        "step_supplier": "Fournisseur & Site de livraison",
+        "step_supplier_desc": "Sélectionnez le fournisseur et l'entrepôt de réception",
+        "step_lines": "Lignes de commande",
+        "step_lines_desc": "Ajoutez les articles commandés, quantités, prix HT et TVA",
+        "step_terms": "Conditions commerciales",
+        "step_terms_desc": "Conditions de paiement, Incoterms, devise et notes"
+      },
+      "fields": {
+        "committed_delivery_date": "Date de livraison prévue",
+        "delivery_address": "Adresse de livraison",
+        "approval_required": "Approbation requise avant envoi",
+        "qty_ordered": "Qté commandée",
+        "qty_received": "Qté reçue",
+        "unit_price_ht": "Prix unitaire (HT)",
+        "receiving_progress": "Avancement réception"
+      },
+      "sections": {
+        "overview": "Fournisseur & Site de livraison",
+        "lines": "Lignes de commande"
+      },
+      "actions": {
+        "mark_sent": "Envoyer au fournisseur",
+        "mark_acknowledged": "Marquer accusé de réception",
+        "mark_in_delivery": "Marquer en cours de livraison",
+        "create_grn": "Créer un Bon de Réception (BR)",
+        "close_po": "Clôturer la commande",
+        "back_to_po": "Retour au Bon de Commande"
+      },
+      "match": {
+        "variances": "Lignes avec écart",
+        "comparison_table": "Comparatif par ligne BC vs BR",
+        "status_matched": "Conforme",
+        "status_pending_receipt": "En attente de réception",
+        "status_over_received": "Sur-réception",
+        "status_under_received": "Sous-réception",
+        "status_variance": "Écart Prix / QC"
+      },
+      "snackbar": {
+        "created_success": "BC créé avec succès",
+        "updated_success": "BC mis à jour avec succès",
+        "deleted_success": "BC supprimé avec succès",
+        "status_updated": "Statut mis à jour avec succès",
+        "error_save": "Échec de l'enregistrement du BC",
+        "error_delete": "Échec de la suppression du BC",
+        "error_status": "Échec de la mise à jour du statut",
+        "error_generic": "Une erreur est survenue"
+      }
+    },
+    "dashboard": {
+      "title": "Achats & Approvisionnements",
+      "subtitle": "Vue d'ensemble des demandes d'achat, appels d'offres, commandes, réceptions et fournisseurs",
+      "filter": {
+        "date_range": "Période",
+        "warehouse": "Entrepôt",
+        "from": "Du",
+        "to": "Au"
+      },
+      "kpi": {
+        "open_iprs": "DAI en cours",
+        "open_iprs_desc": "Brouillons & en attente d'approbation",
+        "pending_rfqs": "Consultations ouvertes",
+        "pending_rfqs_desc": "Demandes de cotation actives",
+        "active_pos": "Commandes actives",
+        "active_pos_desc": "Émises & en cours de livraison",
+        "pending_grns": "Réceptions en attente",
+        "pending_grns_desc": "En contrôle qualité ou à confirmer",
+        "committed_spend": "Engagements d'achat",
+        "this_month": "Ce mois"
+      },
+      "pipeline": {
+        "title": "Pipeline Achats",
+        "monthly_trends": "Évolution mensuelle des achats",
+        "subtitle": "Flux documentaire et volumes par étape"
+      },
+      "scorecard": {
+        "title": "Performance Fournisseurs",
+        "subtitle": "Évaluation basée sur la ponctualité et la qualité des livraisons",
+        "supplier": "Fournisseur",
+        "overall_score": "Score global",
+        "rfq_score": "Score RFQ",
+        "on_time_delivery": "Livraison à temps",
+        "delivery_quality": "Qualité de réception",
+        "partial_rate": "Taux de livraison partielle",
+        "avg_days_late": "Retard moyen (j)",
+        "no_suppliers": "Aucune donnée de performance fournisseur disponible.",
+        "weight_rfq": "Moy. RFQ (20%)",
+        "weight_on_time": "Ponctualité (25%)",
+        "weight_quality": "Qualité (25%)",
+        "weight_partial": "Partiel (15%)",
+        "weight_days_late": "Retard (15%)"
+      },
+      "recent": {
+        "title": "Activité récente",
+        "subtitle": "Derniers documents d'achat",
+        "no_activity": "Aucune activité récente"
+      },
+      "quick_actions": {
+        "title": "Actions rapides",
+        "new_ipr": "Nouvelle DAI",
+        "new_rfq": "Nouvelle RFQ",
+        "new_po": "Nouveau BC",
+        "new_grn": "Nouveau BR"
+      }
+    }
+  }
+}
+

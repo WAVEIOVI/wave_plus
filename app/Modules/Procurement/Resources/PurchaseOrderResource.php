@@ -45,7 +45,9 @@ class PurchaseOrderResource extends JsonResource
 
             // Relationships
             'supplier' => new SupplierResource($this->whenLoaded('supplier')),
+            'site' => $this->whenLoaded('site'),
             'lines' => $this->whenLoaded('lines'),
+            'goods_receipt_notes' => GoodsReceiptNoteResource::collection($this->whenLoaded('goodsReceiptNotes')),
         ];
     }
 }

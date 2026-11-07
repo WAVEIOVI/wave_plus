@@ -1,8 +1,9 @@
 <script setup>
-import { WpSectionCard } from '@/components/shared'
+import { WpPartnerCard, WpSectionCard } from '@/components/shared'
 import { resolveAreaDescription, resolveAreaName } from '@/composables/client-assets/sites/useSiteAreaTree'
 import { resolveAreaTypeIcon } from '@/composables/client-assets/sites/useSiteConstants'
 import { localizedValue } from '@/composables/useLocaleField'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -42,6 +43,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isTransferOnly: {
+    type: Boolean,
+    default: false,
+  },
   showViewClient: {
     type: Boolean,
     default: false,
@@ -57,11 +62,22 @@ const emit = defineEmits([
   'openSiteModal',
   'openAreaModal',
   'openMoveSiteModal',
+  'openTransfer',
   'clearArea',
   'viewClient',
 ])
 
 const { t } = useI18n()
+
+// Once an equipment record is saved (!isModeNew or isClientLocked), client is permanently locked
+// and site/zone changes must happen via the formal Transfer dialog.
+const clientLocked = computed(() => !props.isModeNew || props.isClientLocked)
+const locationRequiresTransfer = computed(() => !props.isModeNew || props.isTransferOnly)
+
+const triggerTransferDialog = () => {
+  emit('openMoveSiteModal')
+  emit('openTransfer')
+}
 </script>
 
 <template>
@@ -70,9 +86,24 @@ const { t } = useI18n()
     <WpSectionCard
       icon="tabler-map-pin"
       icon-color="info"
-      :title="t('Facility Location & Assigned Zone')"
-      :subtitle="t('Assign equipment to a specific building level, wing, or functional area')"
+      :title="t('Commercial Assignment & Physical Location')"
+      :subtitle="t('Client organization ownership, facility site assignment, and hierarchical building zone')"
     >
+      <template
+        v-if="locationRequiresTransfer"
+        #actions
+      >
+        <VBtn
+          size="small"
+          variant="tonal"
+          color="info"
+          prepend-icon="tabler-arrows-exchange"
+          @click="triggerTransferDialog"
+        >
+          {{ t('Transfer Site / Zone') }}
+        </VBtn>
+      </template>
+
       <!-- ═══ SCENARIO 1: Adding new equipment inside client site ═══ -->
       <template v-if="props.isInsideClientSite && props.isModeNew">
         <!-- Compact info header showing the fixed facility site -->
@@ -222,134 +253,168 @@ const { t } = useI18n()
         </button>
       </template>
 
-      <!-- ═══ SCENARIO 2: Editing equipment inside client site ═══ -->
-      <template v-else-if="props.isInsideClientSite && !props.isModeNew">
-        <div class="location-flow">
-          <!-- Current Site Row with Move button -->
-          <div class="selection-row">
-            <div class="d-flex align-center gap-3 min-w-0">
-              <VAvatar
-                color="info"
-                variant="tonal"
-                size="44"
-                rounded="lg"
-              >
-                <VIcon
-                  icon="tabler-building-factory-2"
-                  size="24"
-                />
-              </VAvatar>
-              <div class="min-w-0">
-                <div class="text-caption text-medium-emphasis">
-                  {{ t('Facility Site') }}
-                </div>
-                <div class="font-weight-bold text-body-1 text-truncate">
-                  {{ localizedValue(props.selectedSite?.name) || `Site #${props.form.site_id}` }}
-                </div>
-              </div>
-            </div>
+      <!-- ═══ SCENARIO 2: Saved Record (Edit Page or Edit Wizard) — Locked Client & Transfer-Only Site/Zone ═══ -->
+      <template v-else-if="locationRequiresTransfer">
+        <VRow>
+          <!-- Standard WpPartnerCard (Locked after creation) -->
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <WpPartnerCard
+              :partner="props.selectedClient"
+              :partner-label="t('Client Organization')"
+              type="client"
+              :fields="{
+                name: 'legal_name',
+                tradeName: 'commercial_name',
+                code: p => p?.client_code || p?.client_id || p?.code,
+                status: 'status',
+                category: 'industry',
+                logo: p => p?.logo_url || p?.logo || p?.logo_external_url,
+                logoSource: 'logo_source',
+                logoDomain: 'logo_domain',
+                email: 'primary_email',
+                phone: 'primary_phone',
+              }"
+              :can-edit="false"
+              :can-change="false"
+              :can-view="Boolean(props.selectedClient)"
+              class="h-100"
+              @view="emit('viewClient')"
+            />
+          </VCol>
 
-            <VBtn
-              size="small"
-              variant="tonal"
-              color="warning"
-              prepend-icon="tabler-arrows-exchange"
-              @click="emit('openMoveSiteModal')"
-            >
-              {{ t('Change / Move Site') }}
-            </VBtn>
-          </div>
-
-          <span
-            class="location-flow__connector"
-            aria-hidden="true"
-          />
-
-          <!-- Zone Row -->
-          <div class="selection-row selection-row--zone">
-            <div class="d-flex align-center gap-3 min-w-0">
-              <VAvatar
-                color="info"
-                variant="tonal"
-                size="44"
-                rounded="lg"
-              >
-                <VIcon
-                  :icon="props.selectedArea ? resolveAreaTypeIcon(props.selectedArea.area_type) : 'tabler-map-pin'"
-                  size="24"
-                />
-              </VAvatar>
-
-              <div class="min-w-0">
-                <div class="d-flex align-center gap-2 flex-wrap">
-                  <span class="font-weight-bold text-body-1">
-                    {{ props.selectedArea ? resolveAreaName(props.selectedArea) : t('Facility-wide (Unassigned Zone)') }}
-                  </span>
-                  <VChip
-                    v-if="props.selectedArea?.area_type"
-                    size="x-small"
+          <!-- Site & Zone Location Hierarchy (Managed via Formal Transfer Dialog) -->
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <div class="location-flow h-100 justify-space-between">
+              <!-- Facility Site Row -->
+              <div class="selection-row">
+                <div class="d-flex align-center gap-3 min-w-0">
+                  <VAvatar
                     color="info"
-                    label
-                    class="text-capitalize"
-                  >
-                    {{ props.selectedArea.area_type }}
-                  </VChip>
-                  <VChip
-                    v-if="props.selectedArea?.code"
-                    size="x-small"
                     variant="tonal"
+                    size="42"
+                    rounded="lg"
                   >
-                    {{ props.selectedArea.code }}
-                  </VChip>
+                    <VIcon
+                      icon="tabler-building-estate"
+                      size="22"
+                    />
+                  </VAvatar>
+                  <div class="min-w-0">
+                    <div class="text-caption text-medium-emphasis">
+                      {{ t('Facility Site') }}
+                    </div>
+                    <div class="font-weight-bold text-body-1 text-truncate">
+                      {{ localizedValue(props.selectedSite?.name) || (props.form.site_id ? `Site #${props.form.site_id}` : t('Unassigned Site')) }}
+                    </div>
+                    <div
+                      v-if="props.selectedSite?.site_code"
+                      class="text-caption text-disabled font-mono"
+                    >
+                      {{ props.selectedSite.site_code }}
+                    </div>
+                  </div>
                 </div>
 
-                <div
-                  v-if="props.selectedArea && props.selectedAreaFullPath"
-                  class="text-caption text-info font-weight-medium d-flex align-center gap-1 mt-0.5"
+                <VChip
+                  size="x-small"
+                  color="info"
+                  variant="tonal"
+                  prepend-icon="tabler-lock"
                 >
-                  <VIcon
-                    icon="tabler-corner-down-right"
-                    size="13"
-                    class="flex-shrink-0 flip-rtl"
-                  />
-                  <span class="text-truncate">{{ props.selectedAreaFullPath }}</span>
+                  {{ t('Transfer Only') }}
+                </VChip>
+              </div>
+
+              <!-- Zone / Building Area Row -->
+              <div class="selection-row selection-row--zone">
+                <div class="d-flex align-center gap-3 min-w-0">
+                  <VAvatar
+                    color="info"
+                    variant="tonal"
+                    size="42"
+                    rounded="lg"
+                  >
+                    <VIcon
+                      :icon="props.selectedArea ? resolveAreaTypeIcon(props.selectedArea.area_type) : 'tabler-hierarchy'"
+                      size="22"
+                    />
+                  </VAvatar>
+
+                  <div class="min-w-0">
+                    <div class="text-caption text-medium-emphasis">
+                      {{ t('Assigned Zone / Area') }}
+                    </div>
+                    <div class="d-flex align-center gap-2 flex-wrap">
+                      <span class="font-weight-bold text-body-2">
+                        {{ props.selectedArea ? resolveAreaName(props.selectedArea) : t('Facility-wide (Unassigned Zone)') }}
+                      </span>
+                      <VChip
+                        v-if="props.selectedArea?.area_type"
+                        size="x-small"
+                        color="info"
+                        label
+                        class="text-capitalize"
+                      >
+                        {{ props.selectedArea.area_type }}
+                      </VChip>
+                      <VChip
+                        v-if="props.selectedArea?.code"
+                        size="x-small"
+                        variant="tonal"
+                      >
+                        {{ props.selectedArea.code }}
+                      </VChip>
+                    </div>
+
+                    <div
+                      v-if="props.selectedAreaFullPath"
+                      class="text-caption text-info font-weight-medium d-flex align-center gap-1 mt-0.5"
+                    >
+                      <VIcon
+                        icon="tabler-corner-down-right"
+                        size="13"
+                        class="flex-shrink-0 flip-rtl"
+                      />
+                      <span class="text-truncate">{{ props.selectedAreaFullPath }}</span>
+                    </div>
+                  </div>
                 </div>
-                <div
-                  v-else
-                  class="text-caption text-medium-emphasis"
+
+                <VBtn
+                  size="small"
+                  variant="tonal"
+                  color="info"
+                  prepend-icon="tabler-arrows-exchange"
+                  @click="triggerTransferDialog"
                 >
-                  {{ props.selectedArea ? (resolveAreaDescription(props.selectedArea) || t('Specific sub-zone assignment')) : t('Located anywhere on the facility premises') }}
-                </div>
+                  {{ t('Transfer') }}
+                </VBtn>
+              </div>
+
+              <!-- Audit Notice -->
+              <div class="d-flex align-center gap-2 px-3 py-2 rounded-lg bg-surface-variant-subtle text-caption text-medium-emphasis">
+                <VIcon
+                  icon="tabler-shield-lock"
+                  size="15"
+                  color="info"
+                  class="shrink-0"
+                />
+                <span>
+                  {{ t('Client ownership is locked after registration. Site and zone relocations are recorded via the Transfer Asset dialog.') }}
+                </span>
               </div>
             </div>
-
-            <div class="d-flex align-center gap-2 flex-wrap">
-              <VBtn
-                v-if="props.selectedArea"
-                size="small"
-                variant="text"
-                color="secondary"
-                prepend-icon="tabler-x"
-                @click="emit('clearArea')"
-              >
-                {{ t('Clear Zone') }}
-              </VBtn>
-
-              <VBtn
-                size="small"
-                variant="tonal"
-                color="info"
-                prepend-icon="tabler-hierarchy"
-                @click="emit('openAreaModal')"
-              >
-                {{ props.selectedArea ? t('Change Zone / Area') : t('Search & Assign Zone') }}
-              </VBtn>
-            </div>
-          </div>
-        </div>
+          </VCol>
+        </VRow>
       </template>
 
-      <!-- ═══ SCENARIO 3: Outside client site (global equipment flow) ═══ -->
+      <!-- ═══ SCENARIO 3: New Equipment Creation (Global Wizard Flow) ═══ -->
       <template v-else>
         <div class="d-flex flex-column gap-3">
           <!-- 1. Client selection -->
@@ -390,7 +455,7 @@ const { t } = useI18n()
                 {{ t('View Client') }}
               </VBtn>
               <VBtn
-                v-if="!props.isClientLocked"
+                v-if="!clientLocked"
                 size="small"
                 variant="tonal"
                 color="primary"
@@ -625,6 +690,11 @@ const { t } = useI18n()
 <style lang="scss" scoped>
 $ease: cubic-bezier(0.4, 0, 0.2, 1);
 
+.bg-surface-variant-subtle {
+  background: rgba(var(--v-theme-info), 0.06);
+  border: 1px solid rgba(var(--v-theme-info), 0.18);
+}
+
 .site-context-header {
   display: flex;
   align-items: center;
@@ -696,7 +766,7 @@ $ease: cubic-bezier(0.4, 0, 0.2, 1);
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 0.9rem;
   background: rgb(var(--v-theme-surface));
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 8px;
@@ -725,7 +795,7 @@ $ease: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   &--zone {
-    background: rgba(var(--v-theme-info), 0.02);
+    background: rgba(var(--v-theme-info), 0.03);
   }
 }
 
@@ -734,22 +804,6 @@ $ease: cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-
-  &__connector {
-    position: absolute;
-    inset-inline-start: 32px;
-    inset-block-start: 48px;
-    block-size: calc(100% - 96px);
-    inline-size: 2px;
-    background: repeating-linear-gradient(
-      to bottom,
-      rgba(var(--v-theme-info), 0.4) 0px,
-      rgba(var(--v-theme-info), 0.4) 4px,
-      transparent 4px,
-      transparent 8px
-    );
-    pointer-events: none;
-  }
 }
 
 .flip-rtl {

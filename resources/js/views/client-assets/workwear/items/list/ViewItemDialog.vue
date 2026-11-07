@@ -6,11 +6,11 @@ import {
   WpKpiCard,
   WpKpiGroup,
 } from '@/components/shared'
+import { resolveSilhouetteDisplay } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import WorkwearGarmentIllustration from '@/views/client-assets/workwear/models/components/WorkwearGarmentIllustration.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useDisplay } from 'vuetify'
 
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
@@ -22,7 +22,6 @@ const emit = defineEmits(['update:isDialogVisible'])
 
 const { t, locale } = useI18n()
 const store = useClientAssetStore()
-const { smAndDown } = useDisplay()
 
 const loading = ref(false)
 const itemDetails = ref(null)
@@ -49,9 +48,27 @@ const conditionMap = {
 
 const targetId = computed(() => props.itemId || props.item?.id)
 const resolvedItem = computed(() => itemDetails.value || props.item)
+const resolvedModel = computed(() => resolvedItem.value?.model || resolvedItem.value?.workwear_model || null)
+
+const inheritedGarmentType = computed(() => {
+  if (resolvedModel.value) {
+    return resolveSilhouetteDisplay(resolvedModel.value, { locale: locale.value, t }).itemTitle
+  }
+
+  return (resolvedItem.value?.garment_type || '').replace(/_/g, ' ') || '—'
+})
+
+const inheritedSupplier = computed(() => {
+  return (
+    resolvedModel.value?.supplier?.legal_name
+    || resolvedItem.value?.supplier?.legal_name
+    || resolvedModel.value?.catalog_item?.preferred_supplier?.legal_name
+    || '—'
+  )
+})
 
 const sections = computed(() => [
-  { id: 'bio', label: t('General & Commercial'), icon: 'tabler-info-circle' },
+  { id: 'bio', label: t('General & Model Context'), icon: 'tabler-info-circle' },
   { id: 'media', label: t('Media & Stock Matrix'), icon: 'tabler-photo', badge: resolvedItem.value?.photos?.length || undefined },
   { id: 'history', label: t('Handover History'), icon: 'tabler-history', badge: resolvedItem.value?.assignments?.length || undefined },
 ])
@@ -63,15 +80,15 @@ const summaryItems = computed(() => [
   },
   {
     label: t('Linked Model'),
-    value: resolvedItem.value?.model?.name || resolvedItem.value?.workwear_model?.name || '—',
+    value: resolvedModel.value?.name || '—',
   },
   {
     label: t('Assigned Staff'),
     value: resolvedItem.value?.current_assignment?.employee?.full_name || t('In Stock / Unassigned'),
   },
   {
-    label: t('Supplier'),
-    value: resolvedItem.value?.supplier?.legal_name || '—',
+    label: t('Supplier (From Model)'),
+    value: inheritedSupplier.value,
   },
 ])
 
@@ -115,7 +132,7 @@ watch(
   <WpDetailDialog
     :model-value="isDialogVisible"
     :title="resolvedItem?.item_code || $t('Workwear Item Preview')"
-    :subtitle="resolvedItem?.sku ? `SKU: ${resolvedItem.sku}` : (resolvedItem?.model?.name || '')"
+    :subtitle="resolvedModel?.name || ''"
     icon="tabler-hanger"
     :loading="loading && !resolvedItem"
     max-width="1100"
@@ -131,7 +148,7 @@ watch(
           color="error"
           class="font-weight-bold"
         >
-          STOLEN
+          {{ $t('STOLEN') }}
         </VChip>
         <VChip
           v-if="resolvedItem?.status"
@@ -223,24 +240,24 @@ watch(
             </VCol>
             <VCol v-bind="getColProps(2)">
               <WpKpiCard
-                :title="$t('Unit Cost')"
-                :value="resolvedItem.unit_cost !== null && resolvedItem.unit_cost !== undefined ? `${Number(resolvedItem.unit_cost).toFixed(2)} TND` : '—'"
-                icon="tabler-coin"
-                icon-color="success"
+                :title="$t('Garment Type')"
+                :value="inheritedGarmentType"
+                icon="tabler-shirt"
+                icon-color="secondary"
               />
             </VCol>
             <VCol v-bind="getColProps(3)">
               <WpKpiCard
-                :title="$t('Category')"
-                :value="resolvedItem.garment_type || '—'"
-                icon="tabler-hanger"
-                icon-color="secondary"
+                :title="$t('Supplier')"
+                :value="inheritedSupplier"
+                icon="tabler-building-factory-2"
+                icon-color="warning"
               />
             </VCol>
           </template>
         </WpKpiGroup>
 
-        <!-- ━━━ 1. General Info & Commercial ━━━ -->
+        <!-- ━━━ 1. General Info & Model Context ━━━ -->
         <section
           id="dialog-section-bio"
           class="dialog-journal-section mb-6"
@@ -256,7 +273,7 @@ watch(
                 color="primary"
                 class="me-1"
               />
-              {{ $t('General & Commercial References') }}
+              {{ $t('General & Model References') }}
             </h6>
 
             <VRow dense>
@@ -276,10 +293,10 @@ watch(
                 sm="6"
               >
                 <div class="text-caption text-medium-emphasis">
-                  {{ $t('Model Reference') }}
+                  {{ $t('Workwear Model') }}
                 </div>
                 <div class="text-body-2 font-weight-medium">
-                  {{ resolvedItem.model?.model_ref || resolvedItem.model?.name || '—' }}
+                  {{ resolvedModel?.model_ref ? `${resolvedModel.model_ref} — ${resolvedModel.name}` : (resolvedModel?.name || '—') }}
                 </div>
               </VCol>
               <VCol
@@ -345,10 +362,10 @@ watch(
                 md="5"
               >
                 <WorkwearGarmentIllustration
-                  :silhouette="resolvedItem.model?.silhouette || resolvedItem.garment_type || 'coverall'"
-                  :colors="resolvedItem.model?.colors?.length ? resolvedItem.model.colors : [resolvedItem.color || 'navy', 'hi-vis-yellow']"
-                  :placements="resolvedItem.model?.placements || []"
-                  :logos="resolvedItem.model?.logos || []"
+                  :silhouette="resolvedModel?.silhouette || resolvedItem.garment_type || 'coverall'"
+                  :colors="resolvedModel?.colors?.length ? resolvedModel.colors : [resolvedItem.color || 'navy', 'hi-vis-yellow']"
+                  :placements="resolvedModel?.placements || []"
+                  :logos="resolvedModel?.logos || []"
                   readonly
                   compact
                 />

@@ -10,6 +10,7 @@ import {
 } from '@/components/shared'
 import { useWorkwearList } from '@/composables/client-assets/workwear/useWorkwearList'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
+import WorkwearAssignmentsTab from '@/views/client-assets/workwear/assignments/WorkwearAssignmentsTab.vue'
 import WorkwearEmployeesTab from '@/views/client-assets/workwear/employees/WorkwearEmployeesTab.vue'
 import WorkwearItemsTab from '@/views/client-assets/workwear/items/WorkwearItemsTab.vue'
 import WorkwearModelsTab from '@/views/client-assets/workwear/models/WorkwearModelsTab.vue'
@@ -37,12 +38,14 @@ const isMobileFabOpen = ref(false)
 const itemsTabRef = ref(null)
 const modelsTabRef = ref(null)
 const employeesTabRef = ref(null)
+const assignmentsTabRef = ref(null)
 
 // ── Tab Navigation ────────────────────────────────────────────────────────
 const workwearTabs = computed(() => [
   { value: 'models', title: t('Workwear Models'), icon: 'tabler-shirt' },
   { value: 'items', title: t('Workwear Items'), icon: 'tabler-hanger' },
   { value: 'employees', title: t('Client Employees'), icon: 'tabler-users' },
+  { value: 'assignments', title: t('Assignments & Tracking'), icon: 'tabler-user-check' },
 ])
 
 const mobileNavItems = computed(() => workwearTabs.value.map(tab => ({
@@ -67,6 +70,13 @@ const kpisData = ref({
 
 const kpiCards = computed(() => [
   {
+    id: 'models',
+    title: t('Workwear Models'),
+    value: kpisData.value.total_models,
+    icon: 'tabler-shirt',
+    color: 'warning',
+  },
+  {
     id: 'total_items',
     title: t('Total Items'),
     value: kpisData.value.total_items,
@@ -82,21 +92,14 @@ const kpiCards = computed(() => [
   },
   {
     id: 'assigned',
-    title: t('Active Handovers'),
+    title: t('Active Assignments'),
     value: kpisData.value.active_assignments || kpisData.value.assigned,
     icon: 'tabler-user-check',
     color: 'info',
   },
   {
-    id: 'models',
-    title: t('Garment Models'),
-    value: kpisData.value.total_models,
-    icon: 'tabler-shirt',
-    color: 'warning',
-  },
-  {
     id: 'employees',
-    title: t('Enrolled Staff'),
+    title: t('Client Employees'),
     value: kpisData.value.total_employees,
     icon: 'tabler-users',
     color: 'secondary',
@@ -121,7 +124,7 @@ const mobileFabActions = computed(() => {
       {
         id: 'batch-employee',
         icon: 'tabler-users-plus',
-        title: t('Batch Enroll'),
+        title: t('Batch Create Employees'),
         onClick: () => employeesTabRef.value?.openBatch(),
       },
       {
@@ -133,11 +136,22 @@ const mobileFabActions = computed(() => {
     ]
   }
 
+  if (activeTab.value === 'assignments') {
+    return [
+      {
+        id: 'assign-workwear',
+        icon: 'tabler-user-plus',
+        title: t('Assign Workwear Item'),
+        onClick: () => assignmentsTabRef.value?.openAssign(),
+      },
+    ]
+  }
+
   return [
     {
       id: 'batch-item',
       icon: 'tabler-packages',
-      title: t('Batch Intake'),
+      title: t('Batch Create Items'),
       onClick: () => itemsTabRef.value?.openBatch(),
     },
     {
@@ -170,7 +184,7 @@ onMounted(async () => {
     <!-- 👉 Page Header -->
     <WpPageHeader
       :title="$t('Workwear & PPE')"
-      :subtitle="$t('Track protective workwear garments, model specifications, barcodes, and employee assignments.')"
+      :subtitle="$t('Manage workwear models, serialized garment items, client employees, and item-to-employee assignments.')"
       icon="tabler-hanger"
     />
 
@@ -206,19 +220,24 @@ onMounted(async () => {
       :swipeable="false"
       crossfade
     >
-      <!-- Items Tab -->
-      <template #tab-items>
-        <WorkwearItemsTab ref="itemsTabRef" />
-      </template>
-
       <!-- Models Tab -->
       <template #tab-models>
         <WorkwearModelsTab ref="modelsTabRef" />
       </template>
 
+      <!-- Items Tab -->
+      <template #tab-items>
+        <WorkwearItemsTab ref="itemsTabRef" />
+      </template>
+
       <!-- Employees Tab -->
       <template #tab-employees>
         <WorkwearEmployeesTab ref="employeesTabRef" />
+      </template>
+
+      <!-- Assignments & Tracking Tab -->
+      <template #tab-assignments>
+        <WorkwearAssignmentsTab ref="assignmentsTabRef" />
       </template>
     </AppHybridTabs>
 

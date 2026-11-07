@@ -2,7 +2,7 @@
 import { useWorkwearDocumentOptions } from '@/composables/client-assets/workwear/useWorkwearDocumentOptions'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
-import { computed, ref, toValue, unref } from 'vue'
+import { computed, ref, toValue } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -41,6 +41,7 @@ export function useWorkwearItemEdit(itemId) {
     available: 'success',
     assigned: 'info',
     returned: 'secondary',
+    repair_needed: 'warning',
     retired: 'warning',
     lost: 'error',
     stolen: 'error',
@@ -54,15 +55,24 @@ export function useWorkwearItemEdit(itemId) {
     damaged: 'error',
   }
 
-  const conditionOptions = ['new', 'good', 'fair', 'worn', 'damaged'].map(c => ({
-    title: c.replace(/\b\w/g, l => l.toUpperCase()),
-    value: c,
-  }))
+  const conditionOptions = computed(() => [
+    { title: t('New'), value: 'new' },
+    { title: t('Good'), value: 'good' },
+    { title: t('Fair'), value: 'fair' },
+    { title: t('Worn'), value: 'worn' },
+    { title: t('Damaged'), value: 'damaged' },
+  ])
 
-  const statusOptions = ['in_stock', 'assigned', 'returned', 'retired', 'lost', 'stolen'].map(s => ({
-    title: s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value: s,
-  }))
+  const statusOptions = computed(() => [
+    { title: t('In Stock'), value: 'in_stock' },
+    { title: t('Available'), value: 'available' },
+    { title: t('Assigned'), value: 'assigned' },
+    { title: t('Returned'), value: 'returned' },
+    { title: t('Repair Needed'), value: 'repair_needed' },
+    { title: t('Retired'), value: 'retired' },
+    { title: t('Lost'), value: 'lost' },
+    { title: t('Stolen'), value: 'stolen' },
+  ])
 
   const assignments = computed(() => itemData.value?.assignments || [])
 
@@ -99,8 +109,23 @@ export function useWorkwearItemEdit(itemId) {
     try {
       const data = await store.fetchWorkwearItem(id)
 
-      itemData.value = { ...data }
-      originalData.value = JSON.parse(JSON.stringify(data))
+      // Map existing item_option_values into selected_options dictionary
+      const selectedOptions = {}
+      if (Array.isArray(data?.item_option_values)) {
+        data.item_option_values.forEach(iov => {
+          if (iov.option_id && iov.value_id) {
+            selectedOptions[iov.option_id] = iov.value_id
+          }
+        })
+      }
+
+      const hydrated = {
+        ...data,
+        selected_options: selectedOptions,
+      }
+
+      itemData.value = hydrated
+      originalData.value = JSON.parse(JSON.stringify(hydrated))
 
       if (data?.model_id) {
         modelStockMatrix.value = await store.fetchWorkwearStock({ model_id: data.model_id }).catch(() => [])
@@ -118,20 +143,17 @@ export function useWorkwearItemEdit(itemId) {
     saving.value = true
     serverErrors.value = {}
     try {
+      const optionValueIds = Object.values(itemData.value.selected_options || {}).filter(Boolean)
+
       await store.updateWorkwearItem(id, {
-        sku: itemData.value.sku || null,
-        garment_type: itemData.value.garment_type,
-        size: itemData.value.size,
+        size: itemData.value.size || null,
         color: itemData.value.color || null,
-        supplier_id: itemData.value.supplier_id || null,
-        unit_cost: itemData.value.unit_cost !== '' && itemData.value.unit_cost !== null
-          ? Number(itemData.value.unit_cost)
-          : null,
         item_condition: itemData.value.item_condition,
         status: itemData.value.status,
         notes: itemData.value.notes,
         sales_order_id: itemData.value.sales_order_id || null,
         delivery_note_id: itemData.value.delivery_note_id || null,
+        option_value_ids: optionValueIds,
       })
       await fetchItem()
       showMessage(t('Item updated successfully'), 'success')
@@ -213,7 +235,10 @@ export function useWorkwearItemEdit(itemId) {
   const openAssignDialog = async () => {
     assignForm.value = { employee_id: null, notes: '' }
     try {
-      await store.fetchWorkwearEmployees({ itemsPerPage: -1 })
+      await store.fetchWorkwearEmployees({
+        itemsPerPage: -1,
+        'filter[client_id]': itemData.value?.client_id || undefined,
+      })
       employeeOptions.value = store.workwearEmployees.map(e => ({ title: e.full_name, value: e.id }))
     } catch (e) {
       console.error(e)

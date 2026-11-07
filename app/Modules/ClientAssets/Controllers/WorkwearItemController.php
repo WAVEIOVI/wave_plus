@@ -5,6 +5,7 @@ namespace App\Modules\ClientAssets\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\ClientAssets\Controllers\Concerns\AuthorizesClientAssetsRequests;
 use App\Modules\ClientAssets\Models\WorkwearItem;
+use App\Modules\ClientAssets\Models\WorkwearModel;
 use App\Modules\ClientAssets\Requests\AssignWorkwearItemRequest;
 use App\Modules\ClientAssets\Requests\BatchStoreWorkwearItemRequest;
 use App\Modules\ClientAssets\Requests\ReturnWorkwearItemRequest;
@@ -29,7 +30,8 @@ class WorkwearItemController extends Controller
     private const ALLOWED_SORT_COLUMNS = ['created_at', 'item_code', 'sku', 'status', 'garment_type', 'size', 'color', 'unit_cost'];
 
     private const ITEM_RELATIONS = [
-        'workwearModel', 'client', 'supplier', 'media', 'salesOrder', 'deliveryNote',
+        'workwearModel.supplier', 'workwearModel.catalogItem.options.values', 'workwearModel.options.values', 'workwearModel.placements',
+        'client', 'supplier', 'media', 'salesOrder', 'deliveryNote',
         'itemOptionValues.option', 'itemOptionValues.optionValue',
     ];
 
@@ -42,10 +44,15 @@ class WorkwearItemController extends Controller
     {
         $this->authorize('viewAny', WorkwearItem::class);
 
-        $query = WorkwearItem::with(['workwearModel', 'client', 'supplier', 'media', 'salesOrder', 'deliveryNote', 'currentAssignment.employee', 'itemOptionValues.option', 'itemOptionValues.optionValue']);
+        $query = WorkwearItem::with([
+            'workwearModel.supplier', 'workwearModel.catalogItem',
+            'client', 'supplier', 'media', 'salesOrder', 'deliveryNote',
+            'currentAssignment.employee', 'itemOptionValues.option', 'itemOptionValues.optionValue',
+        ]);
         if ($s = $request->input('q')) {
             $query->where(fn ($q) => $q->where('item_code', 'like', "%{$s}%")
-                ->orWhere('sku', 'like', "%{$s}%")
+                ->orWhere('size', 'like', "%{$s}%")
+                ->orWhere('color', 'like', "%{$s}%")
                 ->orWhere('uuid', 'like', "%{$s}%"));
         }
         if ($c = $request->input('filter.client_id')) {
@@ -126,7 +133,8 @@ class WorkwearItemController extends Controller
     public function show(string $id): JsonResponse
     {
         $i = WorkwearItem::with([
-            'workwearModel', 'client', 'supplier', 'media',
+            'workwearModel.supplier', 'workwearModel.catalogItem.options.values', 'workwearModel.options.values', 'workwearModel.placements',
+            'client', 'supplier', 'media',
             'currentAssignment.employee', 'currentAssignment.assignedByUser',
             'assignments.employee', 'assignments.assignedByUser', 'assignments.returnedByUser',
             'itemOptionValues.option', 'itemOptionValues.optionValue', 'salesOrder', 'deliveryNote',
@@ -142,6 +150,16 @@ class WorkwearItemController extends Controller
         $validated = $r->validated();
         $optionValueIds = $validated['option_value_ids'] ?? null;
         unset($validated['option_value_ids']);
+
+        // Automatically inherit supplier_id and garment_type from WorkwearModel if not specified
+        if (! empty($validated['model_id'])) {
+            $model = WorkwearModel::with('catalogItem')->find($validated['model_id']);
+            if ($model) {
+                $validated['client_id'] = $model->client_id;
+                $validated['supplier_id'] = $validated['supplier_id'] ?? $model->supplier_id ?? $model->catalogItem?->preferred_supplier_id;
+                $validated['garment_type'] = $validated['garment_type'] ?? $model->silhouette_item ?? $model->silhouette ?? ($model->garment_types[0] ?? null);
+            }
+        }
 
         $i = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $optionValueIds) {
             $item = WorkwearItem::create($validated);
@@ -185,7 +203,6 @@ class WorkwearItemController extends Controller
             if ($optionValueIds !== null) {
                 $this->workwearService->syncItemOptionValues($i, $optionValueIds);
             } elseif ($modelChanged) {
-                // Previous selections belong to the old model's options.
                 $i->itemOptionValues()->delete();
             }
         });

@@ -33,8 +33,6 @@ const emit = defineEmits([
 
 const { t } = useI18n()
 
-// Gradient/filter ids must be unique per drawing, otherwise url(#id) resolves
-// to whichever instance is first in the DOM (breaks when that one is hidden).
 const uid = `wwg-${Math.random().toString(36).slice(2, 8)}`
 
 const zoomLevel = ref(1)
@@ -522,7 +520,7 @@ function cycleZoom(delta) {
             </g>
           </g>
 
-          <!-- 2. WORK JACKET / 6. WEATHERPROOF PARKA -->
+          <!-- 2. WORK JACKET / WEATHERPROOF PARKA -->
           <g v-else-if="silhouette === 'jacket' || silhouette === 'parka'">
             <path
               :d="silhouette === 'parka'
@@ -611,7 +609,124 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 3. WORK TROUSERS -->
+          <!-- 3. WORK SWEATSHIRT / HOODIE / FLEECE -->
+          <g v-else-if="silhouette === 'sweatshirt'">
+            <path
+              d="M118 58 L202 58 L242 82 L274 192 L246 202 L220 124 L218 246 L102 246 L100 124 L74 202 L46 192 L78 82 Z"
+              :fill="regionHex('body', primaryColorHex)"
+              stroke="#475569"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <!-- Contrast Shoulder & Chest Band -->
+            <path
+              d="M118 58 L202 58 L242 82 L224 112 L96 112 L78 82 Z"
+              :fill="regionHex('yoke', contrastColorHex)"
+              stroke="#475569"
+              stroke-width="1.4"
+            />
+            <!-- Ribbed Crew Neckline & Quarter Zip -->
+            <path
+              d="M128 58 Q160 80 192 58 Q160 48 128 58 Z"
+              :fill="regionHex('collar_hood', primaryColorHex)"
+              stroke="#64748b"
+              stroke-width="2"
+            />
+            <g v-if="currentView === 'front'">
+              <line
+                x1="160"
+                y1="68"
+                x2="160"
+                y2="112"
+                stroke="#cbd5e1"
+                stroke-width="2"
+              />
+              <!-- Kangaroo / Front Pouch Pocket -->
+              <path
+                d="M122 184 L198 184 L208 228 L112 228 Z"
+                fill="rgba(15,23,42,0.2)"
+                stroke="#64748b"
+                stroke-width="1.4"
+              />
+            </g>
+            <!-- Ribbed Waistband & Cuffs -->
+            <rect
+              x="102"
+              y="232"
+              width="116"
+              height="14"
+              :fill="regionHex('hem_cuffs', primaryColorHex)"
+              stroke="#475569"
+            />
+          </g>
+
+          <!-- 4. LAB COAT / HYGIENE SMOCK / TUNIC -->
+          <g v-else-if="silhouette === 'lab_coat'">
+            <path
+              d="M120 52 L200 52 L238 76 L272 190 L246 200 L220 122 L226 308 L94 308 L100 122 L74 200 L48 190 L82 76 Z"
+              :fill="regionHex('body', primaryColorHex)"
+              stroke="#475569"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <!-- Notched Lapel Collar & Button Front -->
+            <path
+              d="M126 52 L160 98 L194 52 L182 42 L138 42 Z"
+              :fill="regionHex('collar_hood', contrastColorHex)"
+              stroke="#64748b"
+              stroke-width="1.6"
+            />
+            <g
+              v-if="currentView === 'front'"
+              stroke="#64748b"
+              stroke-width="1.4"
+            >
+              <line
+                x1="160"
+                y1="98"
+                x2="160"
+                y2="308"
+              />
+              <circle
+                v-for="cy in [118, 148, 178, 208, 238]"
+                :key="cy"
+                cx="154"
+                :cy="cy"
+                r="2.2"
+                fill="#94a3b8"
+              />
+              <!-- Breast & Hip Patch Pockets -->
+              <rect
+                x="176"
+                y="116"
+                width="30"
+                height="34"
+                rx="2"
+                :fill="regionHex('pockets', contrastColorHex)"
+                fill-opacity="0.35"
+              />
+              <rect
+                x="110"
+                y="210"
+                width="36"
+                height="44"
+                rx="3"
+                :fill="regionHex('pockets', contrastColorHex)"
+                fill-opacity="0.35"
+              />
+              <rect
+                x="174"
+                y="210"
+                width="36"
+                height="44"
+                rx="3"
+                :fill="regionHex('pockets', contrastColorHex)"
+                fill-opacity="0.35"
+              />
+            </g>
+          </g>
+
+          <!-- 5. WORK TROUSERS -->
           <g v-else-if="silhouette === 'trousers'">
             <!-- Waistband -->
             <rect
@@ -693,7 +808,49 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 4. POLO / WORK SHIRT -->
+          <!-- 6. WORK SHORTS / BERMUDA -->
+          <g v-else-if="silhouette === 'shorts'">
+            <rect
+              x="104"
+              y="78"
+              width="112"
+              height="20"
+              rx="2"
+              :fill="regionHex('main_fabric', primaryColorHex)"
+              stroke="#475569"
+              stroke-width="2"
+            />
+            <path
+              d="M104 98 L216 98 L224 262 L168 262 L160 182 L152 262 L96 262 Z"
+              :fill="regionHex('main_fabric', primaryColorHex)"
+              stroke="#475569"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <!-- Side Cargo Pockets -->
+            <rect
+              x="96"
+              y="182"
+              width="28"
+              height="52"
+              rx="3"
+              :fill="regionHex('cargo_accents', contrastColorHex)"
+              stroke="#475569"
+              stroke-width="1.4"
+            />
+            <rect
+              x="196"
+              y="182"
+              width="28"
+              height="52"
+              rx="3"
+              :fill="regionHex('cargo_accents', contrastColorHex)"
+              stroke="#475569"
+              stroke-width="1.4"
+            />
+          </g>
+
+          <!-- 7. POLO SHIRT -->
           <g v-else-if="silhouette === 'polo'">
             <path
               d="M120 58 L200 58 L244 82 L264 144 L232 156 L216 116 L216 252 L104 252 L104 116 L88 156 L56 144 L76 82 Z"
@@ -748,7 +905,98 @@ function cycleZoom(delta) {
             </g>
           </g>
 
-          <!-- 5. HI-VIS SAFETY VEST -->
+          <!-- 8. WORK T-SHIRT (CREW-NECK) -->
+          <g v-else-if="silhouette === 'tshirt'">
+            <path
+              d="M122 58 L198 58 L244 82 L262 138 L230 150 L216 114 L216 250 L104 250 L104 114 L90 150 L58 138 L76 82 Z"
+              :fill="regionHex('body', primaryColorHex)"
+              stroke="#475569"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <!-- Contrast Neckband & Sleeve Cuffs -->
+            <path
+              d="M124 58 Q160 82 196 58 Q160 48 124 58 Z"
+              :fill="regionHex('shoulder_panels', contrastColorHex)"
+              stroke="#475569"
+              stroke-width="1.8"
+            />
+            <path
+              d="M58 138 L90 150 L93 142 L61 130 Z"
+              :fill="regionHex('cuff_trim', contrastColorHex)"
+            />
+            <path
+              d="M262 138 L230 150 L227 142 L259 130 Z"
+              :fill="regionHex('cuff_trim', contrastColorHex)"
+            />
+          </g>
+
+          <!-- 9. BUTTON-DOWN WORK SHIRT / OVERSHIRT -->
+          <g v-else-if="silhouette === 'shirt'">
+            <path
+              d="M120 56 L200 56 L240 78 L268 182 L242 192 L218 118 L216 252 L104 252 L102 118 L78 192 L52 182 L80 78 Z"
+              :fill="regionHex('body', primaryColorHex)"
+              stroke="#475569"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <!-- Shoulder Yoke -->
+            <path
+              d="M120 56 L200 56 L240 78 L220 98 L100 98 L80 78 Z"
+              :fill="regionHex('shoulder_panels', contrastColorHex)"
+              stroke="#475569"
+              stroke-width="1.4"
+            />
+            <!-- Turn-Down Shirt Collar -->
+            <path
+              d="M122 56 L160 82 L198 56 L186 42 L134 42 Z"
+              :fill="regionHex('collar_placket', primaryColorHex)"
+              stroke="#64748b"
+              stroke-width="1.8"
+            />
+            <!-- Full Button Placket & Dual Flapped Breast Pockets -->
+            <g v-if="currentView === 'front'">
+              <rect
+                x="154"
+                y="78"
+                width="12"
+                height="174"
+                fill="rgba(15,23,42,0.25)"
+                stroke="#94a3b8"
+                stroke-width="1.2"
+              />
+              <circle
+                v-for="cy in [96, 122, 148, 174, 200, 226]"
+                :key="cy"
+                cx="160"
+                :cy="cy"
+                r="1.8"
+                fill="#e2e8f0"
+              />
+              <rect
+                x="114"
+                y="112"
+                width="30"
+                height="34"
+                rx="2"
+                fill="rgba(15,23,42,0.22)"
+                stroke="#94a3b8"
+                stroke-width="1.2"
+              />
+              <rect
+                x="176"
+                y="112"
+                width="30"
+                height="34"
+                rx="2"
+                fill="rgba(15,23,42,0.22)"
+                stroke="#94a3b8"
+                stroke-width="1.2"
+              />
+            </g>
+          </g>
+
+          <!-- 10. HI-VIS SAFETY VEST -->
           <g v-else-if="silhouette === 'vest'">
             <path
               d="M124 56 L142 56 L160 102 L178 56 L196 56 L220 76 L210 124 L218 248 L102 248 L110 124 L100 76 Z"
@@ -806,7 +1054,7 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 7. BIB & BRACE OVERALLS / DUNGAREES -->
+          <!-- 11. BIB & BRACE OVERALLS / DUNGAREES -->
           <g v-else-if="silhouette === 'overalls'">
             <!-- Straps -->
             <rect
@@ -864,7 +1112,7 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 8. APRON / TABARD / LAB SMOCK -->
+          <!-- 12. APRON / TABARD -->
           <g v-else-if="silhouette === 'apron'">
             <path
               d="M134 56 L186 56 L190 98 L218 134 L214 342 L106 342 L102 134 L130 98 Z"
@@ -885,7 +1133,7 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 9. SAFETY BOOTS / FOOTWEAR -->
+          <!-- 13. SAFETY BOOTS / FOOTWEAR -->
           <g v-else-if="silhouette === 'boots'">
             <!-- Left & Right Boot Pair -->
             <path
@@ -925,7 +1173,7 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 10. PROTECTIVE GLOVES / GAUNTLETS -->
+          <!-- 14. PROTECTIVE GLOVES / GAUNTLETS -->
           <g v-else-if="silhouette === 'gloves'">
             <path
               d="M74 160 L82 96 L96 96 L98 140 L104 88 L118 88 L118 140 L124 94 L138 94 L136 150 L148 128 L156 138 L142 192 L138 294 L76 294 Z"
@@ -961,7 +1209,7 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 11. SAFETY HELMET / HEADWEAR -->
+          <!-- 15. SAFETY HELMET / HEADWEAR -->
           <g v-else-if="silhouette === 'helmet'">
             <path
               d="M72 224 C72 130 248 130 248 224 Z"
@@ -990,7 +1238,7 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 12. EYE, FACE, HEARING & RESPIRATORY PPE -->
+          <!-- 16. EYE, FACE, HEARING & RESPIRATORY PPE -->
           <g v-else-if="silhouette === 'glasses'">
             <rect
               x="58"
@@ -1022,7 +1270,7 @@ function cycleZoom(delta) {
             />
           </g>
 
-          <!-- 13. FALL ARREST HARNESS -->
+          <!-- 17. FALL ARREST HARNESS -->
           <g v-else>
             <path
               d="M116 64 L136 64 L160 156 L184 64 L204 64 L174 188 L208 296 L186 304 L160 218 L134 304 L112 296 L146 188 Z"
@@ -1297,7 +1545,6 @@ function cycleZoom(delta) {
 
 .studio-hud-bar .text-caption {
   letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .hud-dot {
@@ -1309,33 +1556,16 @@ function cycleZoom(delta) {
 }
 
 .studio-legend {
-  background: rgba(15, 23, 42, 90%);
+  background: rgba(15, 23, 42, 92%);
   border-block-start: 1px solid rgba(148, 163, 184, 14%);
 }
 
-.placement-node {
-  transition: opacity 0.15s ease;
-
-  &:hover {
-    opacity: 0.92;
-  }
+.zone-anchor:hover circle:first-child {
+  fill: rgba(56, 189, 248, 45%);
+  r: 8;
 }
 
-.placement-node:focus-visible,
-.zone-anchor:focus-visible {
-  outline: none;
-
-  :deep(rect),
-  :deep(circle) {
-    stroke: #38bdf8;
-    stroke-width: 2.4;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .garment-svg,
-  .placement-node {
-    transition: none;
-  }
+.placement-node:hover rect {
+  filter: brightness(1.12);
 }
 </style>

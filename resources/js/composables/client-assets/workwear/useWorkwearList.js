@@ -9,8 +9,8 @@ export function useWorkwearList() {
   const route = useRoute()
   const router = useRouter()
 
-  const validTabs = ['items', 'models', 'employees']
-  const initialTab = validTabs.includes(route.query?.tab) ? route.query.tab : 'items'
+  const validTabs = ['models', 'items', 'employees', 'assignments']
+  const initialTab = validTabs.includes(route.query?.tab) ? route.query.tab : 'models'
   const activeTab = ref(initialTab)
 
   watch(activeTab, newTab => {
@@ -27,25 +27,32 @@ export function useWorkwearList() {
 
   const tabs = computed(() => [
     {
+      id: 'models',
+      title: t('Workwear Models'),
+      icon: 'tabler-shirt',
+      count: store.totalWorkwearModels || 0,
+      description: t('Catalog specifications, PPE garments, and studio blueprints'),
+    },
+    {
       id: 'items',
       title: t('Workwear Items'),
       icon: 'tabler-hanger',
       count: store.totalWorkwearItems || 0,
-      description: t('Tracked individual garments, serials, and assignment states'),
-    },
-    {
-      id: 'models',
-      title: t('Garment Models'),
-      icon: 'tabler-shirt',
-      count: store.totalWorkwearModels || 0,
-      description: t('Catalog specifications, PPE garments, and versions'),
+      description: t('Tracked individual garments, QR codes, and stock availability'),
     },
     {
       id: 'employees',
-      title: t('Staff Assignments'),
+      title: t('Client Employees'),
       icon: 'tabler-users',
       count: store.totalWorkwearEmployees || 0,
-      description: t('Client employees, active allocations, and return history'),
+      description: t('Client employees, garment sizes, and body measurements'),
+    },
+    {
+      id: 'assignments',
+      title: t('Assignments & Tracking'),
+      icon: 'tabler-arrows-TransferUpDown',
+      count: store.totalWorkwearItems || 0,
+      description: t('Assign workwear items to client employees and track handovers'),
     },
   ])
 

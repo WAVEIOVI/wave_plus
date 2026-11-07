@@ -1,5 +1,11 @@
 <script setup>
+/* eslint-disable camelcase, vue/no-mutating-props */
 import { WpSectionCard } from '@/components/shared'
+import {
+  extractCatalogColorsAndSizes,
+  resolveColorHex,
+  resolveColorLabel,
+} from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import { localizedValue } from '@/composables/useLocaleField'
 import CatalogZoomDialog from '@/views/catalog/shared/CatalogZoomDialog.vue'
 import { computed, ref } from 'vue'
@@ -10,12 +16,42 @@ const props = defineProps({
   options: { type: Array, default: () => [] },
 })
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const isVariantsZoomOpen = ref(false)
+const syncedSuccess = ref(false)
 
 const catalogItem = computed(() => props.modelData?.catalog_item || null)
 const catalogOptions = computed(() => catalogItem.value?.options || [])
 const catalogVariants = computed(() => catalogItem.value?.variants || [])
+
+const extractedCatalogAttrs = computed(() =>
+  extractCatalogColorsAndSizes(catalogItem.value, locale.value),
+)
+
+const hasImportableCatalogAttrs = computed(() =>
+  extractedCatalogAttrs.value.colors.length > 0 || extractedCatalogAttrs.value.sizes.length > 0,
+)
+
+function syncColorsAndSizesFromCatalog() {
+  if (!catalogItem.value || !props.modelData) return
+
+  const { colors, sizes } = extractedCatalogAttrs.value
+  if (colors.length > 0) {
+    const nextColors = [...colors]
+    if (nextColors.length === 1) {
+      nextColors.push(props.modelData.colors?.[1] || 'hi-vis-yellow')
+    }
+    props.modelData.colors = nextColors
+  }
+  if (sizes.length > 0) {
+    props.modelData.size_range = [...sizes]
+  }
+
+  syncedSuccess.value = true
+  setTimeout(() => {
+    syncedSuccess.value = false
+  }, 2500)
+}
 
 // Options live on the catalog product; linking happens in the overview section.
 const goToOverview = () => {
@@ -30,8 +66,8 @@ const goToOverview = () => {
   >
     <WpSectionCard
       icon="tabler-adjustments"
-      :title="$t('Catalog Options')"
-      :subtitle="$t('Options and available values imported from the linked Physical Catalog Product.')"
+      :title="$t('Catalog Options & Approved Variants')"
+      :subtitle="$t('Colors, sizes, and options imported from the linked Physical Catalog Product.')"
     >
       <template #actions>
         <VChip
@@ -44,15 +80,127 @@ const goToOverview = () => {
           {{ catalogItem.code }}
         </VChip>
         <VBtn
+          v-if="hasImportableCatalogAttrs"
+          :color="syncedSuccess ? 'success' : 'secondary'"
+          variant="tonal"
+          size="small"
+          :prepend-icon="syncedSuccess ? 'tabler-check' : 'tabler-download'"
+          @click="syncColorsAndSizesFromCatalog"
+        >
+          {{ syncedSuccess ? $t('Colors & Sizes Imported') : $t('Import Colors & Sizes from Catalog') }}
+        </VBtn>
+        <VBtn
           v-if="catalogItem"
           color="primary"
           variant="tonal"
+          size="small"
           prepend-icon="tabler-arrows-maximize"
           @click="isVariantsZoomOpen = true"
         >
           {{ $t('View Catalog Variants') }} ({{ catalogVariants.length }})
         </VBtn>
       </template>
+
+      <!-- Active Model Colors & Approved Sizes Summary -->
+      <VRow
+        dense
+        class="mb-4"
+      >
+        <VCol
+          cols="12"
+          md="6"
+        >
+          <div class="option-card h-100">
+            <div class="d-flex align-center justify-space-between gap-2 mb-2">
+              <span class="text-subtitle-2 font-weight-bold d-flex align-center gap-1">
+                <VIcon
+                  icon="tabler-palette"
+                  size="16"
+                  color="primary"
+                />
+                {{ $t('Model Approved Colors') }}
+              </span>
+              <VChip
+                size="x-small"
+                color="primary"
+                variant="tonal"
+              >
+                {{ (modelData.colors || []).length }}
+              </VChip>
+            </div>
+            <div
+              v-if="modelData.colors?.length"
+              class="d-flex flex-wrap gap-2"
+            >
+              <VChip
+                v-for="(col, idx) in modelData.colors"
+                :key="idx"
+                size="small"
+                variant="tonal"
+                color="secondary"
+              >
+                <span
+                  class="d-inline-block rounded-circle me-2 border"
+                  :style="{ inlineSize: '12px', blockSize: '12px', backgroundColor: resolveColorHex(col) }"
+                />
+                {{ resolveColorLabel(col, { t }) }}
+              </VChip>
+            </div>
+            <span
+              v-else
+              class="text-caption text-disabled"
+            >
+              {{ $t('No colors configured') }}
+            </span>
+          </div>
+        </VCol>
+
+        <VCol
+          cols="12"
+          md="6"
+        >
+          <div class="option-card h-100">
+            <div class="d-flex align-center justify-space-between gap-2 mb-2">
+              <span class="text-subtitle-2 font-weight-bold d-flex align-center gap-1">
+                <VIcon
+                  icon="tabler-ruler-2"
+                  size="16"
+                  color="info"
+                />
+                {{ $t('Model Approved Size Range') }}
+              </span>
+              <VChip
+                size="x-small"
+                color="info"
+                variant="tonal"
+              >
+                {{ (modelData.size_range || []).length }} {{ $t('sizes') }}
+              </VChip>
+            </div>
+            <div
+              v-if="modelData.size_range?.length"
+              class="d-flex flex-wrap gap-1"
+            >
+              <VChip
+                v-for="sz in modelData.size_range"
+                :key="sz"
+                size="small"
+                color="info"
+                variant="tonal"
+                class="font-mono font-weight-bold"
+              >
+                {{ sz }}
+              </VChip>
+            </div>
+            <span
+              v-else
+              class="text-caption text-disabled"
+            >
+              {{ $t('No sizes configured') }}
+            </span>
+          </div>
+        </VCol>
+      </VRow>
 
       <!-- Linked product -->
       <div

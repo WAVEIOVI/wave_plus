@@ -4,6 +4,7 @@
  * EN/ISO Standards, Certifications, and Customization Placements.
  */
 /* eslint-disable camelcase */
+import { localizedValue } from '@/composables/useLocaleField'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -13,9 +14,14 @@ export const WORKWEAR_SILHOUETTES = [
   { value: 'jacket', title: 'Work Jacket / Blouson', titleFr: 'Veste de travail / Blouson', icon: 'tabler-shirt' },
   { value: 'parka', title: 'Weatherproof Parka / Coat', titleFr: 'Parka / Manteau imperméable', icon: 'tabler-snowflake' },
   { value: 'vest', title: 'Sleeveless Vest / Gilet', titleFr: 'Gilet sans manches', icon: 'tabler-shield-checkered' },
-  { value: 'polo', title: 'Polo / Shirt / Top', titleFr: 'Polo / Chemise / Haut', icon: 'tabler-shirt-sport' },
-  { value: 'trousers', title: 'Trousers / Shorts', titleFr: 'Pantalon de travail / Bermuda', icon: 'tabler-hanger-2' },
-  { value: 'apron', title: 'Apron / Tabard / Smock', titleFr: 'Tablier / Blouse / Chasuble', icon: 'tabler-user-shield' },
+  { value: 'polo', title: 'Polo Shirt', titleFr: 'Polo de travail', icon: 'tabler-shirt-sport' },
+  { value: 'tshirt', title: 'Work T-Shirt (Crew-Neck)', titleFr: 'T-shirt de travail', icon: 'tabler-shirt' },
+  { value: 'shirt', title: 'Button-Down Work Shirt', titleFr: 'Chemise / Surchemise de travail', icon: 'tabler-shirt-filled' },
+  { value: 'sweatshirt', title: 'Sweatshirt / Hoodie / Fleece', titleFr: 'Sweat-shirt / Polaire', icon: 'tabler-jacket' },
+  { value: 'lab_coat', title: 'Lab Coat / Hygiene Smock', titleFr: 'Blouse / Tunique médicale', icon: 'tabler-medical-cross' },
+  { value: 'trousers', title: 'Work / Cargo Trousers', titleFr: 'Pantalon de travail', icon: 'tabler-hanger-2' },
+  { value: 'shorts', title: 'Work Shorts / Bermuda', titleFr: 'Bermuda / Short de travail', icon: 'tabler-hanger-2' },
+  { value: 'apron', title: 'Apron / Tabard', titleFr: 'Tablier / Chasuble', icon: 'tabler-user-shield' },
   { value: 'boots', title: 'Safety Boots / Footwear', titleFr: 'Chaussures & bottes de sécurité', icon: 'tabler-shoe' },
   { value: 'gloves', title: 'Protective Gloves / Gauntlets', titleFr: 'Gants de protection', icon: 'tabler-hand-stop' },
   { value: 'helmet', title: 'Safety Helmet / Headwear', titleFr: 'Casque & casquette de sécurité', icon: 'tabler-helmet' },
@@ -24,106 +30,21 @@ export const WORKWEAR_SILHOUETTES = [
 ]
 
 /**
- * Pre-consolidation catalog retained to map saved taxonomy values to the
- * simplified product-family catalog below.
+ * Organized, workwear-focused Silhouette Classification Catalog.
+ * Keeps categories and subcategories crisp, practical, and easy to browse.
  */
-const LEGACY_WORKWEAR_SILHOUETTE_CATALOG = [
+export const WORKWEAR_SILHOUETTE_CATALOG = [
   {
-    value: 'upper_body',
-    title: 'Upper Body Garments',
-    titleFr: 'Vêtements du haut du corps',
+    value: 'clothing',
+    title: 'Workwear Clothing',
+    titleFr: 'Vêtements de travail',
     icon: 'tabler-shirt',
     defaultRenderer: 'jacket',
     subcategories: [
       {
-        value: 'tshirts_polos',
-        title: 'T-Shirts & Polos',
-        defaultRenderer: 'polo',
-        items: [
-          { value: 'tshirt_short_crew', title: 'Short-Sleeve T-Shirt', titleFr: 'T-shirt manches courtes', renderer: 'polo' },
-          { value: 'tshirt_long_sleeve', title: 'Long-Sleeve T-Shirt', titleFr: 'T-shirt manches longues', renderer: 'polo' },
-          { value: 'polo_short_pique', title: 'Short-Sleeve Piqué Polo Shirt', titleFr: 'Polo piqué manches courtes', renderer: 'polo' },
-          { value: 'polo_long_sleeve', title: 'Long-Sleeve Polo Shirt', titleFr: 'Polo manches longues', renderer: 'polo' },
-        ],
-      },
-      {
-        value: 'shirts',
-        title: 'Shirts (Chemises)',
-        defaultRenderer: 'polo',
-        items: [
-          { value: 'work_shirt_short', title: 'Short-Sleeve Work Shirt', titleFr: 'Chemise de travail manches courtes', renderer: 'polo' },
-          { value: 'work_shirt_long', title: 'Long-Sleeve Work Shirt', titleFr: 'Chemise de travail manches longues', renderer: 'polo' },
-          { value: 'flannel_overshirt', title: 'Flannel / Heavy Cotton Overshirt', titleFr: 'Surchemise de travail', renderer: 'jacket' },
-          { value: 'chef_tunic', title: 'Stand-Collar / Mandarin-Collar Tunic', titleFr: 'Veste de cuisine / Tunique médicale', renderer: 'jacket' },
-        ],
-      },
-      {
-        value: 'sweatshirts_fleeces',
-        title: 'Sweatshirts, Hoodies & Fleeces',
-        defaultRenderer: 'jacket',
-        items: [
-          { value: 'crewneck_sweatshirt', title: 'Crew-Neck Sweatshirt', titleFr: 'Sweat-shirt col rond', renderer: 'jacket' },
-          { value: 'quarter_zip_sweatshirt', title: 'Quarter-Zip / Half-Zip Sweatshirt', titleFr: 'Sweat-shirt col camionneur zippé', renderer: 'jacket' },
-          { value: 'pullover_hoodie', title: 'Pullover Hoodie', titleFr: 'Sweat à capuche', renderer: 'jacket' },
-          { value: 'microfleece_jacket', title: 'Microfleece Jacket', titleFr: 'Veste polaire', renderer: 'jacket' },
-          { value: 'knitted_work_sweater', title: 'Knitted Work Sweater / Commando Pullover', titleFr: 'Pull de travail / Pull commando', renderer: 'jacket' },
-        ],
-      },
-      {
-        value: 'jackets_vests',
-        title: 'Work Jackets & Vests',
-        defaultRenderer: 'jacket',
-        items: [
-          { value: 'standard_work_jacket', title: 'Standard Work Jacket / Blouson', titleFr: 'Veste de travail / Blouson', renderer: 'jacket' },
-          { value: 'softshell_jacket', title: 'Softshell Jacket (3-Layer Windproof)', titleFr: 'Veste softshell', renderer: 'jacket' },
-          { value: 'bomber_pilot_jacket', title: 'Bomber / Pilot Jacket', titleFr: 'Blouson pilote / Bomber', renderer: 'jacket' },
-          { value: 'multipocket_reporter_vest', title: 'Multi-Pocket Work Vest / Reporter Vest', titleFr: 'Gilet multipoches', renderer: 'vest' },
-        ],
-      },
-      {
-        value: 'coats_outerwear',
-        title: 'Coats & Heavy Outerwear',
-        defaultRenderer: 'parka',
-        items: [
-          { value: 'parka_3in1_4in1', title: 'Parka (Insulated / 3-in-1 / 4-in-1)', titleFr: 'Parka de travail', renderer: 'parka' },
-          { value: 'hardshell_rain_jacket', title: 'Waterproof Rain Jacket / Hardshell', titleFr: 'Veste de pluie imperméable', renderer: 'parka' },
-          { value: 'trench_rain_coat', title: 'Long Rain Coat / Trench Coat', titleFr: 'Manteau de pluie long / Ciré', renderer: 'parka' },
-          { value: 'puffer_insulated_jacket', title: 'Insulated Down / Puffer Jacket', titleFr: 'Doudoune de travail', renderer: 'parka' },
-          { value: 'lab_coat_warehouse_smock', title: 'Lab Coat / Warehouse Coat', titleFr: 'Blouse de travail / Blouse blanche', renderer: 'apron' },
-        ],
-      },
-    ],
-  },
-  {
-    value: 'lower_body',
-    title: 'Lower Body Garments',
-    titleFr: 'Vêtements du bas du corps',
-    icon: 'tabler-hanger-2',
-    defaultRenderer: 'trousers',
-    subcategories: [
-      {
-        value: 'trousers',
-        title: 'Trousers / Pants',
-        defaultRenderer: 'trousers',
-        items: [
-          { value: 'standard_work_trousers', title: 'Standard Work Trousers', titleFr: 'Pantalon de travail classique', renderer: 'trousers' },
-          { value: 'cargo_multipocket_trousers', title: 'Cargo / Multi-Pocket Work Trousers', titleFr: 'Pantalon multipoches / Cargo', renderer: 'trousers' },
-          { value: 'holster_pocket_trousers', title: 'Holster-Pocket Craftsman Trousers', titleFr: 'Pantalon à poches flottantes', renderer: 'trousers' },
-          { value: 'elasticated_kitchen_medical_trousers', title: 'Elasticated Waist Kitchen / Medical Trousers', titleFr: 'Pantalon médical / de cuisine', renderer: 'trousers' },
-        ],
-      },
-    ],
-  },
-  {
-    value: 'full_body',
-    title: 'Full-Body Garments',
-    titleFr: 'Combinaisons & Salopettes',
-    icon: 'tabler-stretching',
-    defaultRenderer: 'coverall',
-    subcategories: [
-      {
-        value: 'coveralls',
-        title: 'Coveralls (Combinaisons)',
+        value: 'one_piece',
+        title: 'Coveralls & Overalls',
+        titleFr: 'Combinaisons & Salopettes',
         defaultRenderer: 'coverall',
         items: [
           { value: 'single_zip_coverall', title: 'Standard Single-Zip Coverall / Boiler Suit', titleFr: 'Combinaison de travail simple zip', renderer: 'coverall' },
@@ -133,84 +54,81 @@ const LEGACY_WORKWEAR_SILHOUETTE_CATALOG = [
           { value: 'bib_brace_overalls', title: 'Bib & Brace Overalls / Dungarees', titleFr: 'Salopette / Cotte à bretelles', renderer: 'overalls' },
         ],
       },
-    ],
-  },
-  {
-    value: 'high_visibility',
-    title: 'High-Visibility Garments (EN ISO 20471)',
-    titleFr: 'Haute Visibilité',
-    icon: 'tabler-shield-checkered',
-    defaultRenderer: 'vest',
-    subcategories: [
       {
-        value: 'hivis_class_1',
-        title: 'Class 1 (Low-Risk / Off-Road)',
-        defaultRenderer: 'trousers',
-        items: [
-          { value: 'hivis_trousers_c1', title: 'Hi-Vis Work Trousers (Class 1)', titleFr: 'Pantalon haute visibilité classe 1', renderer: 'trousers' },
-          { value: 'hivis_harness_vest', title: 'Hi-Vis Harness / Belt Vest', titleFr: 'Baudrier haute visibilité', renderer: 'vest' },
-        ],
-      },
-      {
-        value: 'hivis_class_2',
-        title: 'Class 2 (Medium-Risk / Roadway ≤ 60 km/h)',
-        defaultRenderer: 'vest',
-        items: [
-          { value: 'hivis_safety_vest_c2', title: 'Hi-Vis Safety Vest / Tabard (Velcro or Zip)', titleFr: 'Gilet de sécurité haute visibilité', renderer: 'vest' },
-          { value: 'hivis_executive_vest_c2', title: 'Hi-Vis Executive Multi-Pocket Vest', titleFr: 'Gilet haute visibilité multipoches', renderer: 'vest' },
-          { value: 'hivis_tshirt_polo_c2', title: 'Hi-Vis T-Shirt / Polo (Short Sleeve)', titleFr: 'T-shirt / Polo haute visibilité', renderer: 'polo' },
-          { value: 'hivis_bib_overalls_c2', title: 'Hi-Vis Bib & Brace Overalls', titleFr: 'Salopette haute visibilité', renderer: 'overalls' },
-          { value: 'hivis_trousers_c2', title: 'Hi-Vis Trousers (Class 2 Double Band)', titleFr: 'Pantalon haute visibilité classe 2', renderer: 'trousers' },
-        ],
-      },
-      {
-        value: 'hivis_class_3',
-        title: 'Class 3 (High-Risk / Motorway & Night)',
-        defaultRenderer: 'parka',
-        items: [
-          { value: 'hivis_long_sleeve_polo_c3', title: 'Hi-Vis Long-Sleeve Polo / T-Shirt', titleFr: 'Polo / T-shirt manches longues HV classe 3', renderer: 'polo' },
-          { value: 'hivis_sweatshirt_hoodie_c3', title: 'Hi-Vis Sweatshirt / Hoodie', titleFr: 'Sweat haute visibilité classe 3', renderer: 'jacket' },
-          { value: 'hivis_softshell_bomber_c3', title: 'Hi-Vis Softshell / Bomber Jacket', titleFr: 'Softshell / Bomber haute visibilité classe 3', renderer: 'jacket' },
-          { value: 'hivis_parka_4in1_c3', title: 'Hi-Vis 4-in-1 Waterproof Parka', titleFr: 'Parka 4-en-1 haute visibilité classe 3', renderer: 'parka' },
-          { value: 'hivis_coverall_c3', title: 'Hi-Vis Full Coverall', titleFr: 'Combinaison haute visibilité classe 3', renderer: 'coverall' },
-        ],
-      },
-    ],
-  },
-  {
-    value: 'cleanroom_medical',
-    title: 'Cleanroom, Medical & Hygiene Garments',
-    titleFr: 'Salle Blanche, Médical & Agroalimentaire',
-    icon: 'tabler-medical-cross',
-    defaultRenderer: 'apron',
-    subcategories: [
-      {
-        value: 'cleanroom',
-        title: 'Cleanroom & ESD',
-        defaultRenderer: 'coverall',
-        items: [
-          { value: 'esd_lab_coat', title: 'ESD Anti-Static Lab Coat / Smock', titleFr: 'Blouse ESD antistatique', renderer: 'apron' },
-          { value: 'cleanroom_bunny_suit', title: 'Cleanroom One-Piece Coverall (ISO Class 4–8)', titleFr: 'Combinaison salle blanche', renderer: 'coverall' },
-        ],
-      },
-      {
-        value: 'medical_healthcare',
-        title: 'Medical, Healthcare & Laboratory',
-        defaultRenderer: 'polo',
-        items: [
-          { value: 'scrub_tunic_top', title: 'Scrub Top / V-Neck Medical Tunic', titleFr: 'Tunique médicale / Casaque', renderer: 'polo' },
-          { value: 'scrub_trousers', title: 'Scrub Trousers', titleFr: 'Pantalon médical', renderer: 'trousers' },
-          { value: 'isolation_surgical_gown', title: 'Isolation / Surgical Gown', titleFr: 'Casaque chirurgicale / Blouse d’isolement', renderer: 'apron' },
-        ],
-      },
-      {
-        value: 'food_industry',
-        title: 'Food Industry & Catering (HACCP)',
+        value: 'jackets_vests',
+        title: 'Jackets, Parkas & Vests',
+        titleFr: 'Vestes, Parkas & Gilets',
         defaultRenderer: 'jacket',
         items: [
-          { value: 'haccp_pocketless_coat', title: 'HACCP Pocketless Food-Processing Coat', titleFr: 'Blouse agroalimentaire sans poches extérieures', renderer: 'apron' },
-          { value: 'chef_double_breasted_jacket', title: 'Chef Jacket (Double-Breasted / Short or Long Sleeve)', titleFr: 'Veste de cuisine', renderer: 'jacket' },
-          { value: 'butcher_waterproof_apron', title: 'Butcher’s Waterproof / Chainmail Apron', titleFr: 'Tablier de boucher / Tablier cotte de mailles', renderer: 'apron' },
+          { value: 'standard_work_jacket', title: 'Standard Work Jacket / Blouson', titleFr: 'Veste de travail / Blouson', renderer: 'jacket' },
+          { value: 'softshell_jacket', title: 'Softshell Jacket (3-Layer Windproof)', titleFr: 'Veste softshell', renderer: 'jacket' },
+          { value: 'bomber_pilot_jacket', title: 'Bomber / Pilot Jacket', titleFr: 'Blouson pilote / Bomber', renderer: 'jacket' },
+          { value: 'parka_3in1_4in1', title: 'Parka (Insulated / 3-in-1 / 4-in-1)', titleFr: 'Parka de travail', renderer: 'parka' },
+          { value: 'hardshell_rain_jacket', title: 'Waterproof Rain Jacket / Hardshell', titleFr: 'Veste de pluie imperméable', renderer: 'parka' },
+          { value: 'trench_rain_coat', title: 'Long Rain Coat / Trench Coat', titleFr: 'Manteau de pluie long / Ciré', renderer: 'parka' },
+          { value: 'puffer_insulated_jacket', title: 'Insulated Down / Puffer Jacket', titleFr: 'Doudoune de travail', renderer: 'parka' },
+          { value: 'multipocket_reporter_vest', title: 'Multi-Pocket Work Vest / Hi-Vis Gilet', titleFr: 'Gilet multipoches / Gilet HV', renderer: 'vest' },
+        ],
+      },
+      {
+        value: 'tshirts_polos',
+        title: 'T-Shirts & Polo Shirts',
+        titleFr: 'T-Shirts & Polos',
+        defaultRenderer: 'polo',
+        items: [
+          { value: 'tshirt_short_crew', title: 'Short-Sleeve Work T-Shirt', titleFr: 'T-shirt manches courtes', renderer: 'tshirt' },
+          { value: 'tshirt_long_sleeve', title: 'Long-Sleeve Work T-Shirt', titleFr: 'T-shirt manches longues', renderer: 'tshirt' },
+          { value: 'polo_short_pique', title: 'Short-Sleeve Piqué Polo Shirt', titleFr: 'Polo piqué manches courtes', renderer: 'polo' },
+          { value: 'polo_long_sleeve', title: 'Long-Sleeve Polo Shirt', titleFr: 'Polo manches longues', renderer: 'polo' },
+        ],
+      },
+      {
+        value: 'shirts_tunics',
+        title: 'Work Shirts & Tunics',
+        titleFr: 'Chemises & Tuniques',
+        defaultRenderer: 'shirt',
+        items: [
+          { value: 'work_shirt_short', title: 'Short-Sleeve Work Shirt', titleFr: 'Chemise de travail manches courtes', renderer: 'shirt' },
+          { value: 'work_shirt_long', title: 'Long-Sleeve Work Shirt', titleFr: 'Chemise de travail manches longues', renderer: 'shirt' },
+          { value: 'flannel_overshirt', title: 'Flannel / Heavy Cotton Overshirt', titleFr: 'Surchemise de travail', renderer: 'shirt' },
+          { value: 'chef_tunic', title: 'Stand-Collar / Mandarin-Collar Tunic', titleFr: 'Veste de cuisine / Tunique médicale', renderer: 'lab_coat' },
+        ],
+      },
+      {
+        value: 'sweatshirts_fleeces',
+        title: 'Sweatshirts, Hoodies & Fleeces',
+        titleFr: 'Sweats, Capuches & Polaires',
+        defaultRenderer: 'sweatshirt',
+        items: [
+          { value: 'crewneck_sweatshirt', title: 'Crew-Neck Work Sweatshirt', titleFr: 'Sweat-shirt col rond', renderer: 'sweatshirt' },
+          { value: 'quarter_zip_sweatshirt', title: 'Quarter-Zip / Half-Zip Sweatshirt', titleFr: 'Sweat-shirt col camionneur zippé', renderer: 'sweatshirt' },
+          { value: 'pullover_hoodie', title: 'Work Pullover Hoodie', titleFr: 'Sweat à capuche', renderer: 'sweatshirt' },
+          { value: 'microfleece_jacket', title: 'Microfleece Work Jacket', titleFr: 'Veste polaire', renderer: 'sweatshirt' },
+          { value: 'knitted_work_sweater', title: 'Knitted Work Sweater / Commando Pullover', titleFr: 'Pull de travail / Pull commando', renderer: 'sweatshirt' },
+        ],
+      },
+      {
+        value: 'bottoms',
+        title: 'Trousers & Work Shorts',
+        titleFr: 'Pantalons & Bermudas',
+        defaultRenderer: 'trousers',
+        items: [
+          { value: 'standard_work_trousers', title: 'Standard Work Trousers', titleFr: 'Pantalon de travail classique', renderer: 'trousers' },
+          { value: 'cargo_multipocket_trousers', title: 'Cargo / Multi-Pocket Work Trousers', titleFr: 'Pantalon multipoches / Cargo', renderer: 'trousers' },
+          { value: 'holster_pocket_trousers', title: 'Holster-Pocket Craftsman Trousers', titleFr: 'Pantalon à poches flottantes', renderer: 'trousers' },
+          { value: 'elasticated_kitchen_medical_trousers', title: 'Elasticated Waist Kitchen / Medical Trousers', titleFr: 'Pantalon médical / de cuisine', renderer: 'trousers' },
+          { value: 'work_cargo_shorts', title: 'Work Cargo Shorts / Bermuda', titleFr: 'Bermuda de travail multipoches', renderer: 'shorts' },
+        ],
+      },
+      {
+        value: 'protective_garments',
+        title: 'Lab Coats, Smocks & Aprons',
+        titleFr: 'Blouses & Tabliers',
+        defaultRenderer: 'lab_coat',
+        items: [
+          { value: 'lab_coat_warehouse_smock', title: 'Lab Coat / Warehouse Smock', titleFr: 'Blouse de travail / Blouse blanche', renderer: 'lab_coat' },
+          { value: 'isolation_surgical_gown', title: 'Isolation / Hygiene Gown', titleFr: 'Casaque / Blouse d’isolement', renderer: 'lab_coat' },
+          { value: 'butcher_waterproof_apron', title: 'Industrial / Waterproof Apron', titleFr: 'Tablier industriel / imperméable', renderer: 'apron' },
         ],
       },
     ],
@@ -218,14 +136,14 @@ const LEGACY_WORKWEAR_SILHOUETTE_CATALOG = [
   {
     value: 'footwear',
     title: 'Safety Footwear',
-    titleFr: 'Chaussures & Bottes de sécurité',
+    titleFr: 'Chaussures & bottes de sécurité',
     icon: 'tabler-shoe',
     defaultRenderer: 'boots',
     subcategories: [
       {
         value: 'safety_shoes',
-        title: 'Safety Shoes',
-        titleFr: 'Chaussures de sécurité',
+        title: 'Safety Shoes & Boots (S1–S3)',
+        titleFr: 'Chaussures de sécurité (S1–S3)',
         defaultRenderer: 'boots',
         items: [
           { value: 'low_cut_safety_shoe', title: 'Low-Cut Safety Shoe (S1 / S1P / S2 / S3)', titleFr: 'Chaussure de sécurité basse', renderer: 'boots' },
@@ -252,14 +170,14 @@ const LEGACY_WORKWEAR_SILHOUETTE_CATALOG = [
   },
   {
     value: 'hand_protection',
-    title: 'Hand Protection (EN 388 / EN 374 / EN 407)',
-    titleFr: 'Gants de protection',
+    title: 'Hand Protection',
+    titleFr: 'Protection des mains',
     icon: 'tabler-hand-stop',
     defaultRenderer: 'gloves',
     subcategories: [
       {
         value: 'gloves',
-        title: 'Safety Gloves',
+        title: 'Safety & Technical Gloves',
         titleFr: 'Gants de sécurité',
         defaultRenderer: 'gloves',
         items: [
@@ -268,16 +186,16 @@ const LEGACY_WORKWEAR_SILHOUETTE_CATALOG = [
           { value: 'chemical_gauntlet_glove', title: 'Chemical-Resistant Gauntlet (Nitrile / Butyl / Neoprene)', titleFr: 'Gant de protection chimique manchette longue', renderer: 'gloves' },
           { value: 'welding_gauntlet_glove', title: 'Welding Gauntlet (EN 12477 Type A / Type B)', titleFr: 'Gant de soudeur', renderer: 'gloves' },
           { value: 'cryogenic_cold_glove', title: 'Cold-Storage / Cryogenic Glove (EN 511)', titleFr: 'Gant grand froid / cryogénique', renderer: 'gloves' },
-          { value: 'dielectric_insulating_glove', title: 'Electrically Insulating LaTeX Glove (Class 00 to 4)', titleFr: 'Gant isolant électricien', renderer: 'gloves' },
-          { value: 'disposable_nitrile_glove', title: 'Disposable Nitrile / LaTeX Examination Glove', titleFr: 'Gant jetable nitrile / latex', renderer: 'gloves' },
+          { value: 'dielectric_insulating_glove', title: 'Electrically Insulating Latex Glove (Class 00 to 4)', titleFr: 'Gant isolant électricien', renderer: 'gloves' },
+          { value: 'disposable_nitrile_glove', title: 'Disposable Nitrile / Latex Examination Glove', titleFr: 'Gant jetable nitrile / latex', renderer: 'gloves' },
         ],
       },
     ],
   },
   {
     value: 'head_protection',
-    title: 'Head Protection',
-    titleFr: 'Protection de la tête, des yeux et de l’ouïe',
+    title: 'Head, Eye & Fall PPE',
+    titleFr: 'Tête, Yeux & Antichute',
     icon: 'tabler-helmet',
     defaultRenderer: 'helmet',
     subcategories: [
@@ -287,101 +205,21 @@ const LEGACY_WORKWEAR_SILHOUETTE_CATALOG = [
         titleFr: 'Casques & casquettes de sécurité',
         defaultRenderer: 'helmet',
         items: [
-          { value: 'industrial_safety_helmet', title: 'Industrial Safety Helmet / Hard Hat', titleFr: 'Casque de chantier', renderer: 'helmet' },
+          { value: 'industrial_safety_helmet', title: 'Industrial Safety Helmet / Hard Hat (EN 397)', titleFr: 'Casque de chantier', renderer: 'helmet' },
           { value: 'bump_cap', title: 'Bump Cap / Baseball Safety Cap (EN 812)', titleFr: 'Casquette anti-heurts', renderer: 'helmet' },
         ],
       },
-    ],
-  },
-]
-
-
-const getLegacyItems = (categoryValue, subcategoryValue) =>
-  LEGACY_WORKWEAR_SILHOUETTE_CATALOG
-    .find(category => category.value === categoryValue)
-    ?.subcategories.find(subcategory => subcategory.value === subcategoryValue)?.items || []
-
-const upperBody = LEGACY_WORKWEAR_SILHOUETTE_CATALOG.find(category => category.value === 'upper_body')
-
-const clothingItems = subcategoryValues =>
-  upperBody.subcategories
-    .filter(subcategory => subcategoryValues.includes(subcategory.value))
-    .flatMap(subcategory => subcategory.items)
-
-const legacyItem = (categoryValue, subcategoryValue, itemValue) =>
-  getLegacyItems(categoryValue, subcategoryValue).find(item => item.value === itemValue)
-
-/**
- * Catalog groups products by physical form. Visibility, cleanroom and similar
- * use-cases are captured by standards/certifications rather than duplicate items.
- */
-export const WORKWEAR_SILHOUETTE_CATALOG = [
-  {
-    value: 'clothing',
-    title: 'Workwear Clothing',
-    titleFr: 'Vêtements de travail',
-    icon: 'tabler-shirt',
-    defaultRenderer: 'jacket',
-    subcategories: [
       {
-        value: 'tops',
-        title: 'Tops, Jackets & Coats',
-        titleFr: 'Hauts, vestes & manteaux',
-        defaultRenderer: 'jacket',
-        items: clothingItems(['tshirts_polos', 'shirts', 'sweatshirts_fleeces', 'jackets_vests', 'coats_outerwear']),
-      },
-      {
-        value: 'bottoms',
-        title: 'Trousers & Bottoms',
-        titleFr: 'Pantalons & bas',
-        defaultRenderer: 'trousers',
-        items: getLegacyItems('lower_body', 'trousers'),
-      },
-      {
-        value: 'one_piece',
-        title: 'Coveralls & One-Piece Garments',
-        titleFr: 'Combinaisons & salopettes',
-        defaultRenderer: 'coverall',
-        items: getLegacyItems('full_body', 'coveralls'),
-      },
-      {
-        value: 'protective_garments',
-        title: 'Protective Garments & Aprons',
-        titleFr: 'Vêtements de protection & tabliers',
-        defaultRenderer: 'apron',
+        value: 'eye_face_fall',
+        title: 'Eye, Respiratory & Fall Arrest PPE',
+        titleFr: 'Lunettes, Masques & Harnais',
+        defaultRenderer: 'glasses',
         items: [
-          legacyItem('cleanroom_medical', 'medical_healthcare', 'isolation_surgical_gown'),
-          legacyItem('cleanroom_medical', 'food_industry', 'butcher_waterproof_apron'),
-        ].filter(Boolean),
+          { value: 'safety_glasses_goggles', title: 'Safety Spectacles / Goggles (EN 166)', titleFr: 'Lunettes de sécurité', renderer: 'glasses' },
+          { value: 'fall_arrest_harness', title: 'Full-Body Fall Arrest Harness (EN 361)', titleFr: 'Harnais antichute complet', renderer: 'harness' },
+        ],
       },
     ],
-  },
-  {
-    value: 'footwear',
-    title: 'Safety Footwear',
-    titleFr: 'Chaussures & bottes de sécurité',
-    icon: 'tabler-shoe',
-    defaultRenderer: 'boots',
-    subcategories: LEGACY_WORKWEAR_SILHOUETTE_CATALOG
-      .find(category => category.value === 'footwear').subcategories,
-  },
-  {
-    value: 'hand_protection',
-    title: 'Hand Protection',
-    titleFr: 'Protection des mains',
-    icon: 'tabler-hand-stop',
-    defaultRenderer: 'gloves',
-    subcategories: LEGACY_WORKWEAR_SILHOUETTE_CATALOG
-      .find(category => category.value === 'hand_protection').subcategories,
-  },
-  {
-    value: 'head_protection',
-    title: 'Head Protection',
-    titleFr: 'Protection de la tête',
-    icon: 'tabler-helmet',
-    defaultRenderer: 'helmet',
-    subcategories: LEGACY_WORKWEAR_SILHOUETTE_CATALOG
-      .find(category => category.value === 'head_protection').subcategories,
   },
 ]
 
@@ -410,7 +248,7 @@ const LEGACY_SILHOUETTE_ITEM_ALIASES = {
 }
 
 const LEGACY_SILHOUETTE_CATEGORY_ALIASES = {
-  upper_body: { category: 'clothing', subcategory: 'tops' },
+  upper_body: { category: 'clothing', subcategory: 'jackets_vests' },
   lower_body: { category: 'clothing', subcategory: 'bottoms' },
   full_body: { category: 'clothing', subcategory: 'one_piece' },
   high_visibility: { category: 'clothing' },
@@ -437,18 +275,24 @@ export function normalizeSilhouetteTaxonomy(model) {
 
   if (!match) {
     const legacyCategory = LEGACY_SILHOUETTE_CATEGORY_ALIASES[model.silhouette_category]
-    if (!legacyCategory) return model
+    if (!legacyCategory && model.silhouette_subcategory !== 'tops') return model
 
-    const subcategory = legacyCategory.subcategory || ({
+    const subcategory = legacyCategory?.subcategory || ({
       trousers: 'bottoms',
+      shorts: 'bottoms',
       coverall: 'one_piece',
       overalls: 'one_piece',
       apron: 'protective_garments',
-    }[model.silhouette] || 'tops')
+      lab_coat: 'protective_garments',
+      polo: 'tshirts_polos',
+      tshirt: 'tshirts_polos',
+      shirt: 'shirts_tunics',
+      sweatshirt: 'sweatshirts_fleeces',
+    }[model.silhouette] || 'jackets_vests')
 
     return {
       ...model,
-      silhouette_category: legacyCategory.category,
+      silhouette_category: legacyCategory?.category || model.silhouette_category || 'clothing',
       silhouette_subcategory: subcategory,
     }
   }
@@ -481,6 +325,69 @@ export const WORKWEAR_COLOR_PALETTE = [
   { value: 'sky', label: 'Medical / Cleanroom Blue', labelFr: 'Bleu médical / Salle blanche', hex: '#0284c7' },
   { value: 'white', label: 'Cleanroom / HACCP White', labelFr: 'Blanc agroalimentaire / HACCP', hex: '#f1f5f9' },
 ]
+
+/**
+ * Helper to extract Colors and Sizes from a linked Catalog Item's options.
+ */
+export function extractCatalogColorsAndSizes(catalogItem, locale = 'en') {
+  const result = {
+    colors: [],
+    sizes: [],
+    otherOptions: [],
+  }
+  if (!catalogItem || !Array.isArray(catalogItem.options)) return result
+
+  for (const opt of catalogItem.options) {
+    const rawName = (localizedValue(opt.name, locale) || opt.code || '').toLowerCase()
+    const values = (opt.values || [])
+      .map(v => localizedValue(v.value, locale) || v.value || '')
+      .map(s => String(s).trim())
+      .filter(Boolean)
+
+    if (!values.length) continue
+
+    const isColor = rawName.includes('color')
+      || rawName.includes('colour')
+      || rawName.includes('couleur')
+      || rawName.includes('teinte')
+      || rawName.includes('لون')
+
+    const isSize = rawName.includes('size')
+      || rawName.includes('taille')
+      || rawName.includes('pointure')
+      || rawName.includes('dimension')
+      || rawName.includes('مقاس')
+
+    if (isColor) {
+      const normalizedColors = values.map(v => {
+        const lower = v.toLowerCase()
+        const match = WORKWEAR_COLOR_PALETTE.find(
+          c => c.value === lower
+            || c.label.toLowerCase() === lower
+            || (c.labelFr && c.labelFr.toLowerCase() === lower)
+            || lower.includes(c.value.replace('hi-vis-', '')),
+        )
+
+        return match ? match.value : v
+      })
+
+      result.colors.push(...normalizedColors)
+    } else if (isSize) {
+      result.sizes.push(...values)
+    } else {
+      result.otherOptions.push({
+        id: opt.id,
+        name: localizedValue(opt.name, locale) || opt.name,
+        values,
+      })
+    }
+  }
+
+  result.colors = [...new Set(result.colors)]
+  result.sizes = [...new Set(result.sizes)]
+
+  return result
+}
 
 export const WORKWEAR_PLACEMENT_TYPES = [
   { value: 'logo', title: 'Logo / Artwork', icon: 'tabler-photo-hexagon', color: '#2563eb', defaultWidth: 90, defaultHeight: 45, defaultMethod: 'Direct Embroidery' },
@@ -556,11 +463,11 @@ export const WORKWEAR_CERTIFICATIONS_PRESETS = [
 
 /**
  * Quick-answer presets for Technical Construction & Care Profile
- * (derived from Section 17 of workwear-ppe-catalog.md)
  */
 export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   fastening: {
     label: 'Closures & Fastening',
+    title: 'Closures & Fastening',
     icon: 'tabler-zip',
     placeholder: 'e.g. Concealed YKK 2-way brass zipper with Velcro storm flap, metal-free dielectric snaps...',
     quickAnswers: [
@@ -574,6 +481,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   },
   storage: {
     label: 'Pocket Configuration & Storage',
+    title: 'Pocket Configuration & Storage',
     icon: 'tabler-box-padding',
     placeholder: 'e.g. 2 chest pockets with flaps, ruler pocket, thigh cargo pocket, internal phone pocket...',
     quickAnswers: [
@@ -587,6 +495,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   },
   reinforcements: {
     label: 'Reinforcements & Stress Zones',
+    title: 'Reinforcements & Stress Zones',
     icon: 'tabler-shield-lock',
     placeholder: 'e.g. Triple-stitched inseam, Cordura 500D knee & ankle reinforcements, bar-tacked stress points...',
     quickAnswers: [
@@ -600,6 +509,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   },
   ergonomics: {
     label: 'Ventilation & Ergonomics',
+    title: 'Ventilation & Ergonomics',
     icon: 'tabler-wind',
     placeholder: 'e.g. Pre-bent articulated knees, gusseted crotch, action back pleats, underarm zip vents...',
     quickAnswers: [
@@ -613,6 +523,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   },
   adjustability: {
     label: 'Adjustability (Waist, Cuffs & Hem)',
+    title: 'Adjustability (Waist, Cuffs & Hem)',
     icon: 'tabler-adjustments-horizontal',
     placeholder: 'e.g. Side-elasticated waistband, +5 cm extendable hem allowance, Velcro adjustable cuffs...',
     quickAnswers: [
@@ -625,6 +536,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   },
   visibility: {
     label: 'Visibility & Reflective Configuration',
+    title: 'Visibility & Reflective Configuration',
     icon: 'tabler-sun-high',
     placeholder: 'e.g. 50mm 3M Scotchlite segmented reflective tape on torso, shoulders and double leg bands...',
     quickAnswers: [
@@ -638,6 +550,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   },
   collar: {
     label: 'Collar & Hood Construction',
+    title: 'Collar & Hood Construction',
     icon: 'tabler-shirt',
     placeholder: 'e.g. Fleece-lined stand/mandarin collar, helmet-compatible detachable storm hood...',
     quickAnswers: [
@@ -650,6 +563,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
   },
   care: {
     label: 'Industrial Washing & Care Profile',
+    title: 'Industrial Washing & Care Profile',
     icon: 'tabler-wash-machine',
     placeholder: 'e.g. Industrial wash 75°C (ISO 15797), max 50 wash cycles for reflective/FR treatments...',
     quickAnswers: [
@@ -663,7 +577,7 @@ export const WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS = {
 }
 
 /**
- * Fit & Sizing Variations (from Section 16 of workwear-ppe-catalog.md)
+ * Fit & Sizing Variations
  */
 export const WORKWEAR_FIT_VARIATIONS = [
   { value: 'unisex_regular', title: 'Unisex / Men’s Regular Fit (Coupe droite / Standard)' },
@@ -785,7 +699,7 @@ export const SILHOUETTE_SHORT_TITLES = {
   standard_work_jacket: { en: 'Work Jacket', fr: 'Veste de travail' },
   softshell_jacket: { en: 'Softshell Jacket', fr: 'Veste softshell' },
   bomber_pilot_jacket: { en: 'Pilot Bomber', fr: 'Blouson pilote' },
-  multipocket_reporter_vest: { en: 'Reporter Vest', fr: 'Gilet multipoches' },
+  multipocket_reporter_vest: { en: 'Work / Hi-Vis Vest', fr: 'Gilet multipoches' },
   parka_3in1_4in1: { en: 'Work Parka', fr: 'Parka de travail' },
   hardshell_rain_jacket: { en: 'Rain Jacket', fr: 'Veste de pluie' },
   trench_rain_coat: { en: 'Rain Coat', fr: 'Manteau de pluie' },
@@ -797,6 +711,7 @@ export const SILHOUETTE_SHORT_TITLES = {
   cargo_multipocket_trousers: { en: 'Cargo Trousers', fr: 'Pantalon cargo' },
   holster_pocket_trousers: { en: 'Craftsman Trousers', fr: 'Pantalon poches flottantes' },
   elasticated_kitchen_medical_trousers: { en: 'Medical Trousers', fr: 'Pantalon médical' },
+  work_cargo_shorts: { en: 'Work Cargo Shorts', fr: 'Bermuda de travail' },
 
   // Footwear
   low_cut_safety_shoe: { en: 'Low-Cut Safety Shoe', fr: 'Chaussure basse' },
@@ -813,53 +728,42 @@ export const SILHOUETTE_SHORT_TITLES = {
   // Aprons & Medical
   scrub_tunic_top: { en: 'Medical Scrub Top', fr: 'Tunique médicale' },
   scrub_trousers: { en: 'Scrub Trousers', fr: 'Pantalon médical' },
-  isolation_surgical_gown: { en: 'Surgical Gown', fr: 'Casaque chirurgicale' },
+  isolation_surgical_gown: { en: 'Hygiene Gown', fr: 'Casaque chirurgicale' },
   haccp_pocketless_coat: { en: 'HACCP Food Coat', fr: 'Blouse agroalimentaire' },
   chef_double_breasted_jacket: { en: 'Chef Jacket', fr: 'Veste de cuisine' },
-  butcher_waterproof_apron: { en: 'Butcher Apron', fr: 'Tablier de boucher' },
+  butcher_waterproof_apron: { en: 'Industrial Apron', fr: 'Tablier industriel' },
 
   // Hand Protection
-  nitrile_pu_precision_glove: { en: 'Precision Glove', fr: 'Gant précision' },
-  cut_resistant_glove_level_d_f: { en: 'Cut-Resistant Glove', fr: 'Gant anti-coupure' },
-  leather_rigger_driver_glove: { en: 'Leather Rigger Glove', fr: 'Gant cuir docker' },
-  mechanics_impact_glove: { en: 'Impact Glove', fr: 'Gant anti-choc' },
-  chemical_nitrile_gauntlet: { en: 'Chemical Gauntlet', fr: 'Gant chimique' },
-  welding_heat_gauntlet: { en: 'Welding Gauntlet', fr: 'Gant de soudure' },
-  cold_insulated_thermal_glove: { en: 'Thermal Winter Glove', fr: 'Gant thermique froid' },
-  disposable_nitrile_box: { en: 'Disposable Glove', fr: 'Gant jetable nitrile' },
+  pu_nitrile_handling_glove: { en: 'Precision Glove', fr: 'Gant manutention' },
+  cut_resistant_glove: { en: 'Cut-Resistant Glove', fr: 'Gant anti-coupure' },
+  chemical_gauntlet_glove: { en: 'Chemical Gauntlet', fr: 'Gant chimique' },
+  welding_gauntlet_glove: { en: 'Welding Gauntlet', fr: 'Gant de soudeur' },
+  cryogenic_cold_glove: { en: 'Thermal Cold Glove', fr: 'Gant grand froid' },
+  dielectric_insulating_glove: { en: 'Dielectric Glove', fr: 'Gant isolant' },
+  disposable_nitrile_glove: { en: 'Disposable Glove', fr: 'Gant jetable nitrile' },
 
-  // Head Protection
-  standard_industrial_safety_helmet: { en: 'Safety Helmet', fr: 'Casque de chantier' },
-  climbing_height_work_helmet: { en: 'Height Work Helmet', fr: 'Casque travail hauteur' },
-  bump_cap_baseball: { en: 'Safety Bump Cap', fr: 'Casquette anti-heurt' },
-  electrician_arc_flash_helmet_visor: { en: 'Arc-Flash Helmet', fr: 'Casque électricien' },
-  ear_defenders_headband: { en: 'Ear Defenders', fr: 'Casque antibruit' },
-  safety_glasses_spectacles: { en: 'Safety Spectacles', fr: 'Lunettes de sécurité' },
-  safety_goggles_indirect_vent: { en: 'Safety Goggles', fr: 'Lunettes masques' },
-  half_mask_respirator: { en: 'Half-Mask Respirator', fr: 'Demi-masque respiratoire' },
-  disposable_ffp_respirator: { en: 'FFP Respirator Mask', fr: 'Masque FFP2 / FFP3' },
+  // Head & Fall Protection
+  industrial_safety_helmet: { en: 'Safety Helmet', fr: 'Casque de chantier' },
+  bump_cap: { en: 'Safety Bump Cap', fr: 'Casquette anti-heurt' },
+  safety_glasses_goggles: { en: 'Safety Spectacles', fr: 'Lunettes de sécurité' },
+  fall_arrest_harness: { en: 'Fall Arrest Harness', fr: 'Harnais antichute' },
 }
 
 export const SUBCATEGORY_SHORT_TITLES = {
-  tops: { en: 'Tops & Jackets', fr: 'Hauts & Vestes' },
-  bottoms: { en: 'Trousers & Bottoms', fr: 'Pantalons & Bas' },
   one_piece: { en: 'Coveralls & Overalls', fr: 'Combinaisons' },
-  protective_garments: { en: 'Aprons & Smocks', fr: 'Tabliers & Blouses' },
-  safety_shoes: { en: 'Safety Shoes', fr: 'Chaussures sécurité' },
+  jackets_vests: { en: 'Jackets, Parkas & Vests', fr: 'Vestes & Gilets' },
+  tshirts_polos: { en: 'T-Shirts & Polos', fr: 'T-Shirts & Polos' },
+  shirts_tunics: { en: 'Shirts & Tunics', fr: 'Chemises & Tuniques' },
+  sweatshirts_fleeces: { en: 'Sweatshirts & Fleeces', fr: 'Sweats & Polaires' },
+  bottoms: { en: 'Trousers & Shorts', fr: 'Pantalons & Shorts' },
+  protective_garments: { en: 'Lab Coats & Aprons', fr: 'Blouses & Tabliers' },
+  safety_shoes: { en: 'Safety Shoes (S1–S3)', fr: 'Chaussures sécurité' },
   wellington_gumboots: { en: 'Boots & Wellingtons', fr: 'Bottes étanches' },
-  cut_resistant: { en: 'Cut-Resistant Gloves', fr: 'Gants anti-coupure' },
-  chemical_welding: { en: 'Chemical & Welding', fr: 'Chimique & Soudure' },
-  mechanical_gloves: { en: 'Mechanical Gloves', fr: 'Gants mécaniques' },
-  chemical_thermal: { en: 'Chemical & Thermal', fr: 'Chimique & Thermique' },
-  hard_hats: { en: 'Safety Helmets', fr: 'Casques de sécurité' },
-  soft_caps: { en: 'Bump Caps', fr: 'Casquettes anti-heurt' },
-  eye_hearing: { en: 'Eye & Hearing PPE', fr: 'Yeux & Audition' },
+  gloves: { en: 'Safety Gloves', fr: 'Gants de sécurité' },
+  head_protection: { en: 'Safety Helmets & Caps', fr: 'Casques & Casquettes' },
+  eye_face_fall: { en: 'Eye & Fall Arrest PPE', fr: 'Lunettes & Harnais' },
 }
 
-/**
- * Formats a concise, human-friendly short title for garment silhouettes by stripping
- * long parenthetical codes or slash alternatives.
- */
 export function formatSilhouetteShortTitle(item, locale = 'en') {
   if (!item) return ''
 
@@ -883,9 +787,6 @@ export function formatSilhouetteShortTitle(item, locale = 'en') {
   return withoutParens || rawTitle
 }
 
-/**
- * Formats a concise, human-friendly short title for a subcategory.
- */
 export function formatSubcategoryShortTitle(sub, locale = 'en') {
   if (!sub) return ''
 
@@ -901,10 +802,6 @@ export function formatSubcategoryShortTitle(sub, locale = 'en') {
   return rawTitle || ''
 }
 
-/**
- * Extracts a concise specification badge (such as "S1-S3" or "S4 / S5") from
- * the raw item title if present.
- */
 export function extractSilhouetteSpecBadge(item) {
   const title = typeof item === 'string' ? item : item?.title
   if (!title) return null
@@ -930,6 +827,27 @@ export function resolveColorHex(colorNameOrHex, fallback = '#1e293b') {
   )
 
   return found ? found.hex : fallback
+}
+
+export function resolveColorLabel(colorValue, options = {}) {
+  if (!colorValue || typeof colorValue !== 'string') return colorValue || ''
+  
+  const trimmed = colorValue.trim()
+  const lower = trimmed.toLowerCase()
+  const locale = options.locale || (typeof window !== 'undefined' ? (localStorage.getItem('currentLanguage') || 'en') : 'en')
+  const isFr = typeof locale === 'string' && locale.startsWith('fr')
+  const t = typeof options.t === 'function' ? options.t : (key => key)
+
+  const found = WORKWEAR_COLOR_PALETTE.find(
+    c => c.value === lower || c.label.toLowerCase() === lower || lower.includes(c.value.replace('hi-vis-', '')),
+  )
+
+  if (found) {
+    return isFr && found.labelFr ? found.labelFr : t(found.label)
+  }
+
+  // Return original value if not found in palette
+  return trimmed
 }
 
 export function resolveZoneMeta(zoneValue, silhouette = 'coverall') {
@@ -1015,6 +933,45 @@ function makeJacketOrParkaTemplate(silhouette, label, isParka) {
   }
 }
 
+function makePoloOrTopTemplate(silhouette, label) {
+  return {
+    silhouette,
+    label,
+    viewBox: WORKWEAR_STUDIO_VIEWBOX,
+    garmentBounds: { x: 56, y: 44, width: 208, height: 208 },
+    scale: {
+      unitsPerMm: 0.28,
+      referenceWidthMm: 520,
+      referenceHeightMm: 720,
+      scaleMode: 'proportional_template',
+      scaleVerified: false,
+    },
+    colorRegions: [
+      { key: 'body', label: 'Main Torso & Sleeves', role: 'primary', slot: 0 },
+      { key: 'shoulder_panels', label: 'Contrast Shoulder Panels', role: 'contrast', slot: 1 },
+      { key: 'collar_placket', label: 'Collar & Placket Trim', role: 'primary', slot: 0 },
+      { key: 'cuff_trim', label: 'Sleeve Cuff Trim', role: 'contrast', slot: 1 },
+    ],
+    zones: [
+      makeZone('chest_left', 'Chest Left (Heart / Logo)', ['front'], 190, 122, [158, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
+      makeZone('chest_right', 'Chest Right (Name / Badge)', ['front'], 130, 122, [104, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
+      makeZone('chest_center', 'Chest Center', ['front'], 160, 148, [104, 108, 112, 84], [15, 360, 10, 220], [125, 95]),
+      makeZone('pocket_left', 'Left Breast Pocket', ['front'], 190, 140, [158, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
+      makeZone('pocket_right', 'Right Breast Pocket', ['front'], 130, 140, [104, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
+      makeZone('shoulder_left', 'Left Shoulder Panel', ['front', 'back'], 204, 82, [168, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
+      makeZone('shoulder_right', 'Right Shoulder Panel', ['front', 'back'], 116, 82, [86, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
+      makeZone('collar', 'Collar / Nape', ['front', 'back'], 160, 58, [118, 42, 84, 42], [15, 200, 10, 100], [75, 45]),
+      makeZone('sleeve_left', 'Left Sleeve', ['front', 'back'], 238, 118, [210, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
+      makeZone('sleeve_right', 'Right Sleeve', ['front', 'back'], 82, 118, [54, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
+      makeZone('waist', 'Mid Torso / Waist', ['front', 'back'], 160, 198, [104, 164, 112, 66], [15, 360, 10, 180], [125, 75]),
+      makeZone('hem', 'Bottom Hem', ['front', 'back'], 160, 232, [104, 200, 112, 54], [15, 360, 10, 140], [125, 60]),
+      makeZone('back_upper', 'Upper Back (Shoulder Yoke)', ['back'], 160, 112, [104, 70, 112, 84], [15, 360, 10, 220], [125, 95]),
+      makeZone('back_center', 'Center Back', ['back'], 160, 158, [104, 114, 112, 88], [15, 360, 10, 240], [125, 100]),
+      makeZone('back_lower', 'Lower Back', ['back'], 160, 208, [104, 168, 112, 80], [15, 360, 10, 200], [125, 85]),
+    ],
+  }
+}
+
 export const WORKWEAR_STUDIO_TEMPLATES = {
   coverall: {
     silhouette: 'coverall',
@@ -1059,6 +1016,8 @@ export const WORKWEAR_STUDIO_TEMPLATES = {
   },
   jacket: makeJacketOrParkaTemplate('jacket', 'Work Jacket / Softshell', false),
   parka: makeJacketOrParkaTemplate('parka', 'Weatherproof Parka', true),
+  sweatshirt: makeJacketOrParkaTemplate('sweatshirt', 'Work Sweatshirt / Hoodie / Fleece', false),
+  lab_coat: makeJacketOrParkaTemplate('lab_coat', 'Lab Coat / Hygiene Smock / Tunic', true),
   vest: {
     silhouette: 'vest',
     label: 'Hi-Vis Safety Vest / Gilet',
@@ -1122,42 +1081,35 @@ export const WORKWEAR_STUDIO_TEMPLATES = {
       makeZone('hem', 'Lower Leg / Ankle Cuff', ['front', 'back'], 160, 354, [94, 326, 132, 58], [15, 420, 10, 160], [140, 65]),
     ],
   },
-  polo: {
-    silhouette: 'polo',
-    label: 'Polo / T-Shirt / Work Shirt',
+  shorts: {
+    silhouette: 'shorts',
+    label: 'Work Shorts / Cargo Bermuda',
     viewBox: WORKWEAR_STUDIO_VIEWBOX,
-    garmentBounds: { x: 56, y: 44, width: 208, height: 208 },
+    garmentBounds: { x: 94, y: 78, width: 132, height: 190 },
     scale: {
       unitsPerMm: 0.28,
-      referenceWidthMm: 520,
-      referenceHeightMm: 720,
+      referenceWidthMm: 480,
+      referenceHeightMm: 560,
       scaleMode: 'proportional_template',
       scaleVerified: false,
     },
     colorRegions: [
-      { key: 'body', label: 'Main Torso & Sleeves', role: 'primary', slot: 0 },
-      { key: 'shoulder_panels', label: 'Contrast Shoulder Panels', role: 'contrast', slot: 1 },
-      { key: 'collar_placket', label: 'Ribbed Collar & Button Placket', role: 'primary', slot: 0 },
-      { key: 'cuff_trim', label: 'Sleeve Cuff Trim', role: 'contrast', slot: 1 },
+      { key: 'main_fabric', label: 'Main Shorts & Waistband', role: 'primary', slot: 0 },
+      { key: 'cargo_accents', label: 'Contrast Cargo Pockets & Trim', role: 'contrast', slot: 1 },
     ],
     zones: [
-      makeZone('chest_left', 'Chest Left (Heart / Logo)', ['front'], 190, 122, [158, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
-      makeZone('chest_right', 'Chest Right (Name / Badge)', ['front'], 130, 122, [104, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
-      makeZone('chest_center', 'Chest Center (Below Placket)', ['front'], 160, 148, [104, 108, 112, 84], [15, 360, 10, 220], [125, 95]),
-      makeZone('pocket_left', 'Left Breast Pocket', ['front'], 190, 140, [158, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
-      makeZone('pocket_right', 'Right Breast Pocket', ['front'], 130, 140, [104, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
-      makeZone('shoulder_left', 'Left Shoulder Panel', ['front', 'back'], 204, 82, [168, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
-      makeZone('shoulder_right', 'Right Shoulder Panel', ['front', 'back'], 116, 82, [86, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
-      makeZone('collar', 'Collar / Nape', ['front', 'back'], 160, 58, [118, 42, 84, 42], [15, 200, 10, 100], [75, 45]),
-      makeZone('sleeve_left', 'Left Short Sleeve', ['front', 'back'], 238, 118, [210, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
-      makeZone('sleeve_right', 'Right Short Sleeve', ['front', 'back'], 82, 118, [54, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
-      makeZone('waist', 'Mid Torso / Waist', ['front', 'back'], 160, 198, [104, 164, 112, 66], [15, 360, 10, 180], [125, 75]),
-      makeZone('hem', 'Shirt Bottom Hem', ['front', 'back'], 160, 232, [104, 200, 112, 54], [15, 360, 10, 140], [125, 60]),
-      makeZone('back_upper', 'Upper Back (Shoulder Yoke)', ['back'], 160, 112, [104, 70, 112, 84], [15, 360, 10, 220], [125, 95]),
-      makeZone('back_center', 'Center Back', ['back'], 160, 158, [104, 114, 112, 88], [15, 360, 10, 240], [125, 100]),
-      makeZone('back_lower', 'Lower Back', ['back'], 160, 208, [104, 168, 112, 80], [15, 360, 10, 200], [125, 85]),
+      makeZone('waist', 'Waistband / Belt Line', ['front', 'back'], 160, 90, [102, 74, 116, 48], [15, 380, 10, 120], [130, 50]),
+      makeZone('pocket_left', 'Left Hip / Holster Pocket', ['front', 'back'], 192, 136, [158, 98, 62, 78], [15, 190, 10, 200], [70, 80]),
+      makeZone('pocket_right', 'Right Hip / Holster Pocket', ['front', 'back'], 128, 136, [100, 98, 62, 78], [15, 190, 10, 200], [70, 80]),
+      makeZone('back_lower', 'Rear Yoke / Seat Panel', ['back'], 160, 128, [102, 94, 116, 72], [15, 360, 10, 180], [125, 75]),
+      makeZone('thigh_left', 'Left Thigh / Cargo Pocket', ['front', 'back'], 196, 212, [162, 170, 62, 86], [15, 190, 10, 220], [70, 90]),
+      makeZone('thigh_right', 'Right Thigh / Cargo Pocket', ['front', 'back'], 124, 212, [96, 170, 62, 86], [15, 190, 10, 220], [70, 90]),
+      makeZone('hem', 'Shorts Hem / Cuff', ['front', 'back'], 160, 248, [96, 224, 128, 44], [15, 400, 10, 120], [130, 50]),
     ],
   },
+  polo: makePoloOrTopTemplate('polo', 'Polo Shirt'),
+  tshirt: makePoloOrTopTemplate('tshirt', 'Work T-Shirt (Crew-Neck)'),
+  shirt: makePoloOrTopTemplate('shirt', 'Button-Down Work Shirt / Overshirt'),
   overalls: {
     silhouette: 'overalls',
     label: 'Bib & Brace Overalls',
@@ -1362,10 +1314,6 @@ export function getTemplateColorRegions(silhouette = 'coverall') {
   return getStudioTemplate(silhouette).colorRegions || []
 }
 
-/**
- * Resolve named colour regions for a silhouette from a `colors` array.
- * Supports both legacy `[primary, contrast]` arrays and optional `'region:color'` tokens.
- */
 export function resolveModelColorRegions(colors = [], silhouette = 'coverall') {
   const template = getStudioTemplate(silhouette)
   const raw = Array.isArray(colors) ? colors.filter(c => typeof c === 'string' && c.trim() !== '') : []
@@ -1402,9 +1350,6 @@ export function resolveModelColorRegions(colors = [], silhouette = 'coverall') {
   return resolved
 }
 
-/**
- * Update a named colour region in a backward-compatible `colors` array.
- */
 export function setModelRegionColor(colors = [], silhouette = 'coverall', regionKey, colorValue) {
   const template = getStudioTemplate(silhouette)
   const raw = Array.isArray(colors) ? colors.filter(c => typeof c === 'string' && c.trim() !== '') : []
@@ -1441,11 +1386,6 @@ export function setModelRegionColor(colors = [], silhouette = 'coverall', region
   return [...positional.slice(0, 2), ...overrides]
 }
 
-/**
- * Compute uniform SVG coordinates and safe-boundary containment for a placement on a template.
- * Uses the template's single `unitsPerMm` factor for both dimensions (`width_mm`, `height_mm`)
- * and offsets (`offset_x_mm`, `offset_y_mm`).
- */
 export function computePlacementGeometry(placement = {}, silhouette = 'coverall') {
   const template = getStudioTemplate(silhouette)
   const unitsPerMm = template.scale.unitsPerMm
@@ -1509,10 +1449,6 @@ const ZONE_REMAP_FALLBACKS = {
   back_lower: ['back_center', 'back_upper', 'waist', 'hem'],
 }
 
-/**
- * Clamp and normalize a placement so its zone, view, dimensions, and coordinates
- * satisfy the target silhouette template's safe boundaries.
- */
 export function normalizePlacementForTemplate(placement = {}, silhouette = 'coverall') {
   const template = getStudioTemplate(silhouette)
   const unitsPerMm = template.scale.unitsPerMm
@@ -1608,7 +1544,7 @@ export function useWorkwearStudioConstants() {
   const localizedText = (enText, frText) => {
     if (isFr.value && frText) return frText
     if (enText && te(enText)) return t(enText)
-    
+
     return enText ? t(enText) : ''
   }
 
@@ -1669,14 +1605,14 @@ export function useWorkwearStudioConstants() {
 
   const getSubcategories = catValue => {
     const cat = localizedSilhouetteCatalog.value.find(c => c.value === catValue)
-    
+
     return cat ? cat.subcategories : []
   }
 
   const getItems = (catValue, subValue) => {
     const subs = getSubcategories(catValue)
     const sub = subs.find(s => s.value === subValue)
-    
+
     return sub ? sub.items : []
   }
 
@@ -1684,7 +1620,7 @@ export function useWorkwearStudioConstants() {
 
   const resolveColorName = colorValue => {
     const found = localizedColorPalette.value.find(c => c.value === colorValue)
-    
+
     return found ? found.label : colorValue
   }
 
@@ -1715,6 +1651,7 @@ export function useWorkwearStudioConstants() {
     formatSilhouetteShortTitle,
     formatSubcategoryShortTitle,
     extractSilhouetteSpecBadge,
+    extractCatalogColorsAndSizes,
     WORKWEAR_STUDIO_VIEWBOX,
     WORKWEAR_STUDIO_TEMPLATES,
     WORKWEAR_SILHOUETTES,
@@ -1731,4 +1668,3 @@ export function useWorkwearStudioConstants() {
     WORKWEAR_PLACEMENT_ZONES,
   }
 }
-

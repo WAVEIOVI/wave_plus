@@ -27,11 +27,11 @@ export function useWorkwearEmployeeList() {
 
   const headers = computed(() => [
     { title: t('Employee Name'), key: 'full_name', sortable: false },
-    { title: t('Ref'), key: 'employee_ref', sortable: true },
+    { title: t('Badge / Ref'), key: 'employee_ref', sortable: true },
     { title: t('Client'), key: 'client', sortable: false },
-    { title: t('Department / Role'), key: 'department', sortable: true },
-    { title: t('Assigned Models'), key: 'model_assignments_count', sortable: false, align: 'center' },
-    { title: t('Issued Garments'), key: 'assignments_count', sortable: false, align: 'center' },
+    { title: t('Department & Contact'), key: 'department', sortable: true },
+    { title: t('Sizes Summary'), key: 'sizes', sortable: false },
+    { title: t('Issued Workwear Items'), key: 'assignments_count', sortable: false, align: 'center' },
     { title: t('Status'), key: 'status', sortable: true },
     { title: t('Actions'), key: 'actions', sortable: false, align: 'end' },
   ])

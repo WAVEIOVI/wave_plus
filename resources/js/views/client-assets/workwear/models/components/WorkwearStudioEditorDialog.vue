@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable camelcase, vue/no-mutating-props */
-import { WpZoomDialog } from '@/components/shared'
+import { AppHybridTabs, WpZoomDialog } from '@/components/shared'
 import {
   WORKWEAR_APPLICATION_METHODS,
   WORKWEAR_COLOR_PALETTE,
@@ -9,6 +9,7 @@ import {
   WORKWEAR_SILHOUETTE_CATALOG,
   WORKWEAR_STANDARD_SIZES,
   clampPlacementToZoneBounds,
+  extractCatalogColorsAndSizes,
   findSilhouetteItemMeta,
   getSilhouetteItems,
   getSilhouetteSubcategories,
@@ -42,6 +43,14 @@ const selectedPlacementIndex = ref(0)
 const nudgeStep = ref(5)
 const rowFileInputRef = ref(null)
 
+const DIMENSION_PRESETS = [
+  { key: 'chest_logo', label: 'Chest Logo (85×45)', width: 85, height: 45 },
+  { key: 'name_badge', label: 'Name Badge (100×28)', width: 100, height: 28 },
+  { key: 'sleeve_patch', label: 'Sleeve Patch (70×70)', width: 70, height: 70 },
+  { key: 'back_text', label: 'Back Text (240×60)', width: 240, height: 60 },
+  { key: 'full_band', label: 'Reflective Band (280×50)', width: 280, height: 50 },
+]
+
 watch(
   () => props.modelData,
   val => {
@@ -65,10 +74,7 @@ watch(
   { immediate: true },
 )
 
-/* ── Discard support ──────────────────────────────────────────────────────
- * Every control edits `modelData` live (the page's Save persists it), so
- * "Discard changes" restores what the studio held when it was opened.
- */
+/* ── Discard support ────────────────────────────────────────────────────── */
 const STUDIO_KEYS = [
   'silhouette_category',
   'silhouette_subcategory',
@@ -129,6 +135,10 @@ const silhouetteItemOptions = computed(() =>
   getSilhouetteItems(props.modelData.silhouette_category, props.modelData.silhouette_subcategory),
 )
 
+const catalogExtracted = computed(() =>
+  extractCatalogColorsAndSizes(props.modelData?.catalog_item, locale.value),
+)
+
 const primaryColor = computed({
   get: () => props.modelData.colors?.[0] || 'navy',
   set: val => {
@@ -153,6 +163,12 @@ const activePlacement = computed(() => {
   }
 
   return null
+})
+
+const currentCanvasZones = computed(() => {
+  const sil = props.modelData.silhouette || 'coverall'
+
+  return getTemplateZones(sil, activeView.value || 'front')
 })
 
 const availableZonesForView = computed(() => {
@@ -182,19 +198,24 @@ const accentColorOptions = computed(() =>
   WORKWEAR_COLOR_PALETTE.map(c => ({ title: c.label, value: c.hex })),
 )
 
-// Types that show their own text on the garment (artwork-only and bands do not).
 const showsTextField = computed(() =>
   Boolean(activePlacement.value) && !['logo', 'reflective_band'].includes(activePlacement.value.type),
 )
 
-const tabs = computed(() => [
-  { value: 'placements', icon: 'tabler-vector-bezier-2', title: t('Placements'), count: placements.value.length },
+const studioTabs = computed(() => [
+  { value: 'placements', icon: 'tabler-vector-bezier-2', title: t('Placements'), badge: placements.value.length || undefined },
   { value: 'silhouette', icon: 'tabler-shirt', title: t('Silhouette') },
-  { value: 'colors', icon: 'tabler-palette', title: t('Colors') },
-  { value: 'sizes', icon: 'tabler-ruler-2', title: t('Sizes'), count: (props.modelData.size_range || []).length },
+  { value: 'colors', icon: 'tabler-palette', title: t('Colors'), badge: (props.modelData.colors || []).length || undefined },
+  { value: 'sizes', icon: 'tabler-ruler-2', title: t('Sizes'), badge: (props.modelData.size_range || []).length || undefined },
 ])
 
 /* ── Placements ───────────────────────────────────────────────────────── */
+function isZoneOccupied(zoneValue) {
+  return (props.modelData.placements || []).some(
+    p => (p.view || 'front') === activeView.value && p.zone === zoneValue,
+  )
+}
+
 function addPlacement(type = 'logo', presetZone = null) {
   if (!Array.isArray(props.modelData.placements)) {
     props.modelData.placements = []
@@ -239,10 +260,21 @@ function handleZoneClick(zone) {
 
   if (existingIdx >= 0) {
     selectedPlacementIndex.value = existingIdx
+  } else if (activePlacement.value && (activePlacement.value.view || 'front') === activeView.value) {
+    activePlacement.value.zone = zone.value
+    const clamped = clampPlacementToZoneBounds(activePlacement.value, props.modelData.silhouette || 'coverall')
+
+    Object.assign(activePlacement.value, clamped)
   } else {
     addPlacement('logo', zone)
   }
   activeTab.value = 'placements'
+}
+
+function applyDimensionPreset(preset) {
+  if (!activePlacement.value) return
+  activePlacement.value.width_mm = preset.width
+  activePlacement.value.height_mm = preset.height
 }
 
 function removePlacement(idx) {
@@ -352,6 +384,18 @@ function setSlotColor(slotKey, value) {
   else contrastColor.value = value
 }
 
+function importColorsFromCatalog() {
+  if (!catalogExtracted.value.colors.length) return
+  const cols = [...catalogExtracted.value.colors]
+  if (cols.length === 1) cols.push(contrastColor.value)
+  props.modelData.colors = cols
+}
+
+function importSizesFromCatalog() {
+  if (!catalogExtracted.value.sizes.length) return
+  props.modelData.size_range = [...catalogExtracted.value.sizes]
+}
+
 function toggleSize(sz) {
   if (!Array.isArray(props.modelData.size_range)) props.modelData.size_range = []
   const idx = props.modelData.size_range.indexOf(sz)
@@ -400,7 +444,7 @@ function triggerArtworkUpload() {
     no-padding
     icon="tabler-vector-bezier-2"
     :title="modelData.name || $t('Garment Studio Editor')"
-    :subtitle="$t('Click garment zones to place artwork')"
+    :subtitle="$t('Click garment zones on the illustration or use the quick zone chips to place and customize branding.')"
     @update:model-value="val => emit('update:modelValue', val)"
   >
     <template #header-actions="{ close }">
@@ -462,51 +506,77 @@ function triggerArtworkUpload() {
 
       <!-- ── Controls ── -->
       <div class="studio-controls-pane">
-        <VTabs
-          v-model="activeTab"
-          density="compact"
-          color="primary"
-          grow
-          show-arrows
-          class="border-b flex-shrink-0"
-        >
-          <VTab
-            v-for="tab in tabs"
-            :key="tab.value"
-            :value="tab.value"
-          >
-            <VIcon
-              start
-              :icon="tab.icon"
-              size="16"
-            />
-            {{ tab.title }}
-            <VBadge
-              v-if="tab.count"
-              :content="String(tab.count)"
-              color="primary"
-              inline
-              class="ms-1"
-            />
-          </VTab>
-        </VTabs>
+        <div class="px-3 pt-2 border-b flex-shrink-0">
+          <AppHybridTabs
+            v-model="activeTab"
+            :tabs="studioTabs"
+            density="compact"
+          />
+        </div>
 
         <div class="controls-scrollable">
           <!-- ━━ Placements ━━ -->
           <div
             v-if="activeTab === 'placements'"
-            class="d-flex flex-column gap-5"
+            class="d-flex flex-column gap-4"
           >
-            <div>
-              <div class="text-body-2 font-weight-medium mb-2">
-                {{ $t('Add New Placement') }}
-                <span class="text-medium-emphasis font-weight-regular">
-                  ({{ activeView === 'back' ? $t('Back View') : $t('Front View') }})
+            <!-- Quick Zone Selector Bar -->
+            <div class="zone-bar">
+              <div class="d-flex align-center justify-space-between mb-2">
+                <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis">
+                  {{ $t('1. Select Target Zone') }} ({{ activeView === 'back' ? $t('Back View') : $t('Front View') }})
                 </span>
+                <VBtnToggle
+                  v-model="activeView"
+                  mandatory
+                  density="compact"
+                  color="primary"
+                  variant="tonal"
+                  rounded="lg"
+                >
+                  <VBtn
+                    value="front"
+                    size="x-small"
+                  >
+                    {{ $t('Front') }}
+                  </VBtn>
+                  <VBtn
+                    value="back"
+                    size="x-small"
+                  >
+                    {{ $t('Back') }}
+                  </VBtn>
+                </VBtnToggle>
+              </div>
+              <div class="d-flex flex-wrap gap-1">
+                <VChip
+                  v-for="zone in currentCanvasZones"
+                  :key="zone.value"
+                  size="small"
+                  :color="activePlacement?.zone === zone.value && (activePlacement?.view || 'front') === activeView ? 'primary' : isZoneOccupied(zone.value) ? 'info' : 'secondary'"
+                  :variant="activePlacement?.zone === zone.value && (activePlacement?.view || 'front') === activeView ? 'flat' : 'tonal'"
+                  class="cursor-pointer"
+                  @click="handleZoneClick(zone)"
+                >
+                  <VIcon
+                    v-if="isZoneOccupied(zone.value)"
+                    start
+                    icon="tabler-map-pin-filled"
+                    size="12"
+                  />
+                  {{ $t(zone.title) }}
+                </VChip>
+              </div>
+            </div>
+
+            <!-- Add Placement by Type -->
+            <div>
+              <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-2">
+                {{ $t('2. Add Customization Element') }}
               </div>
               <div class="d-flex flex-wrap gap-2">
                 <VBtn
-                  v-for="pt in WORKWEAR_PLACEMENT_TYPES.slice(0, 5)"
+                  v-for="pt in WORKWEAR_PLACEMENT_TYPES"
                   :key="pt.value"
                   size="small"
                   variant="tonal"
@@ -519,8 +589,9 @@ function triggerArtworkUpload() {
               </div>
             </div>
 
+            <!-- Configured Placements List -->
             <div>
-              <div class="text-body-2 font-weight-medium mb-2">
+              <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-2">
                 {{ $t('Configured Placements') }} ({{ placements.length }})
               </div>
 
@@ -556,7 +627,7 @@ function triggerArtworkUpload() {
                     {{ pl.label || pl.zone?.replace(/_/g, ' ') }}
                   </VListItemTitle>
                   <VListItemSubtitle class="text-caption">
-                    {{ (pl.view || 'front') === 'back' ? $t('Back View') : $t('Front View') }}
+                    {{ (pl.view || 'front') === 'back' ? $t('Back View') : $t('Front View') }} · {{ pl.width_mm || 80 }}×{{ pl.height_mm || 45 }}mm
                   </VListItemSubtitle>
                   <template #append>
                     <VBtn
@@ -579,7 +650,7 @@ function triggerArtworkUpload() {
                 v-else
                 class="text-body-2 text-medium-emphasis mb-0"
               >
-                {{ $t('No placements added yet. Click "+ Logo" or click directly on any garment zone above.') }}
+                {{ $t('No placements added yet. Click any zone chip above or click directly on the garment illustration.') }}
               </p>
             </div>
 
@@ -697,6 +768,26 @@ function triggerArtworkUpload() {
                     :placeholder="$t('e.g. JOHN DOE / COMPANY')"
                     density="compact"
                   />
+                </VCol>
+
+                <!-- Quick Dimension Presets -->
+                <VCol cols="12">
+                  <div class="text-caption text-medium-emphasis mb-1">
+                    {{ $t('Quick Dimension Presets (mm)') }}
+                  </div>
+                  <div class="d-flex flex-wrap gap-1 mb-1">
+                    <VChip
+                      v-for="preset in DIMENSION_PRESETS"
+                      :key="preset.key"
+                      size="x-small"
+                      :color="activePlacement.width_mm === preset.width && activePlacement.height_mm === preset.height ? 'primary' : 'secondary'"
+                      variant="tonal"
+                      class="cursor-pointer"
+                      @click="applyDimensionPreset(preset)"
+                    >
+                      {{ $t(preset.label) }}
+                    </VChip>
+                  </div>
                 </VCol>
 
                 <VCol
@@ -846,6 +937,32 @@ function triggerArtworkUpload() {
             class="d-flex flex-column gap-4"
           >
             <div class="text-body-2 font-weight-medium">
+              {{ $t('2D Garment Template') }}
+            </div>
+            <div class="template-grid">
+              <VBtn
+                v-for="sil in WORKWEAR_SILHOUETTES"
+                :key="sil.value"
+                block
+                size="small"
+                :variant="modelData.silhouette === sil.value ? 'flat' : 'tonal'"
+                :color="modelData.silhouette === sil.value ? 'primary' : 'secondary'"
+                class="justify-start text-none px-3"
+                :aria-pressed="modelData.silhouette === sil.value"
+                @click="applyTemplateSilhouette(sil.value)"
+              >
+                <VIcon
+                  start
+                  :icon="sil.icon"
+                  size="16"
+                />
+                <span class="text-truncate">{{ $t(sil.title) }}</span>
+              </VBtn>
+            </div>
+
+            <VDivider />
+
+            <div class="text-body-2 font-weight-medium">
               {{ $t('Garment Silhouette Taxonomy') }}
             </div>
             <AppSelect
@@ -875,32 +992,6 @@ function triggerArtworkUpload() {
               density="compact"
               @update:model-value="handleSilhouetteItemChange"
             />
-
-            <VDivider />
-
-            <div class="text-body-2 font-weight-medium">
-              {{ $t('2D Garment Template') }}
-            </div>
-            <div class="template-grid">
-              <VBtn
-                v-for="sil in WORKWEAR_SILHOUETTES"
-                :key="sil.value"
-                block
-                size="small"
-                :variant="modelData.silhouette === sil.value ? 'flat' : 'tonal'"
-                :color="modelData.silhouette === sil.value ? 'primary' : 'secondary'"
-                class="justify-start text-none px-3"
-                :aria-pressed="modelData.silhouette === sil.value"
-                @click="applyTemplateSilhouette(sil.value)"
-              >
-                <VIcon
-                  start
-                  :icon="sil.icon"
-                  size="16"
-                />
-                <span class="text-truncate">{{ sil.title }}</span>
-              </VBtn>
-            </div>
           </div>
 
           <!-- ━━ Colors ━━ -->
@@ -908,6 +999,29 @@ function triggerArtworkUpload() {
             v-else-if="activeTab === 'colors'"
             class="d-flex flex-column gap-5"
           >
+            <VAlert
+              v-if="catalogExtracted.colors.length"
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mb-0"
+            >
+              <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                <span class="text-caption">
+                  {{ $t('Catalog product defines {count} color option(s).', { count: catalogExtracted.colors.length }) }}
+                </span>
+                <VBtn
+                  size="x-small"
+                  color="info"
+                  variant="flat"
+                  prepend-icon="tabler-download"
+                  @click="importColorsFromCatalog"
+                >
+                  {{ $t('Apply Catalog Colors') }}
+                </VBtn>
+              </div>
+            </VAlert>
+
             <div
               v-for="colorSlot in [
                 { key: 'primary', title: $t('Primary Body Color'), model: primaryColor },
@@ -975,6 +1089,29 @@ function triggerArtworkUpload() {
             v-else-if="activeTab === 'sizes'"
             class="d-flex flex-column gap-3"
           >
+            <VAlert
+              v-if="catalogExtracted.sizes.length"
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mb-0"
+            >
+              <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+                <span class="text-caption">
+                  {{ $t('Catalog product defines sizes:') }} <strong>{{ catalogExtracted.sizes.join(', ') }}</strong>
+                </span>
+                <VBtn
+                  size="x-small"
+                  color="info"
+                  variant="flat"
+                  prepend-icon="tabler-download"
+                  @click="importSizesFromCatalog"
+                >
+                  {{ $t('Import Catalog Sizes') }}
+                </VBtn>
+              </div>
+            </VAlert>
+
             <div>
               <div class="text-subtitle-2 font-weight-bold">
                 {{ $t('Approved Manufacturing Size Range') }}
@@ -1044,8 +1181,6 @@ function triggerArtworkUpload() {
 </template>
 
 <style lang="scss" scoped>
-// Space taken by the dialog header + footer when the studio is fullscreen on a phone.
-// Tune this single value if WpZoomDialog's chrome changes.
 $studio-chrome: 152px;
 
 .studio-layout {
@@ -1062,10 +1197,10 @@ $studio-chrome: 152px;
 
 /* ── Canvas ───────────────────────────────────────────────────────────── */
 .studio-canvas-pane {
-  flex: 1 1 58%;
+  flex: 1 1 56%;
   background: rgba(var(--v-theme-background), 0.5);
   min-inline-size: 0;
-  padding: 1.5rem;
+  padding: 1.25rem;
 
   @media (max-width: 960px) {
     flex: 0 0 auto;
@@ -1084,7 +1219,6 @@ $studio-chrome: 152px;
   }
 }
 
-// Phone: pin a smaller drawing above the controls so edits stay visible.
 @media (max-width: 960px) {
   .illustration-viewport :deep(.studio-canvas-wrap) {
     min-block-size: 0;
@@ -1104,12 +1238,12 @@ $studio-chrome: 152px;
 /* ── Controls ─────────────────────────────────────────────────────────── */
 .studio-controls-pane {
   display: flex;
-  flex: 1 1 42%;
+  flex: 1 1 44%;
   flex-direction: column;
   border-inline-start: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   background: rgb(var(--v-theme-surface));
   inline-size: 100%;
-  max-inline-size: 520px;
+  max-inline-size: 560px;
   min-block-size: 0;
 
   @media (max-width: 960px) {
@@ -1130,6 +1264,13 @@ $studio-chrome: 152px;
   @media (max-width: 960px) {
     max-block-size: none;
   }
+}
+
+.zone-bar {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgba(var(--v-theme-on-surface), 0.02);
+  padding: 0.75rem;
 }
 
 .inspector {

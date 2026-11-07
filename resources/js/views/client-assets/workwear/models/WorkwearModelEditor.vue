@@ -3,22 +3,24 @@
 /**
  * WorkwearModelEditor
  * ─────────────────────────────────────────────────────────────────────────────
- * Journal-style editor for Workwear Models.
- * Structure follows the Catalog Item Edit page: 240px sticky sidebar,
- * AppBreadcrumb, AppBottomNav, VFab + AppQuickActionsSheet,
- * WpDeleteDialog, WpUnsavedChangesDialog and useUnsavedChangesGuard.
+ * Journal-style editor for Workwear Models aligned with Client Site & Equipment
+ * edit pages: WpJournalNav (desktop sticky sidebar + mobile bottom nav),
+ * top WpKpiGroup, mobile-first layout, and clean scroll behavior.
  */
 import {
-  AppBottomNav,
+  AppBreadcrumb,
   AppQuickActionsSheet,
   WpDeleteDialog,
   WpDocumentDialog,
+  WpErrorBanner,
   WpImageDialog,
+  WpKpiCard,
+  WpKpiGroup,
   WpMediaViewerDialog,
   WpUnsavedChangesDialog,
 } from '@/components/shared'
-import AppBreadcrumb from '@/components/shared/AppBreadcrumb.vue'
 import { useWorkwearModelEdit } from '@/composables/client-assets/workwear/useWorkwearModelEdit'
+import { resolveSilhouetteDisplay } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import { useUnsavedChangesGuard } from '@/composables/dialog/useUnsavedChangesGuard'
 import WorkwearModelBioSection from '@/views/client-assets/workwear/models/components/WorkwearModelBioSection.vue'
 import WorkwearModelGarmentsSection from '@/views/client-assets/workwear/models/components/WorkwearModelGarmentsSection.vue'
@@ -30,7 +32,7 @@ import WorkwearModelOptionsSection from '@/views/client-assets/workwear/models/c
 import WorkwearModelStudioSection from '@/views/client-assets/workwear/models/components/WorkwearModelStudioSection.vue'
 import WorkwearModelVersionsSection from '@/views/client-assets/workwear/models/components/WorkwearModelVersionsSection.vue'
 import WorkwearSnapshotDialog from '@/views/client-assets/workwear/models/components/WorkwearSnapshotDialog.vue'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
@@ -39,7 +41,7 @@ const props = defineProps({
   id: { type: [String, Number], default: null },
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const modelId = computed(() => props.id || route.params.id)
@@ -99,62 +101,24 @@ const sections = computed(() => {
   ]
 })
 
-const mobileNavItems = computed(() =>
-  sections.value.map(s => ({
-    title: s.label,
-    icon: s.icon,
-    key: s.id,
-    value: s.id,
-  })),
+const silhouetteSummary = computed(() =>
+  resolveSilhouetteDisplay(modelData.value, { locale: locale.value, t }),
 )
 
 const breadcrumbItems = computed(() => [
-  { title: t('Home'), to: '/dashboard', icon: 'tabler-home' },
+  { title: t('Home'), to: '/', icon: 'tabler-home' },
   { title: t('Client Assets'), to: listRoute, icon: 'tabler-shirt' },
   { title: t('Workwear Models'), to: listRoute, icon: 'tabler-list' },
-  { title: modelData.value?.name || modelData.value?.model_ref || t('Edit Model'), icon: 'tabler-edit' },
+  { title: modelData.value?.name || modelData.value?.model_ref || t('Edit Model'), icon: 'tabler-edit', disabled: true },
 ])
 
 const goBack = () => router.push(listRoute)
 
-/* ── Scroll spy ───────────────────────────────────────────────────────── */
-let observer = null
-let scrollLockUntil = 0
-const visibleSections = new Set()
-
 const scrollToSection = sectionId => {
   activeSection.value = sectionId
 
-  // Smooth scrolling crosses other sections; keep the clicked one active.
-  scrollLockUntil = Date.now() + 800
-
   const el = document.getElementById(`section-${sectionId}`)
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
-const observeSections = () => {
-  observer?.disconnect()
-  visibleSections.clear()
-
-  observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      const key = entry.target.id.replace('section-', '')
-
-      if (entry.isIntersecting) visibleSections.add(key)
-      else visibleSections.delete(key)
-    })
-
-    if (Date.now() < scrollLockUntil) return
-
-    // Topmost visible section wins, in page order.
-    const first = sections.value.find(s => visibleSections.has(s.id))
-    if (first) activeSection.value = first.id
-  }, { threshold: 0.2, rootMargin: '-80px 0px -50% 0px' })
-
-  sections.value.forEach(s => {
-    const el = document.getElementById(`section-${s.id}`)
-    if (el) observer.observe(el)
-  })
 }
 
 /* ── Media (logos / design files) ─────────────────────────────────────── */
@@ -198,7 +162,7 @@ const quickActions = computed(() => [
     id: 'save-model',
     title: t('Save Changes'),
     icon: 'tabler-device-floppy',
-    color: 'primary',
+    color: 'success',
     disabled: saving.value || !isDirty.value,
     onClick: handleUpdate,
   },
@@ -248,16 +212,11 @@ const onSaveShortcut = event => {
 
 onMounted(async () => {
   window.addEventListener('keydown', onSaveShortcut)
-
   await fetchModel()
-  await nextTick()
-  observeSections()
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onSaveShortcut)
-  observer?.disconnect()
-  observer = null
 })
 </script>
 
@@ -276,39 +235,25 @@ onBeforeUnmount(() => {
     />
 
     <!-- Error -->
-    <VAlert
+    <WpErrorBanner
       v-else-if="error"
-      type="error"
-      variant="tonal"
-      class="mb-6"
-    >
-      <div class="d-flex flex-wrap align-center justify-space-between gap-3">
-        <span>{{ error }}</span>
-        <VBtn
-          size="small"
-          variant="tonal"
-          color="error"
-          prepend-icon="tabler-refresh"
-          @click="fetchModel"
-        >
-          {{ $t('Retry') }}
-        </VBtn>
-      </div>
-    </VAlert>
+      :error="error"
+      @retry="fetchModel"
+    />
 
     <!-- Journal -->
     <div
       v-else-if="modelData"
       class="journal-layout"
     >
+      <!-- Desktop Sticky Sidebar + Mobile Bottom Nav via WpJournalNav -->
       <WorkwearModelNavSidebar
-        v-if="!smAndDown"
+        v-model="activeSection"
         :model-data="modelData"
         :sections="sections"
         :active-section="activeSection"
         :saving="saving"
         :is-dirty="isDirty"
-        @navigate="scrollToSection"
         @save="handleUpdate"
         @create-snapshot="isVersionDialogOpen = true"
         @back="goBack"
@@ -316,40 +261,54 @@ onBeforeUnmount(() => {
       />
 
       <main class="journal-feed">
-        <!-- Mobile identity bar -->
-        <div
-          v-if="smAndDown"
-          class="d-flex align-center gap-3 min-w-0 w-100"
+        <!-- Top KPI Cards (Standard across Client Assets Edit Pages) -->
+        <WpKpiGroup
+          :cols="{ xs: 2, sm: 2, md: 4, lg: 4 }"
+          class="workwear-top-kpis"
         >
-          <VAvatar
-            rounded
-            :size="40"
-            color="primary"
-            variant="tonal"
-            class="flex-shrink-0"
-          >
-            <VIcon
-              icon="tabler-shirt"
-              size="22"
-            />
-          </VAvatar>
-          <div class="min-w-0 flex-grow-1">
-            <h1 class="text-subtitle-1 font-weight-bold text-truncate mb-0">
-              {{ modelData.name || modelData.model_ref }}
-            </h1>
-            <span class="text-caption font-mono text-disabled d-block text-truncate">{{ modelData.model_ref }}</span>
-          </div>
-          <VChip
-            v-if="isDirty"
-            size="small"
-            color="warning"
-            variant="tonal"
-            class="flex-shrink-0"
-            role="status"
-          >
-            {{ $t('Unsaved changes') }}
-          </VChip>
-        </div>
+          <template #default="{ getColProps }">
+            <VCol v-bind="getColProps(0)">
+              <WpKpiCard
+                :title="$t('2D Silhouette')"
+                :value="silhouetteSummary.shortTitle || silhouetteSummary.itemTitle"
+                icon="tabler-shirt"
+                icon-color="primary"
+                clickable
+                @click="scrollToSection('studio')"
+              />
+            </VCol>
+            <VCol v-bind="getColProps(1)">
+              <WpKpiCard
+                :title="$t('Custom Placements')"
+                :value="countOf(modelData.placements)"
+                icon="tabler-vector-bezier-2"
+                icon-color="info"
+                clickable
+                @click="scrollToSection('studio')"
+              />
+            </VCol>
+            <VCol v-bind="getColProps(2)">
+              <WpKpiCard
+                :title="$t('PPE Standards')"
+                :value="countOf(modelData.standards)"
+                icon="tabler-shield-check"
+                icon-color="success"
+                clickable
+                @click="scrollToSection('garments')"
+              />
+            </VCol>
+            <VCol v-bind="getColProps(3)">
+              <WpKpiCard
+                :title="$t('Physical Items')"
+                :value="items.length"
+                icon="tabler-hanger"
+                icon-color="warning"
+                clickable
+                @click="scrollToSection('items')"
+              />
+            </VCol>
+          </template>
+        </WpKpiGroup>
 
         <WorkwearModelBioSection
           :model-data="modelData"
@@ -395,26 +354,22 @@ onBeforeUnmount(() => {
       </main>
     </div>
 
-    <!-- Mobile navigation + quick actions -->
-    <AppBottomNav
-      v-if="smAndDown && !loading && modelData"
-      v-model="activeSection"
-      :items="mobileNavItems"
-      fit-content
-      :show-badges="false"
-      @change="item => scrollToSection(item.value)"
-    />
-
-    <VFab
+    <!-- Mobile Quick Actions Floating Launcher & Sheet -->
+    <div
       v-if="smAndDown && !loading && modelData"
       class="workwear-edit-quick-actions-launcher"
-      color="primary"
-      icon="tabler-bolt"
-      rounded="lg"
-      size="large"
-      :aria-label="$t('Quick Actions')"
-      @click="quickActionsSheetOpen = true"
-    />
+    >
+      <VFab
+        color="primary"
+        icon="tabler-bolt"
+        rounded="lg"
+        size="default"
+        class="elevation-3"
+        :aria-label="$t('Quick Actions')"
+        @click="quickActionsSheetOpen = true"
+      />
+    </div>
+
     <AppQuickActionsSheet
       v-model="quickActionsSheetOpen"
       :title="$t('Quick Actions')"
@@ -465,17 +420,21 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
+.workwear-edit-page {
+  min-block-size: 100vh;
+  overflow-x: clip;
+  padding-block-end: 2rem;
+}
+
 .journal-layout {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   gap: 1.5rem;
-  min-block-size: 100vh;
 
-  @media (max-width: 960px) {
+  @media (max-width: 959px) {
     flex-direction: column;
-    // room for the bottom nav and the FAB
-    padding-block-end: calc(96px + env(safe-area-inset-bottom, 0px));
+    padding-block-end: calc(108px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -483,20 +442,20 @@ onBeforeUnmount(() => {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   inline-size: 100%;
   min-inline-size: 0;
-  padding-block-end: 2rem;
-
-  @media (max-width: 600px) {
-    gap: 1rem;
-  }
+  padding-block-end: 3.5rem;
 }
 
 .workwear-edit-quick-actions-launcher {
-  position: fixed;
+  position: fixed !important;
   z-index: 1001;
-  inset-block-end: calc(76px + env(safe-area-inset-bottom, 0px));
-  inset-inline-end: 20px;
+  inset-block-end: calc(84px + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: 16px;
+
+  :deep(.v-fab) {
+    margin: 0 !important;
+  }
 }
 </style>

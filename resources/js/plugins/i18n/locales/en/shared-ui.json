@@ -222,6 +222,165 @@
     "viewer": {
       "image_failed": "This image could not be loaded. It may have been moved or you may be offline.",
       "items": "Items"
+    },
+    "documents": {
+      "actions": {
+        "save_success": "Saved successfully",
+        "save_error": "Could not save",
+        "submit_success": "Submitted successfully",
+        "submit_error": "Could not submit",
+        "approve_success": "Approved successfully",
+        "approve_error": "Could not approve",
+        "reject_success": "Rejected successfully",
+        "reject_error": "Could not reject",
+        "convert_success": "Converted successfully",
+        "convert_error": "Could not convert",
+        "print_success": "Sent to printer",
+        "print_error": "Could not print",
+        "pdf_success": "PDF generated",
+        "pdf_error": "Could not generate the PDF",
+        "email_success": "Email sent",
+        "email_error": "Could not send the email",
+        "duplicate_success": "Document duplicated",
+        "duplicate_error": "Could not duplicate",
+        "delete_success": "Deleted successfully",
+        "delete_error": "Could not delete"
+      },
+      "lines": {
+        "errors": {
+          "qty_positive": "Quantity must be greater than 0",
+          "price_min": "Price must be 0 or more",
+          "item_required": "Select a catalog item or enter an item name"
+        }
+      }
+    },
+    "docs": {
+      "header": {
+        "copy_reference": "Copy reference",
+        "version": "v{version}",
+        "more_actions": "More actions"
+      },
+      "stepper": {
+        "title": "Document lifecycle",
+        "step_of": "Step {current} of {total}",
+        "state_done": "Completed",
+        "state_current": "Current",
+        "state_pending": "Pending",
+        "state_skipped": "Skipped",
+        "state_rejected": "Rejected",
+        "state_cancelled": "Cancelled"
+      },
+      "picker": {
+        "title": "Select Catalog Items",
+        "search_placeholder": "Search by name, SKU, or barcode...",
+        "category": "Category",
+        "scan": "Scan",
+        "scan_title": "Scan Item Barcode / QR",
+        "scan_subtitle": "Point the camera at the item barcode or QR code",
+        "scan_not_found": "No item matched code \"{code}\"",
+        "scan_added": "Added {name}",
+        "scan_failed": "Could not look up the scanned code",
+        "error": "Failed to load catalog items",
+        "empty_title": "No catalog items found",
+        "empty_text": "Try adjusting your search or category filter.",
+        "unnamed": "Unnamed Item",
+        "decrease": "Decrease quantity",
+        "increase": "Increase quantity",
+        "quantity": "Quantity",
+        "load_more": "Load more ({count} remaining)",
+        "selected": "{count} selected",
+        "add_selected": "Add Selected ({count})",
+        "select": "Select Item"
+      },
+      "line": {
+        "title_add": "Add Line Item",
+        "title_edit": "Edit Line Item",
+        "save": "Save Line",
+        "item": "Catalog Item / Product",
+        "change_item": "Select",
+        "description": "Description / Specifications",
+        "quantity": "Quantity",
+        "unit": "Unit",
+        "unit_price": "Unit Price (HT)",
+        "discount": "Discount %",
+        "tax_rate": "Tax Rate %",
+        "required_date": "Required Date",
+        "notes": "Line Notes",
+        "line_total": "Computed Line Total",
+        "required": "This field is required",
+        "non_negative": "Must be 0 or greater",
+        "quantity_positive": "Quantity must be greater than 0",
+        "max_percent": "Cannot exceed 100%"
+      },
+      "lines": {
+        "bulk_add": "Bulk Add from Catalog",
+        "scan": "Scan QR / Barcode",
+        "scan_not_found": "No item found for code \"{code}\"",
+        "quantity": "Quantity",
+        "unit_price": "Unit Price",
+        "discount": "Discount",
+        "remove": "Remove line",
+        "decrease": "Decrease quantity",
+        "increase": "Increase quantity",
+        "unit_fallback": "unit(s)"
+      },
+      "totals": {
+        "title": "Financial Summary",
+        "subtotal": "Subtotal (HT)",
+        "discount": "Discount Total",
+        "tax": "Total Tax (VAT)",
+        "tax_rate": "VAT ({rate}%)",
+        "shipping": "Shipping Cost",
+        "additional_costs": "Additional Costs",
+        "stamp_duty": "Stamp Duty",
+        "grand_total": "Grand Total (TTC)",
+        "budget": "Budget Allocation",
+        "budget_used": "{used} / {limit}",
+        "over_budget": "Over budget by {amount}",
+        "remaining": "{amount} remaining"
+      },
+      "terms": {
+        "title": "Commercial Terms & Notes",
+        "payment_terms": "Payment Terms",
+        "incoterms": "Incoterms / Delivery Terms",
+        "currency": "Currency",
+        "expected_delivery_date": "Expected Delivery Date",
+        "supplier_reference": "External Supplier Reference",
+        "supplier_notes": "Supplier-Facing Notes",
+        "supplier_notes_hint": "Visible on the document sent to the supplier",
+        "internal_notes": "Internal Notes",
+        "internal_notes_hint": "For internal team reference only"
+      },
+      "approval": {
+        "title": "Workflow & Approvals",
+        "take_decision": "Review & Decide",
+        "empty": "No approval steps recorded yet.",
+        "dialog_title": "Document Approval Decision",
+        "decision": "Decision",
+        "approved": "Approve",
+        "rejected": "Reject",
+        "revision_requested": "Request Revision",
+        "submit": "Submit Decision",
+        "submit_approved": "Confirm Approval",
+        "submit_rejected": "Confirm Rejection",
+        "submit_revision_requested": "Request Revision",
+        "reason": "Rejection Reason",
+        "reason_required": "A rejection reason is required",
+        "comment": "Approval Note / Comment",
+        "state_pending": "Pending",
+        "state_approved": "Approved",
+        "state_rejected": "Rejected",
+        "state_revision_requested": "Revision Requested",
+        "state_skipped": "Skipped"
+      },
+      "traceability": {
+        "title": "Document Traceability & Audit",
+        "chain_label": "Linked Document Chain",
+        "upstream": "Upstream Documents",
+        "downstream": "Downstream Documents",
+        "timeline": "Activity Timeline",
+        "empty": "No linked documents or activity recorded yet."
+      }
     }
   },
   "documents": {

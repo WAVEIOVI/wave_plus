@@ -323,6 +323,54 @@ class SpatiePermissionAbility {
           return true
         }
       }
+
+      // Supply Chain & Procurement canonical subjects & umbrella
+      const procurementSubjects = ['procurement-iprs', 'procurement-rfqs', 'procurement-pos', 'procurement-grns']
+      if (procurementSubjects.includes(subject)) {
+        if (action === 'read' && (this.permissions.has(`read-${subject}`) || this.permissions.has('read-SupplyChainProcurement'))) {
+          return true
+        }
+        if ((action === 'approve' || action === 'award') && (
+          this.permissions.has(`approve-${subject}`)
+          || this.permissions.has(`award-${subject}`)
+          || this.permissions.has('approve-SupplyChainProcurement')
+        )) {
+          return true
+        }
+      }
+
+      if (subject === 'SupplyChainProcurement') {
+        if (action === 'read' || action === 'write') {
+          return this.permissions.has('read-SupplyChainProcurement')
+            || this.permissions.has('write-SupplyChainProcurement')
+            || this.permissions.has('edit-SupplyChainProcurement')
+            || procurementSubjects.some(s => (
+              this.permissions.has(`read-${s}`)
+              || this.permissions.has(`create-${s}`)
+              || this.permissions.has(`edit-${s}`)
+              || this.permissions.has(`delete-${s}`)
+              || this.permissions.has(`approve-${s}`)
+              || this.permissions.has(`award-${s}`)
+            ))
+        }
+        if (action === 'create') {
+          return this.permissions.has('create-SupplyChainProcurement')
+            || procurementSubjects.some(s => this.permissions.has(`create-${s}`))
+        }
+        if (action === 'update' || action === 'edit') {
+          return this.permissions.has('edit-SupplyChainProcurement')
+            || this.permissions.has('update-SupplyChainProcurement')
+            || procurementSubjects.some(s => this.permissions.has(`edit-${s}`))
+        }
+        if (action === 'delete') {
+          return this.permissions.has('delete-SupplyChainProcurement')
+            || procurementSubjects.some(s => this.permissions.has(`delete-${s}`))
+        }
+        if (action === 'approve' || action === 'award') {
+          return this.permissions.has('approve-SupplyChainProcurement')
+            || procurementSubjects.some(s => this.permissions.has(`approve-${s}`) || this.permissions.has(`award-${s}`))
+        }
+      }
     }
 
     // Fallback: if user has manage: all

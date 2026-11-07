@@ -2,7 +2,6 @@
 /* eslint-disable camelcase */
 import {
   WpActiveFilters,
-  WpBulkActions,
   WpDeleteDialog,
   WpFilterDialog,
   WpMobileCard,
@@ -13,18 +12,21 @@ import {
 import { useWorkwearActions } from '@/composables/client-assets/workwear/useWorkwearActions'
 import { useWorkwearDialogs } from '@/composables/client-assets/workwear/useWorkwearDialogs'
 import { useWorkwearItemList } from '@/composables/client-assets/workwear/useWorkwearItemList'
-import { resolveColorHex } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
+import {
+  resolveColorHex,
+  resolveSilhouetteDisplay,
+} from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import AddNewItemDialog from '@/views/client-assets/workwear/items/list/AddNewItemDialog.vue'
 import AssignWorkwearDialog from '@/views/client-assets/workwear/items/list/AssignWorkwearDialog.vue'
 import BatchCreateItemsDialog from '@/views/client-assets/workwear/items/list/BatchCreateItemsDialog.vue'
 import ReturnWorkwearDialog from '@/views/client-assets/workwear/items/list/ReturnWorkwearDialog.vue'
 import ViewItemDialog from '@/views/client-assets/workwear/items/list/ViewItemDialog.vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const store = useClientAssetStore()
 
@@ -34,12 +36,10 @@ const {
   totalItems,
   loading,
   error,
-  searchQuery,
-  filters,
+  search,
   stagedFilters,
   activeFilters,
   activeFilterCount,
-  setFilter,
   removeFilter,
   resetFilters,
   applyStaged,
@@ -55,8 +55,6 @@ const {
   modelOptions,
   statusMap,
   conditionMap,
-  selectedIds,
-  clearSelection,
   showStockMatrix,
   stockMatrix,
   loadingStockMatrix,
@@ -65,6 +63,20 @@ const {
 } = useWorkwearItemList()
 
 const isFilterDialogOpen = ref(false)
+
+const filterLabels = computed(() => ({
+  client_id: t('Client'),
+  workwear_model_id: t('Workwear Model'),
+  status: t('Status'),
+  item_condition: t('Condition'),
+}))
+
+const filterFormatters = computed(() => ({
+  client_id: val => clientOptions.value.find(c => c.value === val)?.title || val,
+  workwear_model_id: val => modelOptions.value.find(m => m.value === val)?.title || val,
+  status: val => statusOptions.find(s => s.value === val)?.title || val,
+  item_condition: val => conditionOptions.find(c => c.value === val)?.title || val,
+}))
 
 onMounted(() => {
   loadFilterOptions()
@@ -113,11 +125,23 @@ const handleConfirmDelete = async () => {
   }
 }
 
-const handleBulkDelete = async () => {
-  for (const id of selectedIds.value) {
-    await actions.deleteItem(id)
+const resolveItemGarmentType = item => {
+  const model = item.model || item.workwear_model
+  if (model) {
+    return resolveSilhouetteDisplay(model, { locale: locale.value, t }).itemTitle
   }
-  clearSelection()
+
+  return (item.garment_type || '').replace(/_/g, ' ') || '—'
+}
+
+const resolveItemSupplier = item => {
+  return (
+    item.model?.supplier?.legal_name
+    || item.workwear_model?.supplier?.legal_name
+    || item.supplier?.legal_name
+    || item.model?.catalog_item?.preferred_supplier?.legal_name
+    || '—'
+  )
 }
 
 // ── Row Actions Standard Contract ──────────────────────────────────────────
@@ -128,7 +152,7 @@ const getRowActions = item => {
   ]
 
   if (item?.status === 'in_stock' || item?.status === 'available' || item?.status === 'returned') {
-    rowActions.push({ label: t('Assign to Staff'), icon: 'tabler-user-plus', emit: 'assign' })
+    rowActions.push({ label: t('Assign to Employee'), icon: 'tabler-user-plus', emit: 'assign' })
   }
 
   if (item?.status === 'assigned') {
@@ -153,8 +177,8 @@ defineExpose({
 <template>
   <!-- 👉 Toolbar -->
   <WpPageToolbar
-    v-model:search="searchQuery"
-    :search-placeholder="$t('Search items by barcode, serial, size...')"
+    v-model:search="search"
+    :search-placeholder="$t('Search items by item code, size, color...')"
     :create-label="$t('New Item')"
     hide-create-on-mobile
     show-filter
@@ -167,36 +191,6 @@ defineExpose({
     @refresh="refresh"
   >
     <template #prepend>
-      <VAutocomplete
-        :model-value="filters.client_id"
-        :label="$t('Filter by Client')"
-        :items="clientOptions"
-        density="compact"
-        clearable
-        style="inline-size: 195px;"
-        class="me-2"
-        @update:model-value="val => setFilter('client_id', val)"
-      />
-      <VAutocomplete
-        :model-value="filters.workwear_model_id"
-        :label="$t('Filter by Model')"
-        :items="modelOptions"
-        density="compact"
-        clearable
-        style="inline-size: 210px;"
-        class="me-2"
-        @update:model-value="val => setFilter('workwear_model_id', val)"
-      />
-      <VSelect
-        :model-value="filters.status"
-        :label="$t('Filter by Status')"
-        :items="statusOptions"
-        density="compact"
-        clearable
-        style="inline-size: 165px;"
-        class="me-2"
-        @update:model-value="val => setFilter('status', val)"
-      />
       <VBtn
         :color="showStockMatrix ? 'info' : 'secondary'"
         :variant="showStockMatrix ? 'flat' : 'tonal'"
@@ -210,10 +204,10 @@ defineExpose({
         color="primary"
         variant="tonal"
         prepend-icon="tabler-packages"
-        class="me-2 d-none d-sm-inline-flex"
+        class="me-2"
         @click="isBatchCreateDialogOpen = true"
       >
-        {{ $t('Batch Intake') }}
+        {{ $t('Batch Create Items') }}
       </VBtn>
     </template>
 
@@ -221,7 +215,9 @@ defineExpose({
       <WpActiveFilters
         v-if="activeFilters.length"
         :filters="activeFilters"
-        @remove="removeFilter"
+        :labels="filterLabels"
+        :formatters="filterFormatters"
+        @remove="f => removeFilter(f.key || f)"
         @clear-all="resetFilters"
       />
     </template>
@@ -272,7 +268,7 @@ defineExpose({
       >
         <thead>
           <tr>
-            <th>{{ $t('SKU') }}</th>
+            <th>{{ $t('Workwear Model') }}</th>
             <th>{{ $t('Color') }}</th>
             <th>{{ $t('Size') }}</th>
             <th class="text-center">
@@ -291,8 +287,12 @@ defineExpose({
             v-for="(row, idx) in stockMatrix.slice(0, 20)"
             :key="idx"
           >
-            <td class="font-mono text-caption font-weight-bold">
-              {{ row.sku || '—' }}
+            <td>
+              <span class="font-weight-medium">{{ row.model_name || '—' }}</span>
+              <span
+                v-if="row.model_ref"
+                class="text-caption text-disabled font-mono ms-1"
+              >({{ row.model_ref }})</span>
             </td>
             <td class="text-capitalize">
               {{ row.color || '—' }}
@@ -301,6 +301,7 @@ defineExpose({
               <VChip
                 size="x-small"
                 variant="outlined"
+                class="font-mono font-weight-bold"
               >
                 {{ row.size || '—' }}
               </VChip>
@@ -338,34 +339,21 @@ defineExpose({
     </VCard>
   </VExpandTransition>
 
-  <!-- 👉 Bulk Actions Bar -->
-  <div
-    v-if="selectedIds?.length"
-    class="px-4 pb-2"
-  >
-    <WpBulkActions
-      :selected-count="selectedIds?.length || 0"
-      @clear="clearSelection"
-      @delete="handleBulkDelete"
-    />
-  </div>
-
   <!-- 👉 Responsive List -->
   <WpResponsiveList
     v-model:page="page"
     v-model:items-per-page="itemsPerPage"
     v-model:sort-by="sortBy"
-    v-model:selected="selectedIds"
     :headers="headers"
     :items="items"
     :total-items="totalItems"
     :loading="loading"
     :error="error"
-    show-select
+    :show-select="false"
     item-value="id"
     @retry="refresh"
   >
-    <!-- Item Code & SKU column -->
+    <!-- Item Code column -->
     <template #item.item_code="{ item }">
       <div class="d-flex align-center gap-3 py-2">
         <VAvatar
@@ -392,8 +380,8 @@ defineExpose({
           >
             {{ item.item_code }}
           </span>
-          <span class="text-caption text-disabled font-mono">
-            {{ item.sku ? `SKU: ${item.sku}` : (item.serial_number ? `S/N: ${item.serial_number}` : $t('Standard Variant')) }}
+          <span class="text-caption text-disabled">
+            {{ item.model?.model_ref || item.workwear_model?.model_ref || $t('Serialized Item') }}
           </span>
         </div>
       </div>
@@ -411,24 +399,22 @@ defineExpose({
       </div>
     </template>
 
-    <!-- Variant (Color / Size / Garment Type) column -->
+    <!-- Variant (Garment Type / Size / Color) column -->
     <template #item.size="{ item }">
       <div class="d-flex align-center flex-wrap gap-1">
-        <span
-          v-if="item.color"
-          class="d-inline-block rounded-circle border me-1"
-          :style="{
-            inlineSize: '12px',
-            blockSize: '12px',
-            backgroundColor: resolveColorHex(item.color),
-          }"
-          :title="item.color"
-        />
+        <VChip
+          size="x-small"
+          variant="tonal"
+          color="primary"
+          class="text-capitalize"
+        >
+          {{ resolveItemGarmentType(item) }}
+        </VChip>
         <VChip
           v-if="item.size"
           size="x-small"
           variant="outlined"
-          class="font-weight-bold"
+          class="font-weight-bold font-mono"
         >
           {{ item.size }}
         </VChip>
@@ -438,31 +424,27 @@ defineExpose({
           variant="tonal"
           class="text-capitalize"
         >
+          <span
+            class="d-inline-block rounded-circle border me-1"
+            :style="{
+              inlineSize: '10px',
+              blockSize: '10px',
+              backgroundColor: resolveColorHex(item.color),
+            }"
+          />
           {{ item.color }}
-        </VChip>
-        <VChip
-          v-if="item.garment_type"
-          size="x-small"
-          variant="tonal"
-          color="secondary"
-          class="text-capitalize"
-        >
-          {{ item.garment_type.replace(/_/g, ' ') }}
         </VChip>
       </div>
     </template>
 
-    <!-- Supplier / Cost column -->
+    <!-- Supplier / Manufacturer (Inherited from Workwear Model) -->
     <template #item.supplier="{ item }">
       <div class="d-flex flex-column">
-        <span class="text-body-2">
-          {{ item.supplier?.legal_name || item.model?.supplier?.legal_name || '—' }}
+        <span class="text-body-2 font-weight-medium">
+          {{ resolveItemSupplier(item) }}
         </span>
-        <span
-          v-if="item.unit_cost !== null && item.unit_cost !== undefined"
-          class="text-caption text-medium-emphasis font-mono"
-        >
-          {{ Number(item.unit_cost).toFixed(3) }} TND
+        <span class="text-caption text-disabled">
+          {{ $t('From Model') }}
         </span>
       </div>
     </template>
@@ -475,7 +457,7 @@ defineExpose({
         label
         class="text-capitalize font-weight-medium"
       >
-        {{ (item.status || 'draft').replace(/_/g, ' ') }}
+        {{ (item.status || 'in_stock').replace(/_/g, ' ') }}
       </VChip>
     </template>
 
@@ -487,15 +469,25 @@ defineExpose({
         variant="tonal"
         class="text-capitalize"
       >
-        {{ item.item_condition || 'good' }}
+        {{ item.item_condition || 'new' }}
       </VChip>
     </template>
 
-    <!-- Assigned Staff column -->
+    <!-- Assigned Employee column -->
     <template #item.current_assignment="{ item }">
-      <span v-if="item.assigned_to_employee || item.current_assignment?.employee">
-        {{ item.assigned_to_employee?.full_name || item.current_assignment?.employee?.full_name }}
-      </span>
+      <div
+        v-if="item.assigned_to_employee || item.current_assignment?.employee"
+        class="d-flex align-center gap-2"
+      >
+        <VIcon
+          icon="tabler-user-check"
+          size="16"
+          color="info"
+        />
+        <span class="font-weight-medium">
+          {{ item.assigned_to_employee?.full_name || item.current_assignment?.employee?.full_name }}
+        </span>
+      </div>
       <span
         v-else
         class="text-medium-emphasis"
@@ -521,17 +513,25 @@ defineExpose({
     <template #mobile-card="{ item }">
       <WpMobileCard
         :title="item.item_code"
-        :subtitle="item.sku || item.model?.name || $t('Workwear Item')"
+        :subtitle="item.model?.name || item.workwear_model?.name || $t('Workwear Item')"
         icon="tabler-hanger"
-        :status="(item.status || 'draft').replace(/_/g, ' ')"
+        :status="(item.status || 'in_stock').replace(/_/g, ' ')"
         :status-color="statusMap[item.status] || 'secondary'"
         @click="handleView(item)"
       >
         <template #badges>
           <VChip
+            size="x-small"
+            color="primary"
+            variant="tonal"
+          >
+            {{ resolveItemGarmentType(item) }}
+          </VChip>
+          <VChip
             v-if="item.size"
             size="x-small"
             variant="outlined"
+            class="font-mono"
           >
             {{ item.size }}
           </VChip>
@@ -554,6 +554,14 @@ defineExpose({
                 class="me-1"
               />
               {{ item.client?.legal_name || item.model?.client?.legal_name }}
+            </div>
+            <div v-if="resolveItemSupplier(item) !== '—'">
+              <VIcon
+                icon="tabler-building-factory-2"
+                size="14"
+                class="me-1"
+              />
+              {{ resolveItemSupplier(item) }}
             </div>
             <div v-if="item.assigned_to_employee || item.current_assignment?.employee">
               <VIcon
@@ -606,7 +614,7 @@ defineExpose({
       >
         <VAutocomplete
           v-model="stagedFilters.workwear_model_id"
-          :label="$t('Model')"
+          :label="$t('Workwear Model')"
           :items="modelOptions"
           clearable
         />

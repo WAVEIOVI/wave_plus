@@ -139,6 +139,165 @@
         "tax_total": "Total TVA",
         "grand_total": "Total TTC"
       }
+    },
+    "documents": {
+      "actions": {
+        "save_success": "Enregistré avec succès",
+        "save_error": "Échec de l'enregistrement",
+        "submit_success": "Soumis avec succès",
+        "submit_error": "Échec de la soumission",
+        "approve_success": "Approuvé avec succès",
+        "approve_error": "Échec de l'approbation",
+        "reject_success": "Rejeté avec succès",
+        "reject_error": "Échec du rejet",
+        "convert_success": "Converti avec succès",
+        "convert_error": "Échec de la conversion",
+        "print_success": "Envoyé à l'impression",
+        "print_error": "Échec de l'impression",
+        "pdf_success": "PDF généré",
+        "pdf_error": "Échec de la génération du PDF",
+        "email_success": "E-mail envoyé",
+        "email_error": "Échec de l'envoi de l'e-mail",
+        "duplicate_success": "Document dupliqué",
+        "duplicate_error": "Échec de la duplication",
+        "delete_success": "Supprimé avec succès",
+        "delete_error": "Échec de la suppression"
+      },
+      "lines": {
+        "errors": {
+          "qty_positive": "La quantité doit être supérieure à 0",
+          "price_min": "Le prix doit être supérieur ou égal à 0",
+          "item_required": "Sélectionnez un article du catalogue ou saisissez un nom"
+        }
+      }
+    },
+    "docs": {
+      "header": {
+        "copy_reference": "Copier la référence",
+        "version": "v{version}",
+        "more_actions": "Plus d'actions"
+      },
+      "stepper": {
+        "title": "Cycle de vie du document",
+        "step_of": "Étape {current} sur {total}",
+        "state_done": "Terminé",
+        "state_current": "En cours",
+        "state_pending": "En attente",
+        "state_skipped": "Ignoré",
+        "state_rejected": "Rejeté",
+        "state_cancelled": "Annulé"
+      },
+      "picker": {
+        "title": "Sélectionner des articles du catalogue",
+        "search_placeholder": "Rechercher par nom, SKU ou code-barres...",
+        "category": "Catégorie",
+        "scan": "Scanner",
+        "scan_title": "Scanner code-barres / QR",
+        "scan_subtitle": "Dirigez la caméra vers le code-barres ou QR de l'article",
+        "scan_not_found": "Aucun article trouvé pour le code « {code} »",
+        "scan_added": "{name} ajouté",
+        "scan_failed": "Impossible de rechercher le code scanné",
+        "error": "Échec du chargement des articles du catalogue",
+        "empty_title": "Aucun article trouvé",
+        "empty_text": "Essayez d'ajuster votre recherche ou le filtre de catégorie.",
+        "unnamed": "Article sans nom",
+        "decrease": "Diminuer la quantité",
+        "increase": "Augmenter la quantité",
+        "quantity": "Quantité",
+        "load_more": "Charger plus ({count} restant(s))",
+        "selected": "{count} sélectionné(s)",
+        "add_selected": "Ajouter la sélection ({count})",
+        "select": "Sélectionner l'article"
+      },
+      "line": {
+        "title_add": "Ajouter une ligne",
+        "title_edit": "Modifier la ligne",
+        "save": "Enregistrer la ligne",
+        "item": "Article / Produit du catalogue",
+        "change_item": "Choisir",
+        "description": "Description / Spécifications",
+        "quantity": "Quantité",
+        "unit": "Unité",
+        "unit_price": "Prix unitaire (HT)",
+        "discount": "Remise %",
+        "tax_rate": "Taux TVA %",
+        "required_date": "Date souhaitée",
+        "notes": "Notes de ligne",
+        "line_total": "Total ligne calculé",
+        "required": "Ce champ est obligatoire",
+        "non_negative": "Doit être supérieur ou égal à 0",
+        "quantity_positive": "La quantité doit être supérieure à 0",
+        "max_percent": "Ne peut pas dépasser 100%"
+      },
+      "lines": {
+        "bulk_add": "Ajout groupé depuis le catalogue",
+        "scan": "Scanner QR / Code-barres",
+        "scan_not_found": "Aucun article trouvé pour le code « {code} »",
+        "quantity": "Quantité",
+        "unit_price": "Prix unitaire",
+        "discount": "Remise",
+        "remove": "Supprimer la ligne",
+        "decrease": "Diminuer la quantité",
+        "increase": "Augmenter la quantité",
+        "unit_fallback": "unité(s)"
+      },
+      "totals": {
+        "title": "Récapitulatif financier",
+        "subtotal": "Sous-total (HT)",
+        "discount": "Total remises",
+        "tax": "Total TVA",
+        "tax_rate": "TVA ({rate}%)",
+        "shipping": "Frais de livraison",
+        "additional_costs": "Frais additionnels",
+        "stamp_duty": "Droit de timbre",
+        "grand_total": "Total général (TTC)",
+        "budget": "Allocation budgétaire",
+        "budget_used": "{used} / {limit}",
+        "over_budget": "Dépassement de budget de {amount}",
+        "remaining": "{amount} restant"
+      },
+      "terms": {
+        "title": "Conditions commerciales & Notes",
+        "payment_terms": "Conditions de paiement",
+        "incoterms": "Incoterms / Conditions de livraison",
+        "currency": "Devise",
+        "expected_delivery_date": "Date de livraison prévue",
+        "supplier_reference": "Référence externe fournisseur",
+        "supplier_notes": "Notes destinées au fournisseur",
+        "supplier_notes_hint": "Visible sur le document envoyé au fournisseur",
+        "internal_notes": "Notes internes",
+        "internal_notes_hint": "Pour référence interne uniquement"
+      },
+      "approval": {
+        "title": "Workflow & Approbations",
+        "take_decision": "Examiner & Décider",
+        "empty": "Aucune étape d'approbation enregistrée.",
+        "dialog_title": "Décision d'approbation",
+        "decision": "Décision",
+        "approved": "Approuver",
+        "rejected": "Rejeter",
+        "revision_requested": "Demander une révision",
+        "submit": "Soumettre la décision",
+        "submit_approved": "Confirmer l'approbation",
+        "submit_rejected": "Confirmer le rejet",
+        "submit_revision_requested": "Demander une révision",
+        "reason": "Motif du rejet",
+        "reason_required": "Le motif du rejet est obligatoire",
+        "comment": "Note / Commentaire d'approbation",
+        "state_pending": "En attente",
+        "state_approved": "Approuvé",
+        "state_rejected": "Rejeté",
+        "state_revision_requested": "Révision demandée",
+        "state_skipped": "Ignoré"
+      },
+      "traceability": {
+        "title": "Traçabilité & Audit du document",
+        "chain_label": "Chaîne de documents liés",
+        "upstream": "Documents amont",
+        "downstream": "Documents aval",
+        "timeline": "Journal d'activité",
+        "empty": "Aucun document lié ou activité enregistrée."
+      }
     }
   }
 }

@@ -26,7 +26,27 @@ class GoodsReceiptNoteController extends Controller
     {
         $this->authorize('viewAny', GoodsReceiptNote::class);
 
-        $query = GoodsReceiptNote::with(['supplier', 'purchaseOrder']);
+        $query = GoodsReceiptNote::with(['supplier', 'purchaseOrder', 'lines']);
+
+        if ($q = $request->input('q')) {
+            $query->where(function ($qb) use ($q) {
+                $qb->where('reference', 'like', "%{$q}%")
+                    ->orWhere('supplier_delivery_note_ref', 'like', "%{$q}%");
+            });
+        }
+
+        if ($status = $request->input('filter.status')) {
+            $query->whereIn('status', explode(',', $status));
+        }
+
+        if ($supplierId = $request->input('filter.supplier_id')) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        if ($poId = $request->input('filter.po_id')) {
+            $query->where('po_id', $poId);
+        }
+
         $perPage = $this->queryService->cappedPerPage($request);
 
         return GoodsReceiptNoteResource::collection($query->latest()->paginate($perPage));

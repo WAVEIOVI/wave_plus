@@ -41,6 +41,74 @@ final class WorkwearStudioTemplateCatalog
      */
     public static function all(): array
     {
+        $poloTemplate = [
+            'silhouette' => 'polo',
+            'label' => 'Polo Shirt',
+            'view_box' => ['width' => self::VIEWBOX_WIDTH, 'height' => self::VIEWBOX_HEIGHT],
+            'garment_bounds' => ['x' => 56, 'y' => 44, 'width' => 208, 'height' => 208],
+            'scale' => [
+                'units_per_mm' => 0.28,
+                'reference_width_mm' => 520,
+                'reference_height_mm' => 720,
+                'scale_mode' => 'proportional_template',
+                'scale_verified' => false,
+            ],
+            'color_regions' => [
+                ['key' => 'body', 'label' => 'Main Torso & Sleeves', 'role' => 'primary', 'slot' => 0],
+                ['key' => 'shoulder_panels', 'label' => 'Contrast Shoulder Panels', 'role' => 'contrast', 'slot' => 1],
+                ['key' => 'collar_placket', 'label' => 'Ribbed Collar & Button Placket', 'role' => 'primary', 'slot' => 0],
+                ['key' => 'cuff_trim', 'label' => 'Sleeve Cuff Trim', 'role' => 'contrast', 'slot' => 1],
+            ],
+            'zones' => [
+                'chest_left' => self::zone('chest_left', 'Chest Left (Heart / Logo)', ['front'], 190, 122, [158, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
+                'chest_right' => self::zone('chest_right', 'Chest Right (Name / Badge)', ['front'], 130, 122, [104, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
+                'chest_center' => self::zone('chest_center', 'Chest Center (Below Placket)', ['front'], 160, 148, [104, 108, 112, 84], [15, 360, 10, 220], [125, 95]),
+                'pocket_left' => self::zone('pocket_left', 'Left Breast Pocket', ['front'], 190, 140, [158, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
+                'pocket_right' => self::zone('pocket_right', 'Right Breast Pocket', ['front'], 130, 140, [104, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
+                'shoulder_left' => self::zone('shoulder_left', 'Left Shoulder Panel', ['front', 'back'], 204, 82, [168, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
+                'shoulder_right' => self::zone('shoulder_right', 'Right Shoulder Panel', ['front', 'back'], 116, 82, [86, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
+                'collar' => self::zone('collar', 'Collar / Nape', ['front', 'back'], 160, 58, [118, 42, 84, 42], [15, 200, 10, 100], [75, 45]),
+                'sleeve_left' => self::zone('sleeve_left', 'Left Sleeve', ['front', 'back'], 238, 118, [210, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
+                'sleeve_right' => self::zone('sleeve_right', 'Right Sleeve', ['front', 'back'], 82, 118, [54, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
+                'waist' => self::zone('waist', 'Mid Torso / Waist', ['front', 'back'], 160, 198, [104, 164, 112, 66], [15, 360, 10, 180], [125, 75]),
+                'hem' => self::zone('hem', 'Shirt Bottom Hem', ['front', 'back'], 160, 232, [104, 200, 112, 54], [15, 360, 10, 140], [125, 60]),
+                'back_upper' => self::zone('back_upper', 'Upper Back (Shoulder Yoke)', ['back'], 160, 112, [104, 70, 112, 84], [15, 360, 10, 220], [125, 95]),
+                'back_center' => self::zone('back_center', 'Center Back', ['back'], 160, 158, [104, 114, 112, 88], [15, 360, 10, 240], [125, 100]),
+                'back_lower' => self::zone('back_lower', 'Lower Back', ['back'], 160, 208, [104, 168, 112, 80], [15, 360, 10, 200], [125, 85]),
+            ],
+        ];
+
+        $trousersTemplate = [
+            'silhouette' => 'trousers',
+            'label' => 'Work / Cargo Trousers',
+            'view_box' => ['width' => self::VIEWBOX_WIDTH, 'height' => self::VIEWBOX_HEIGHT],
+            'garment_bounds' => ['x' => 94, 'y' => 78, 'width' => 132, 'height' => 304],
+            'scale' => [
+                'units_per_mm' => 0.28,
+                'reference_width_mm' => 480,
+                'reference_height_mm' => 1060,
+                'scale_mode' => 'proportional_template',
+                'scale_verified' => false,
+            ],
+            'color_regions' => [
+                ['key' => 'main_fabric', 'label' => 'Main Legs & Waistband', 'role' => 'primary', 'slot' => 0],
+                ['key' => 'cargo_accents', 'label' => 'Contrast Cargo & Hip Gussets', 'role' => 'contrast', 'slot' => 1],
+                ['key' => 'knee_reinforcements', 'label' => 'Knee Pad Reinforcements', 'role' => 'primary', 'slot' => 0],
+                ['key' => 'reflective_bands', 'label' => 'Ankle Reflective Bands', 'role' => 'reflective', 'slot' => null, 'default_color' => 'silver'],
+            ],
+            'zones' => [
+                'waist' => self::zone('waist', 'Waistband / Belt Line', ['front', 'back'], 160, 90, [102, 74, 116, 48], [15, 380, 10, 120], [130, 50]),
+                'pocket_left' => self::zone('pocket_left', 'Left Hip / Holster Pocket', ['front', 'back'], 192, 136, [158, 98, 62, 78], [15, 190, 10, 200], [70, 80]),
+                'pocket_right' => self::zone('pocket_right', 'Right Hip / Holster Pocket', ['front', 'back'], 128, 136, [100, 98, 62, 78], [15, 190, 10, 200], [70, 80]),
+                'back_lower' => self::zone('back_lower', 'Rear Yoke / Seat Panel', ['back'], 160, 128, [102, 94, 116, 72], [15, 360, 10, 180], [125, 75]),
+                'thigh_left' => self::zone('thigh_left', 'Left Thigh / Cargo Pocket', ['front', 'back'], 198, 242, [164, 184, 62, 104], [15, 190, 10, 260], [70, 110]),
+                'thigh_right' => self::zone('thigh_right', 'Right Thigh / Cargo Pocket', ['front', 'back'], 122, 242, [94, 184, 62, 104], [15, 190, 10, 260], [70, 110]),
+                'knee_left' => self::zone('knee_left', 'Left Knee Pad Panel', ['front', 'back'], 198, 314, [166, 276, 60, 80], [15, 180, 10, 200], [65, 85]),
+                'knee_right' => self::zone('knee_right', 'Right Knee Pad Panel', ['front', 'back'], 122, 314, [94, 276, 60, 80], [15, 180, 10, 200], [65, 85]),
+                'hem' => self::zone('hem', 'Lower Leg / Ankle Cuff', ['front', 'back'], 160, 354, [94, 326, 132, 58], [15, 420, 10, 160], [140, 65]),
+            ],
+        ];
+
         return [
             'coverall' => [
                 'silhouette' => 'coverall',
@@ -86,6 +154,8 @@ final class WorkwearStudioTemplateCatalog
 
             'jacket' => self::jacketOrParkaTemplate('jacket', 'Work Jacket / Softshell', false),
             'parka' => self::jacketOrParkaTemplate('parka', 'Weatherproof Parka', true),
+            'sweatshirt' => self::jacketOrParkaTemplate('sweatshirt', 'Work Sweatshirt / Hoodie / Fleece', false),
+            'lab_coat' => self::jacketOrParkaTemplate('lab_coat', 'Lab Coat / Hygiene Smock / Tunic', true),
 
             'vest' => [
                 'silhouette' => 'vest',
@@ -121,73 +191,32 @@ final class WorkwearStudioTemplateCatalog
                 ],
             ],
 
-            'trousers' => [
-                'silhouette' => 'trousers',
-                'label' => 'Work / Cargo Trousers',
-                'view_box' => ['width' => self::VIEWBOX_WIDTH, 'height' => self::VIEWBOX_HEIGHT],
-                'garment_bounds' => ['x' => 94, 'y' => 78, 'width' => 132, 'height' => 304],
-                'scale' => [
-                    'units_per_mm' => 0.28,
-                    'reference_width_mm' => 480,
-                    'reference_height_mm' => 1060,
-                    'scale_mode' => 'proportional_template',
-                    'scale_verified' => false,
-                ],
-                'color_regions' => [
-                    ['key' => 'main_fabric', 'label' => 'Main Legs & Waistband', 'role' => 'primary', 'slot' => 0],
-                    ['key' => 'cargo_accents', 'label' => 'Contrast Cargo & Hip Gussets', 'role' => 'contrast', 'slot' => 1],
-                    ['key' => 'knee_reinforcements', 'label' => 'Knee Pad Reinforcements', 'role' => 'primary', 'slot' => 0],
-                    ['key' => 'reflective_bands', 'label' => 'Ankle Reflective Bands', 'role' => 'reflective', 'slot' => null, 'default_color' => 'silver'],
-                ],
+            'trousers' => $trousersTemplate,
+            'shorts' => array_merge($trousersTemplate, [
+                'silhouette' => 'shorts',
+                'label' => 'Work Shorts / Cargo Bermuda',
+                'garment_bounds' => ['x' => 94, 'y' => 78, 'width' => 132, 'height' => 190],
                 'zones' => [
                     'waist' => self::zone('waist', 'Waistband / Belt Line', ['front', 'back'], 160, 90, [102, 74, 116, 48], [15, 380, 10, 120], [130, 50]),
                     'pocket_left' => self::zone('pocket_left', 'Left Hip / Holster Pocket', ['front', 'back'], 192, 136, [158, 98, 62, 78], [15, 190, 10, 200], [70, 80]),
                     'pocket_right' => self::zone('pocket_right', 'Right Hip / Holster Pocket', ['front', 'back'], 128, 136, [100, 98, 62, 78], [15, 190, 10, 200], [70, 80]),
                     'back_lower' => self::zone('back_lower', 'Rear Yoke / Seat Panel', ['back'], 160, 128, [102, 94, 116, 72], [15, 360, 10, 180], [125, 75]),
-                    'thigh_left' => self::zone('thigh_left', 'Left Thigh / Cargo Pocket', ['front', 'back'], 198, 242, [164, 184, 62, 104], [15, 190, 10, 260], [70, 110]),
-                    'thigh_right' => self::zone('thigh_right', 'Right Thigh / Cargo Pocket', ['front', 'back'], 122, 242, [94, 184, 62, 104], [15, 190, 10, 260], [70, 110]),
-                    'knee_left' => self::zone('knee_left', 'Left Knee Pad Panel', ['front', 'back'], 198, 314, [166, 276, 60, 80], [15, 180, 10, 200], [65, 85]),
-                    'knee_right' => self::zone('knee_right', 'Right Knee Pad Panel', ['front', 'back'], 122, 314, [94, 276, 60, 80], [15, 180, 10, 200], [65, 85]),
-                    'hem' => self::zone('hem', 'Lower Leg / Ankle Cuff', ['front', 'back'], 160, 354, [94, 326, 132, 58], [15, 420, 10, 160], [140, 65]),
+                    'thigh_left' => self::zone('thigh_left', 'Left Thigh / Cargo Pocket', ['front', 'back'], 196, 212, [162, 170, 62, 86], [15, 190, 10, 220], [70, 90]),
+                    'thigh_right' => self::zone('thigh_right', 'Right Thigh / Cargo Pocket', ['front', 'back'], 124, 212, [96, 170, 62, 86], [15, 190, 10, 220], [70, 90]),
+                    'hem' => self::zone('hem', 'Shorts Hem / Cuff', ['front', 'back'], 160, 248, [96, 224, 128, 44], [15, 400, 10, 120], [130, 50]),
                 ],
-            ],
+            ]),
 
-            'polo' => [
-                'silhouette' => 'polo',
-                'label' => 'Polo / T-Shirt / Work Shirt',
-                'view_box' => ['width' => self::VIEWBOX_WIDTH, 'height' => self::VIEWBOX_HEIGHT],
-                'garment_bounds' => ['x' => 56, 'y' => 44, 'width' => 208, 'height' => 208],
-                'scale' => [
-                    'units_per_mm' => 0.28,
-                    'reference_width_mm' => 520,
-                    'reference_height_mm' => 720,
-                    'scale_mode' => 'proportional_template',
-                    'scale_verified' => false,
-                ],
-                'color_regions' => [
-                    ['key' => 'body', 'label' => 'Main Torso & Sleeves', 'role' => 'primary', 'slot' => 0],
-                    ['key' => 'shoulder_panels', 'label' => 'Contrast Shoulder Panels', 'role' => 'contrast', 'slot' => 1],
-                    ['key' => 'collar_placket', 'label' => 'Ribbed Collar & Button Placket', 'role' => 'primary', 'slot' => 0],
-                    ['key' => 'cuff_trim', 'label' => 'Sleeve Cuff Trim', 'role' => 'contrast', 'slot' => 1],
-                ],
-                'zones' => [
-                    'chest_left' => self::zone('chest_left', 'Chest Left (Heart / Logo)', ['front'], 190, 122, [158, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
-                    'chest_right' => self::zone('chest_right', 'Chest Right (Name / Badge)', ['front'], 130, 122, [104, 88, 58, 68], [15, 180, 10, 160], [65, 70]),
-                    'chest_center' => self::zone('chest_center', 'Chest Center (Below Placket)', ['front'], 160, 148, [104, 108, 112, 84], [15, 360, 10, 220], [125, 95]),
-                    'pocket_left' => self::zone('pocket_left', 'Left Breast Pocket', ['front'], 190, 140, [158, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
-                    'pocket_right' => self::zone('pocket_right', 'Right Breast Pocket', ['front'], 130, 140, [104, 106, 58, 64], [15, 170, 10, 150], [65, 65]),
-                    'shoulder_left' => self::zone('shoulder_left', 'Left Shoulder Panel', ['front', 'back'], 204, 82, [168, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
-                    'shoulder_right' => self::zone('shoulder_right', 'Right Shoulder Panel', ['front', 'back'], 116, 82, [86, 56, 66, 52], [15, 180, 10, 130], [65, 55]),
-                    'collar' => self::zone('collar', 'Collar / Nape', ['front', 'back'], 160, 58, [118, 42, 84, 42], [15, 200, 10, 100], [75, 45]),
-                    'sleeve_left' => self::zone('sleeve_left', 'Left Short Sleeve', ['front', 'back'], 238, 118, [210, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
-                    'sleeve_right' => self::zone('sleeve_right', 'Right Short Sleeve', ['front', 'back'], 82, 118, [54, 78, 56, 78], [15, 160, 10, 180], [60, 75]),
-                    'waist' => self::zone('waist', 'Mid Torso / Waist', ['front', 'back'], 160, 198, [104, 164, 112, 66], [15, 360, 10, 180], [125, 75]),
-                    'hem' => self::zone('hem', 'Shirt Bottom Hem', ['front', 'back'], 160, 232, [104, 200, 112, 54], [15, 360, 10, 140], [125, 60]),
-                    'back_upper' => self::zone('back_upper', 'Upper Back (Shoulder Yoke)', ['back'], 160, 112, [104, 70, 112, 84], [15, 360, 10, 220], [125, 95]),
-                    'back_center' => self::zone('back_center', 'Center Back', ['back'], 160, 158, [104, 114, 112, 88], [15, 360, 10, 240], [125, 100]),
-                    'back_lower' => self::zone('back_lower', 'Lower Back', ['back'], 160, 208, [104, 168, 112, 80], [15, 360, 10, 200], [125, 85]),
-                ],
-            ],
+            'polo' => $poloTemplate,
+            'tshirt' => array_merge($poloTemplate, [
+                'silhouette' => 'tshirt',
+                'label' => 'Work T-Shirt (Crew-Neck)',
+            ]),
+            'shirt' => array_merge($poloTemplate, [
+                'silhouette' => 'shirt',
+                'label' => 'Button-Down Work Shirt / Overshirt',
+                'garment_bounds' => ['x' => 46, 'y' => 44, 'width' => 228, 'height' => 210],
+            ]),
 
             'overalls' => [
                 'silhouette' => 'overalls',

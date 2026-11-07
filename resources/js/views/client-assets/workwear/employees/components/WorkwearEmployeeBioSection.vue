@@ -20,8 +20,54 @@ const { t } = useI18n()
     <WpSectionCard
       icon="tabler-info-circle"
       :title="$t('Basic Information')"
-      :subtitle="$t('Staff personal info, client affiliation, operational department, and active status.')"
+      :subtitle="$t('Staff personal info, locked client affiliation, operational department, and active status.')"
     >
+      <!-- Locked Client & Employee Reference Strip -->
+      <VRow
+        dense
+        class="mb-4"
+      >
+        <VCol
+          cols="12"
+          sm="6"
+        >
+          <div class="locked-context-card">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <span class="text-caption text-medium-emphasis">{{ $t('Client Account (Employer)') }}</span>
+              <VIcon
+                icon="tabler-lock"
+                size="14"
+                class="text-disabled"
+              />
+            </div>
+            <div class="text-body-2 font-weight-bold">
+              {{ employeeData.client?.legal_name || employeeData.client?.name || '—' }}
+            </div>
+            <span class="text-caption text-disabled">{{ $t('Client account cannot be changed after creation') }}</span>
+          </div>
+        </VCol>
+
+        <VCol
+          cols="12"
+          sm="6"
+        >
+          <div class="locked-context-card">
+            <div class="d-flex align-center justify-space-between mb-1">
+              <span class="text-caption text-medium-emphasis">{{ $t('Badge / Employee Reference') }}</span>
+              <VIcon
+                icon="tabler-id-badge-2"
+                size="14"
+                color="primary"
+              />
+            </div>
+            <div class="text-body-2 font-weight-bold font-mono text-primary">
+              {{ employeeData.employee_ref || '—' }}
+            </div>
+            <span class="text-caption text-disabled">{{ $t('Unique employee identifier') }}</span>
+          </div>
+        </VCol>
+      </VRow>
+
       <VRow>
         <VCol
           cols="12"
@@ -97,7 +143,7 @@ const { t } = useI18n()
         >
           <AppTextField
             v-model="employeeData.role"
-            :label="$t('Role')"
+            :label="$t('Operational Role')"
             :error-messages="fieldErrors('role')"
             variant="outlined"
           />
@@ -114,44 +160,19 @@ const { t } = useI18n()
           />
         </VCol>
       </VRow>
-
-      <VDivider class="my-4" />
-
-      <VRow dense>
-        <VCol
-          v-for="item in [
-            { label: 'Employee Ref', value: employeeData.employee_ref },
-            { label: 'Client', value: employeeData.client?.legal_name || employeeData.client?.name },
-          ].filter(i => i.value)"
-          :key="item.label"
-          cols="12"
-          sm="6"
-        >
-          <div class="detail-row">
-            <div>
-              <span class="text-caption text-disabled text-uppercase">{{ $t(item.label) }}</span>
-              <div class="text-body-2 font-weight-medium">
-                {{ item.value }}
-              </div>
-            </div>
-          </div>
-        </VCol>
-      </VRow>
     </WpSectionCard>
   </section>
 </template>
 
 <style lang="scss" scoped>
-.detail-row {
+.locked-context-card {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 10px;
-  gap: 12px;
-  padding: 8px;
-  transition: background 0.2s ease;
-
-  &:hover {
-    background: rgba(var(--v-theme-primary), 0.04);
-  }
+  background: rgba(var(--v-theme-on-surface), 0.02);
+  block-size: 100%;
+  gap: 0.25rem;
+  padding: 0.875rem 1rem;
 }
 </style>

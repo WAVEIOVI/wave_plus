@@ -9,7 +9,6 @@ import {
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useDisplay } from 'vuetify'
 
 const props = defineProps({
   isDialogVisible: { type: Boolean, required: true },
@@ -21,7 +20,6 @@ const emit = defineEmits(['update:isDialogVisible'])
 
 const { t, locale } = useI18n()
 const store = useClientAssetStore()
-const { smAndDown } = useDisplay()
 
 const loading = ref(false)
 const employeeDetails = ref(null)
@@ -41,10 +39,6 @@ const pastIssuances = computed(() =>
   (resolvedEmployee.value?.assignments || []).filter(a => !!a.returned_at),
 )
 
-const modelEntitlements = computed(() =>
-  (resolvedEmployee.value?.model_assignments || []).filter(m => !m.ended_at),
-)
-
 const requirementsList = computed(() =>
   resolvedEmployee.value?.workwear_requirements || [],
 )
@@ -52,9 +46,8 @@ const requirementsList = computed(() =>
 const sections = computed(() => [
   { id: 'bio', label: t('Profile & Client'), icon: 'tabler-info-circle' },
   { id: 'sizes', label: t('Sizes & Measures'), icon: 'tabler-ruler-measure' },
-  { id: 'models', label: t('Entitlements'), icon: 'tabler-shirt', badge: modelEntitlements.value.length || undefined },
+  { id: 'history', label: t('Issued Workwear Items'), icon: 'tabler-hanger', badge: activeIssuances.value.length || undefined },
   { id: 'requirements', label: t('Requirements'), icon: 'tabler-checklist', badge: requirementsList.value.length || undefined },
-  { id: 'history', label: t('Issued Garments'), icon: 'tabler-hanger', badge: activeIssuances.value.length || undefined },
 ])
 
 const summaryItems = computed(() => [
@@ -71,7 +64,7 @@ const summaryItems = computed(() => [
     value: resolvedEmployee.value?.position || resolvedEmployee.value?.role || '—',
   },
   {
-    label: t('Active Garments'),
+    label: t('Active Workwear Items'),
     value: `${activeIssuances.value.length} ${t('issued')}`,
   },
 ])
@@ -179,7 +172,7 @@ watch(
           <template #default="{ getColProps }">
             <VCol v-bind="getColProps(0)">
               <WpKpiCard
-                :title="$t('Active Garments')"
+                :title="$t('Issued Items')"
                 :value="activeIssuances.length"
                 icon="tabler-hanger"
                 icon-color="success"
@@ -187,8 +180,8 @@ watch(
             </VCol>
             <VCol v-bind="getColProps(1)">
               <WpKpiCard
-                :title="$t('Entitled Models')"
-                :value="modelEntitlements.length"
+                :title="$t('Top Size')"
+                :value="resolvedEmployee.sizes?.top || '—'"
                 icon="tabler-shirt"
                 icon-color="primary"
               />
@@ -203,7 +196,7 @@ watch(
             </VCol>
             <VCol v-bind="getColProps(3)">
               <WpKpiCard
-                :title="$t('Past Handover History')"
+                :title="$t('Past Handovers')"
                 :value="pastIssuances.length"
                 icon="tabler-history"
                 icon-color="secondary"
@@ -377,62 +370,86 @@ watch(
           </VCard>
         </section>
 
-        <!-- ━━━ 3. Entitled Models ━━━ -->
+        <!-- ━━━ 3. Issued Workwear Items ━━━ -->
         <section
-          id="dialog-section-models"
+          id="dialog-section-history"
           class="dialog-journal-section mb-6"
         >
           <VCard
             variant="outlined"
             class="pa-4 pa-sm-5 rounded-lg"
           >
-            <h6 class="text-subtitle-1 font-weight-bold mb-3">
-              <VIcon
-                icon="tabler-shirt"
-                size="18"
+            <div class="d-flex align-center justify-space-between mb-3">
+              <h6 class="text-subtitle-1 font-weight-bold mb-0">
+                <VIcon
+                  icon="tabler-hanger"
+                  size="18"
+                  color="primary"
+                  class="me-1"
+                />
+                {{ $t('Issued Workwear Items (Linked to Workwear Models)') }}
+              </h6>
+              <VBtnToggle
+                v-model="historySubTab"
+                mandatory
+                density="compact"
                 color="primary"
-                class="me-1"
-              />
-              {{ $t('Assigned Model Entitlements') }}
-            </h6>
+                variant="outlined"
+              >
+                <VBtn
+                  value="active"
+                  size="x-small"
+                >
+                  {{ $t('Active') }} ({{ activeIssuances.length }})
+                </VBtn>
+                <VBtn
+                  value="past"
+                  size="x-small"
+                >
+                  {{ $t('Past') }} ({{ pastIssuances.length }})
+                </VBtn>
+              </VBtnToggle>
+            </div>
 
             <VTable
-              v-if="modelEntitlements.length"
+              v-if="(historySubTab === 'active' ? activeIssuances : pastIssuances).length"
               density="compact"
               class="border rounded text-no-wrap"
             >
               <thead>
                 <tr>
-                  <th>{{ $t('Model Reference') }}</th>
-                  <th>{{ $t('Name') }}</th>
-                  <th class="text-center">
-                    {{ $t('Quota') }}
-                  </th>
-                  <th>{{ $t('Target Size') }}</th>
+                  <th>{{ $t('Item Code') }}</th>
+                  <th>{{ $t('Workwear Model') }}</th>
+                  <th>{{ $t('Size / Color') }}</th>
+                  <th>{{ $t('Assigned Date') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr
-                  v-for="m in modelEntitlements"
-                  :key="m.id"
+                  v-for="a in (historySubTab === 'active' ? activeIssuances : pastIssuances)"
+                  :key="a.id"
                 >
-                  <td class="font-mono font-weight-bold">
-                    {{ m.model?.model_ref || m.workwear_model?.model_ref || '—' }}
+                  <td class="font-mono font-weight-medium">
+                    {{ a.item?.item_code || '—' }}
                   </td>
-                  <td>{{ m.model?.name || m.workwear_model?.name || '—' }}</td>
-                  <td class="text-center font-weight-bold">
-                    {{ m.quantity || 1 }}
+                  <td>
+                    {{ a.item?.model?.name || a.item?.workwear_model?.name || a.item?.model_name || a.item?.garment_type || '—' }}
                   </td>
                   <td>
                     <VChip
-                      v-if="m.size"
+                      v-if="a.item?.size"
                       size="x-small"
                       variant="outlined"
+                      class="font-mono me-1"
                     >
-                      {{ m.size }}
+                      {{ a.item.size }}
                     </VChip>
-                    <span v-else>—</span>
+                    <span
+                      v-if="a.item?.color"
+                      class="text-caption text-capitalize"
+                    >{{ a.item.color }}</span>
                   </td>
+                  <td>{{ formatDate(a.assigned_at) }}</td>
                 </tr>
               </tbody>
             </VTable>
@@ -441,7 +458,7 @@ watch(
               v-else
               class="text-caption text-disabled text-center py-4"
             >
-              {{ $t('No model entitlements assigned.') }}
+              {{ historySubTab === 'active' ? $t('No active workwear items issued.') : $t('No past return history recorded.') }}
             </div>
           </VCard>
         </section>
@@ -490,95 +507,6 @@ watch(
               class="text-caption text-disabled text-center py-4"
             >
               {{ $t('No requirements configured.') }}
-            </div>
-          </VCard>
-        </section>
-
-        <!-- ━━━ 5. Issued Garments ━━━ -->
-        <section
-          id="dialog-section-history"
-          class="dialog-journal-section mb-6"
-        >
-          <VCard
-            variant="outlined"
-            class="pa-4 pa-sm-5 rounded-lg"
-          >
-            <div class="d-flex align-center justify-space-between mb-3">
-              <h6 class="text-subtitle-1 font-weight-bold mb-0">
-                <VIcon
-                  icon="tabler-hanger"
-                  size="18"
-                  color="primary"
-                  class="me-1"
-                />
-                {{ $t('Issued Garments & Handover History') }}
-              </h6>
-              <VBtnToggle
-                v-model="historySubTab"
-                mandatory
-                density="compact"
-                color="primary"
-                variant="outlined"
-              >
-                <VBtn
-                  value="active"
-                  size="x-small"
-                >
-                  {{ $t('Active') }} ({{ activeIssuances.length }})
-                </VBtn>
-                <VBtn
-                  value="past"
-                  size="x-small"
-                >
-                  {{ $t('Past') }} ({{ pastIssuances.length }})
-                </VBtn>
-              </VBtnToggle>
-            </div>
-
-            <VTable
-              v-if="(historySubTab === 'active' ? activeIssuances : pastIssuances).length"
-              density="compact"
-              class="border rounded text-no-wrap"
-            >
-              <thead>
-                <tr>
-                  <th>{{ $t('Item Code') }}</th>
-                  <th>{{ $t('Garment & Model') }}</th>
-                  <th>{{ $t('Size') }}</th>
-                  <th>{{ $t('Date') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="a in (historySubTab === 'active' ? activeIssuances : pastIssuances)"
-                  :key="a.id"
-                >
-                  <td class="font-mono font-weight-medium">
-                    {{ a.item?.item_code || '—' }}
-                  </td>
-                  <td class="text-capitalize">
-                    {{ a.item?.model?.name || a.item?.model_name || a.item?.garment_type || '—' }}
-                  </td>
-                  <td>
-                    <VChip
-                      v-if="a.item?.size"
-                      size="x-small"
-                      variant="outlined"
-                    >
-                      {{ a.item.size }}
-                    </VChip>
-                    <span v-else>—</span>
-                  </td>
-                  <td>{{ formatDate(a.assigned_at) }}</td>
-                </tr>
-              </tbody>
-            </VTable>
-
-            <div
-              v-else
-              class="text-caption text-disabled text-center py-4"
-            >
-              {{ historySubTab === 'active' ? $t('No active garments issued.') : $t('No past return history recorded.') }}
             </div>
           </VCard>
         </section>

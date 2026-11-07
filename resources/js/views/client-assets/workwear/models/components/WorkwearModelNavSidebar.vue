@@ -3,8 +3,8 @@
 /**
  * WorkwearModelNavSidebar
  * ─────────────────────────────────────────────────────────────────────────────
- * Desktop sticky navigation for the Workwear Model journal page, backed by
- * the shared WAVE PLUS WpJournalNav component.
+ * Desktop sticky navigation + Mobile bottom navigation for the Workwear Model
+ * journal page, backed by the shared WAVE PLUS WpJournalNav component.
  */
 import { WpJournalNav } from '@/components/shared'
 import { computed } from 'vue'
@@ -28,11 +28,12 @@ const emit = defineEmits([
   'back',
 ])
 
+// WpJournalNav internally handles smooth scrolling on click and updates v-model on scroll-spy.
+// Do NOT emit navigate/scrollToSection inside set() or it triggers smooth-scroll loops during user scroll.
 const currentActive = computed({
   get: () => props.modelValue || props.activeSection,
   set: val => {
     emit('update:modelValue', val)
-    emit('navigate', val)
   },
 })
 </script>
@@ -44,7 +45,6 @@ const currentActive = computed({
     :title="modelData.name || modelData.model_ref || ''"
     :subtitle="modelData.model_ref || ''"
     :id-prefix="idPrefix"
-    @update:model-value="emit('navigate', $event)"
   >
     <template #avatar>
       <VAvatar

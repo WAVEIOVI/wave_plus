@@ -21,43 +21,68 @@ const { t } = useI18n()
 
 const isSubmitting = ref(false)
 const employeesList = ref([])
+const availableItemsList = ref([])
 
 const formData = ref({
+  selected_item_ids: [],
   employee_id: null,
   condition_at_assign: 'good',
   notes: '',
 })
 
-const conditionOptions = ['new', 'good', 'fair', 'worn', 'damaged'].map(c => ({
-  title: c.replace(/\b\w/g, l => l.toUpperCase()),
-  value: c,
-}))
+const conditionOptions = computed(() => [
+  { title: t('New'), value: 'new' },
+  { title: t('Good'), value: 'good' },
+  { title: t('Fair'), value: 'fair' },
+  { title: t('Worn'), value: 'worn' },
+  { title: t('Damaged'), value: 'damaged' },
+])
 
 const effectiveClientId = computed(() => {
   if (props.clientId) return props.clientId
   if (props.items.length && props.items[0]?.client_id) return props.items[0].client_id
 
-  return null
+  const firstPicked = availableItemsList.value.find(i => formData.value.selected_item_ids.includes(i.id))
+
+  return firstPicked?.client_id || null
 })
 
-const employeeOptions = computed(() =>
-  employeesList.value.map(e => ({
-    title: `${e.full_name} (${e.department || e.role || 'Staff'})`,
-    value: e.id,
+const availableItemOptions = computed(() =>
+  availableItemsList.value.map(i => ({
+    title: `${i.item_code} — ${i.model?.name || i.workwear_model?.name || i.garment_type || ''} (${i.size || 'STD'}${i.color ? `, ${i.color}` : ''})`,
+    value: i.id,
   })),
 )
 
-const fetchEmployees = async () => {
-  try {
-    const params = { itemsPerPage: -1, 'filter[status]': 'active' }
-    if (effectiveClientId.value) {
-      params['filter[client_id]'] = effectiveClientId.value
-    }
-    const res = await store.fetchWorkwearEmployees(params)
+const employeeOptions = computed(() => {
+  const list = effectiveClientId.value
+    ? employeesList.value.filter(e => String(e.client_id) === String(effectiveClientId.value))
+    : employeesList.value
 
-    employeesList.value = res.data || []
+  return list.map(e => ({
+    title: `${e.full_name || `${e.first_name || ''} ${e.last_name || ''}`} (${e.department || e.position || e.role || t('Staff')})`,
+    value: e.id,
+  }))
+})
+
+const fetchLookups = async () => {
+  try {
+    const empParams = { itemsPerPage: -1, 'filter[status]': 'active' }
+    if (props.clientId || (props.items.length && props.items[0]?.client_id)) {
+      empParams['filter[client_id]'] = props.clientId || props.items[0]?.client_id
+    }
+
+    const [empRes, itemsRes] = await Promise.all([
+      store.fetchWorkwearEmployees(empParams),
+      store.fetchWorkwearItems({ itemsPerPage: 100 }),
+    ])
+
+    employeesList.value = empRes.data || []
+    availableItemsList.value = (itemsRes.data || []).filter(item =>
+      ['in_stock', 'available', 'returned'].includes(item.status),
+    )
   } catch (err) {
-    console.error('Failed to fetch employees:', err)
+    console.error('Failed to fetch assignment lookups:', err)
   }
 }
 
@@ -65,15 +90,25 @@ watch(
   () => props.isDialogVisible,
   val => {
     if (val) {
-      fetchEmployees()
+      formData.value.selected_item_ids = (props.items || []).map(i => (typeof i === 'object' ? i.id : i)).filter(Boolean)
+      fetchLookups()
     }
   },
 )
 
 const onSubmit = async () => {
-  const itemIds = props.items.map(i => (typeof i === 'object' ? i.id : i))
+  const itemIds = formData.value.selected_item_ids.length
+    ? formData.value.selected_item_ids
+    : props.items.map(i => (typeof i === 'object' ? i.id : i)).filter(Boolean)
+
   if (!itemIds.length) {
-    showMessage(t('No items selected for assignment'), 'warning')
+    showMessage(t('Please select at least one workwear item to assign'), 'warning')
+
+    return
+  }
+
+  if (!formData.value.employee_id) {
+    showMessage(t('Please select a client employee'), 'warning')
 
     return
   }
@@ -95,7 +130,7 @@ const onSubmit = async () => {
 
     emit('assigned')
     emit('update:isDialogVisible', false)
-    formData.value = { employee_id: null, condition_at_assign: 'good', notes: '' }
+    formData.value = { selected_item_ids: [], employee_id: null, condition_at_assign: 'good', notes: '' }
   } catch (err) {
     const msg = err?.data?.message || err?.message || t('Failed to assign items')
 
@@ -107,42 +142,47 @@ const onSubmit = async () => {
 
 const closeDialog = () => {
   emit('update:isDialogVisible', false)
-  formData.value = { employee_id: null, condition_at_assign: 'good', notes: '' }
+  formData.value = { selected_item_ids: [], employee_id: null, condition_at_assign: 'good', notes: '' }
 }
 </script>
 
 <template>
   <WpFormDialog
     :model-value="props.isDialogVisible"
-    :title="$t('Assign Workwear Items')"
-    :subtitle="$t('Issue selected workwear garments to a client employee.')"
+    :title="$t('Assign Workwear Item to Employee')"
+    :subtitle="$t('Attach serialized workwear item(s) from a workwear model to a client employee.')"
     icon="tabler-user-check"
     icon-color="info"
-    size="small"
+    size="medium"
     :loading="isSubmitting"
+    :submit-disabled="!formData.selected_item_ids.length || !formData.employee_id"
     :submit-label="$t('Confirm Handover')"
     @update:model-value="val => emit('update:isDialogVisible', val)"
     @submit="onSubmit"
     @cancel="closeDialog"
   >
-    <VAlert
-      color="info"
-      variant="tonal"
-      density="compact"
-      class="mb-4"
-      icon="tabler-hanger"
-    >
-      {{ $t('Assigning {count} workwear garment(s)', { count: props.items.length }) }}
-    </VAlert>
-
     <VRow>
+      <!-- Workwear Item(s) Selector -->
+      <VCol cols="12">
+        <AppAutocomplete
+          v-model="formData.selected_item_ids"
+          :items="availableItemOptions"
+          :label="$t('Workwear Item(s) to Assign *')"
+          :placeholder="$t('Select available workwear item(s)...')"
+          multiple
+          chips
+          closable-chips
+          variant="outlined"
+        />
+      </VCol>
+
       <!-- Employee -->
       <VCol cols="12">
         <AppAutocomplete
           v-model="formData.employee_id"
           :rules="[requiredValidator]"
           :items="employeeOptions"
-          :label="$t('Assign to Staff / Employee')"
+          :label="$t('Assign to Client Employee *')"
           :placeholder="$t('Search employee...')"
           variant="outlined"
           autofocus

@@ -1,7 +1,10 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
+  AppBottomNav,
   AppBreadcrumb,
+  AppFabSpeedDial,
+  AppHybridTabs,
   WpDeleteDialog,
   WpEmptyState,
   WpErrorBanner,
@@ -16,6 +19,14 @@ import {
   useEquipmentHelpers,
 } from '@/composables/client-assets/equipment/useEquipmentHelpers'
 import { getAllDescendantAreaIds } from '@/composables/client-assets/sites/areaHierarchyHelper'
+import {
+  operatingStatusOptions,
+  resolveRiskVariant,
+  resolveSiteStatusVariant,
+  resolveSiteTypeVariant,
+  riskClassOptions,
+  useSiteConstants,
+} from '@/composables/client-assets/sites/useSiteConstants'
 import { useSiteAreas } from '@/composables/client-assets/sites/useSiteAreas'
 import { useSiteEquipment } from '@/composables/client-assets/sites/useSiteEquipment'
 import { localizedValue } from '@/composables/useLocaleField'
@@ -29,11 +40,12 @@ import SiteEquipmentCard from '@/views/client-assets/sites/components/SiteEquipm
 import SiteEquipmentFilterBar from '@/views/client-assets/sites/components/SiteEquipmentFilterBar.vue'
 import SiteEquipmentTable from '@/views/client-assets/sites/components/SiteEquipmentTable.vue'
 import AreaManageDialog from '@/views/client-assets/sites/edit/AreaManageDialog.vue'
+import SiteAreaSearchDialog from '@/views/client-assets/sites/edit/SiteAreaSearchDialog.vue'
 import SiteEquipmentAnalyticsPanel from '@/views/client-assets/sites/edit/SiteEquipmentAnalyticsPanel.vue'
 import SiteLocationExplorer from '@/views/client-assets/sites/edit/SiteLocationExplorer.vue'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 
 const props = defineProps({
@@ -42,10 +54,12 @@ const props = defineProps({
 })
 
 const route = useRoute()
+const router = useRouter()
 const store = useClientAssetStore()
 const snackbarStore = useSnackbarStore()
 const { t } = useI18n()
 const { lgAndDown, smAndDown } = useDisplay()
+const { optionTitle } = useSiteConstants()
 
 const targetSiteId = computed(() => props.siteId || route.params.id)
 
@@ -53,11 +67,11 @@ const targetSiteId = computed(() => props.siteId || route.params.id)
 const loading = ref(true)
 const error = ref(null)
 const fetchedSite = ref(null)
+const filterBarRef = ref(null)
 
 const {
   loadingAreas,
   siteAreasFlat,
-  expandedAreaIds,
   flattenedHierarchy,
   fetchAreas,
   toggleAreaExpand,
@@ -81,8 +95,9 @@ const areaLabel = eq => areaLabelHelper(eq, siteAreasFlat.value)
 // ── UI State ─────────────────────────────────────────────────────────────────
 const selectedLocationAreaId = ref(null)
 const includeSubAreas = ref(true)
-const isMobileDrawerOpen = ref(false)
+const isZoneSearchDialogOpen = ref(false)
 const isSidebarCollapsed = ref(false)
+const isMobileFabOpen = ref(false)
 
 const equipmentViewMode = ref('cards')
 const searchQuery = ref('')
@@ -110,6 +125,10 @@ const isTransferDialogOpen = ref(false)
 const isDeleteEquipmentDialogOpen = ref(false)
 const selectedEquipmentItem = ref(null)
 
+const isDeleteAreaDialogOpen = ref(false)
+const selectedAreaForDelete = ref(null)
+const isDeletingArea = ref(false)
+
 // ── Navigation ───────────────────────────────────────────────────────────────
 const breadcrumbItems = computed(() => [
   { title: t('Home'), to: '/', icon: 'tabler-home' },
@@ -117,6 +136,11 @@ const breadcrumbItems = computed(() => [
   { title: t('Sites'), to: '/client-assets/sites/list', icon: 'tabler-map-pin' },
   {
     title: fetchedSite.value ? localizedValue(fetchedSite.value.name) : t('Inventory Explorer'),
+    to: targetSiteId.value ? { name: 'client-assets-sites-edit-id', params: { id: targetSiteId.value } } : undefined,
+    icon: 'tabler-building-estate',
+  },
+  {
+    title: t('Inventory Explorer'),
     icon: 'tabler-packages',
     disabled: true,
   },
@@ -157,7 +181,7 @@ watch(() => targetSiteId.value, () => {
 const selectedLocationAreaObj = computed(() => {
   if (!selectedLocationAreaId.value) return null
 
-  return siteAreasFlat.value.find(a => a.id === selectedLocationAreaId.value) || null
+  return siteAreasFlat.value.find(a => String(a.id) === String(selectedLocationAreaId.value)) || null
 })
 
 const selectedAreaLabel = computed(() => {
@@ -173,12 +197,12 @@ const filteredEquipment = computed(() => {
   if (selectedLocationAreaId.value) {
     if (includeSubAreas.value) {
       const descendants = getAllDescendantAreaIds(siteAreasFlat.value, selectedLocationAreaId.value)
-      const targetIds = [selectedLocationAreaId.value, ...descendants]
+      const targetIds = [selectedLocationAreaId.value, ...descendants].map(String)
 
-      list = list.filter(eq => targetIds.includes(eq.area_id) || (eq.area?.id && targetIds.includes(eq.area.id)))
+      list = list.filter(eq => targetIds.includes(String(eq.area_id)) || (eq.area?.id && targetIds.includes(String(eq.area.id))))
     }
     else {
-      list = list.filter(eq => eq.area_id === selectedLocationAreaId.value || eq.area?.id === selectedLocationAreaId.value)
+      list = list.filter(eq => String(eq.area_id) === String(selectedLocationAreaId.value) || String(eq.area?.id) === String(selectedLocationAreaId.value))
     }
   }
 
@@ -187,7 +211,7 @@ const filteredEquipment = computed(() => {
 
     list = list.filter(eq => {
       const code = (eq.equipment_code || '').toLowerCase()
-      const model = (eq.model_name || localizedValue(eq.blueprint?.name) || '').toLowerCase()
+      const model = (localizedValue(eq.model_name) || localizedValue(eq.blueprint?.name) || '').toLowerCase()
       const serial = (eq.serial_number || '').toLowerCase()
       const tag = (eq.asset_tag || '').toLowerCase()
       const brand = brandLabel(eq).toLowerCase()
@@ -205,7 +229,7 @@ const filteredEquipment = computed(() => {
   if (filterCriticality.value)
     list = list.filter(eq => eq.criticality === filterCriticality.value)
   if (filterClassId.value)
-    list = list.filter(eq => eq.equipment_class_id === filterClassId.value)
+    list = list.filter(eq => String(eq.equipment_class_id) === String(filterClassId.value))
 
   return list
 })
@@ -259,31 +283,105 @@ watch(lgAndDown, isNarrow => {
     isSidebarCollapsed.value = false
 })
 
+// ── Standard Hybrid Tabs & Mobile Bottom Nav ─────────────────────────────────
 const viewTabs = computed(() => [
-  { value: 'cards', icon: 'tabler-layout-grid', label: t('Cards') },
-  { value: 'table', icon: 'tabler-table', label: t('Table') },
-  { value: 'analytics', icon: 'tabler-chart-pie', label: t('Analytics') },
+  {
+    value: 'cards',
+    title: t('Cards'),
+    label: t('Cards'),
+    icon: 'tabler-layout-grid',
+    badge: filteredEquipment.value.length,
+  },
+  {
+    value: 'table',
+    title: t('Table'),
+    label: t('Table'),
+    icon: 'tabler-table',
+    badge: filteredEquipment.value.length,
+  },
+  {
+    value: 'analytics',
+    title: t('Analytics'),
+    label: t('Analytics'),
+    icon: 'tabler-chart-pie',
+  },
 ])
+
+const mobileNavItems = computed(() => viewTabs.value.map(tab => ({
+  title: tab.title,
+  icon: tab.icon,
+  value: tab.value,
+})))
+
+const mobileFabActions = computed(() => {
+  const actions = [
+    {
+      id: 'zone-picker',
+      icon: 'tabler-hierarchy',
+      title: t('Filter by Zone'),
+      color: 'info',
+      onClick: () => { isZoneSearchDialogOpen.value = true },
+    },
+    {
+      id: 'filter-equipment',
+      icon: 'tabler-filter',
+      title: t('Filter Equipment'),
+      color: 'primary',
+      onClick: () => filterBarRef.value?.openFilterDialog(),
+    },
+  ]
+
+  if (!props.readonly) {
+    actions.unshift(
+      {
+        id: 'add-equipment',
+        icon: 'tabler-plus',
+        title: t('Add Equipment'),
+        color: 'primary',
+        onClick: () => openAddEquipment(selectedLocationAreaId.value),
+      },
+      {
+        id: 'add-zone',
+        icon: 'tabler-sitemap',
+        title: t('Add Zone / Area'),
+        color: 'info',
+        onClick: () => openAreaDialog(null, selectedLocationAreaId.value),
+      },
+    )
+  }
+
+  if (targetSiteId.value) {
+    actions.push({
+      id: 'site-journal',
+      icon: 'tabler-building-estate',
+      title: t('Site Journal'),
+      color: 'secondary',
+      onClick: () => router.push({ name: 'client-assets-sites-edit-id', params: { id: targetSiteId.value } }),
+    })
+  }
+
+  return actions
+})
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 const onSelectLocation = id => {
-  selectedLocationAreaId.value = id
-  if (lgAndDown.value)
-    isMobileDrawerOpen.value = false
+  selectedLocationAreaId.value = id ?? null
+  isZoneSearchDialogOpen.value = false
 }
 
 const openAddEquipment = (areaId = null) => {
-  if (areaId) selectedLocationAreaId.value = areaId
+  if (areaId !== undefined && areaId !== null)
+    selectedLocationAreaId.value = areaId
   isAddEquipmentDialogOpen.value = true
 }
 
 const openEditEquipment = eq => {
-  selectedEquipmentForEditId.value = eq.id
+  selectedEquipmentForEditId.value = typeof eq === 'object' ? eq.id : eq
   isEditEquipmentDialogOpen.value = true
 }
 
 const openViewEquipment = eqId => {
-  selectedViewEquipmentId.value = eqId
+  selectedViewEquipmentId.value = typeof eqId === 'object' ? eqId.id : eqId
   isViewEquipmentModalOpen.value = true
 }
 
@@ -308,15 +406,14 @@ const confirmDeleteEquipment = async () => {
   if (!selectedEquipmentItem.value?.id) return
   isDeletingEquipment.value = true
   try {
-    await clientAssetStore.deleteEquipment(selectedEquipmentItem.value.id)
+    await store.deleteEquipment(selectedEquipmentItem.value.id)
     snackbarStore.showMessage(t('Equipment deleted successfully'), 'success')
     isDeleteEquipmentDialogOpen.value = false
     selectedEquipmentItem.value = null
-    fetchEquipment()
-    fetchAreas()
+    await Promise.allSettled([fetchEquipment(), fetchAreas()])
   }
   catch (err) {
-    snackbarStore.showMessage(err?.message || t('Failed to delete equipment'), 'error')
+    snackbarStore.showMessage(err?.data?.message || err?.message || t('Failed to delete equipment'), 'error')
   }
   finally {
     isDeletingEquipment.value = false
@@ -329,7 +426,7 @@ const openAreaDialog = (area = null, parentId = null) => {
   isAreaDialogOpen.value = true
 }
 
-const handleDeleteArea = async area => {
+const handleDeleteArea = area => {
   if (!area?.id) return
 
   const childCount = siteAreasFlat.value.filter(a => a.parent_area_id === area.id).length
@@ -347,20 +444,28 @@ const handleDeleteArea = async area => {
     return
   }
 
-  if (!confirm(t('Are you sure you want to delete this zone area?')))
-    return
+  selectedAreaForDelete.value = area
+  isDeleteAreaDialogOpen.value = true
+}
 
+const confirmDeleteArea = async () => {
+  if (!selectedAreaForDelete.value?.id) return
+  isDeletingArea.value = true
   try {
-    await store.deleteSiteArea(area.id)
+    await store.deleteSiteArea(selectedAreaForDelete.value.id)
     snackbarStore.showMessage(t('Area deleted successfully'), 'success')
-    if (selectedLocationAreaId.value === area.id)
+    if (String(selectedLocationAreaId.value) === String(selectedAreaForDelete.value.id))
       selectedLocationAreaId.value = null
-    await fetchAreas()
-    await fetchEquipment()
+    isDeleteAreaDialogOpen.value = false
+    selectedAreaForDelete.value = null
+    await Promise.allSettled([fetchAreas(), fetchEquipment()])
   }
   catch (err) {
     console.error(err)
     snackbarStore.showMessage(err?.data?.message || t('Failed to delete area'), 'error')
+  }
+  finally {
+    isDeletingArea.value = false
   }
 }
 </script>
@@ -390,82 +495,169 @@ const handleDeleteArea = async area => {
     <!-- Main Content -->
     <div
       v-else-if="fetchedSite"
-      class="explorer-container"
+      class="explorer-container d-flex flex-column gap-5"
     >
-      <!-- Page Title -->
-      <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between gap-3 mb-5">
-        <div class="min-w-0">
-          <h1 class="text-h5 font-weight-bold mb-1 text-truncate">
-            {{ localizedValue(fetchedSite.name) }} · {{ fetchedSite.site_code }}
-          </h1>
-          <div class="text-body-2 text-medium-emphasis text-truncate">
-            <template v-if="fetchedSite.client">
-              {{ localizedValue(fetchedSite.client.legal_name || fetchedSite.client.trade_name) }} —
-            </template>
-            {{ $t('Physical Asset & Zone Explorer') }}
+      <!-- Responsive Entity Header Card (Mobile-First) -->
+      <VCard
+        class="explorer-header-card border"
+        variant="outlined"
+      >
+        <VCardText class="pa-4 pa-sm-5">
+          <div class="d-flex flex-column flex-md-row align-start align-md-center justify-space-between gap-4">
+            <!-- Site Identity & Metadata -->
+            <div class="d-flex align-start align-sm-center gap-3 min-w-0 w-100">
+              <VAvatar
+                :size="smAndDown ? 48 : 56"
+                :color="resolveSiteTypeVariant(fetchedSite.site_type)"
+                variant="tonal"
+                rounded="lg"
+                class="shrink-0 border"
+              >
+                <VImg
+                  v-if="fetchedSite.main_photo_url || fetchedSite.photos?.[0]?.url"
+                  :src="fetchedSite.main_photo_url || fetchedSite.photos?.[0]?.url"
+                  cover
+                />
+                <VIcon
+                  v-else
+                  icon="tabler-building-estate"
+                  :size="smAndDown ? 24 : 28"
+                />
+              </VAvatar>
+
+              <div class="min-w-0 flex-grow-1">
+                <div class="d-flex align-center flex-wrap gap-2 mb-1">
+                  <h1 class="text-h6 text-sm-h5 font-weight-bold mb-0 text-truncate">
+                    {{ localizedValue(fetchedSite.name) }}
+                  </h1>
+                  <VChip
+                    v-if="fetchedSite.site_code"
+                    size="x-small"
+                    color="secondary"
+                    variant="flat"
+                    label
+                    class="font-weight-bold"
+                  >
+                    {{ fetchedSite.site_code }}
+                  </VChip>
+                  <VChip
+                    v-if="fetchedSite.status"
+                    size="x-small"
+                    :color="resolveSiteStatusVariant(fetchedSite.status)"
+                    label
+                    class="text-capitalize"
+                  >
+                    {{ optionTitle(operatingStatusOptions, fetchedSite.status) }}
+                  </VChip>
+                  <VChip
+                    v-if="fetchedSite.risk_class"
+                    size="x-small"
+                    :color="resolveRiskVariant(fetchedSite.risk_class)"
+                    variant="tonal"
+                    label
+                    class="text-capitalize"
+                  >
+                    {{ optionTitle(riskClassOptions, fetchedSite.risk_class) }}
+                  </VChip>
+                </div>
+
+                <div class="d-flex align-center flex-wrap gap-x-3 gap-y-1 text-body-2 text-medium-emphasis">
+                  <span
+                    v-if="fetchedSite.client"
+                    class="d-inline-flex align-center gap-1 font-weight-medium text-high-emphasis"
+                  >
+                    <VIcon
+                      icon="tabler-building-skyscraper"
+                      size="15"
+                      color="primary"
+                    />
+                    {{ localizedValue(fetchedSite.client.commercial_name, localizedValue(fetchedSite.client.legal_name)) }}
+                  </span>
+                  <span
+                    v-if="fetchedSite.address?.city"
+                    class="d-inline-flex align-center gap-1"
+                  >
+                    <VIcon
+                      icon="tabler-map-pin"
+                      size="15"
+                      color="error"
+                    />
+                    {{ localizedValue(fetchedSite.address.city) }}
+                  </span>
+                  <span class="d-inline-flex align-center gap-1">
+                    <VIcon
+                      icon="tabler-packages"
+                      size="15"
+                      color="info"
+                    />
+                    {{ $t('Physical Asset & Zone Explorer') }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons (Responsive: Full toolbar on md+, compact quick bar on mobile) -->
+            <div class="d-flex align-center gap-2 flex-wrap shrink-0 w-100 w-md-auto justify-end">
+              <VBtn
+                variant="tonal"
+                color="secondary"
+                size="small"
+                prepend-icon="tabler-building-estate"
+                :to="{ name: 'client-assets-sites-edit-id', params: { id: targetSiteId } }"
+              >
+                {{ $t('Site Journal') }}
+              </VBtn>
+
+              <VBtn
+                variant="tonal"
+                color="info"
+                size="small"
+                prepend-icon="tabler-hierarchy"
+                @click="isZoneSearchDialogOpen = true"
+              >
+                {{ $t('Browse Zones') }}
+              </VBtn>
+
+              <VBtn
+                v-if="!readonly && !smAndDown"
+                variant="tonal"
+                color="info"
+                size="small"
+                prepend-icon="tabler-sitemap"
+                @click="openAreaDialog(null, selectedLocationAreaId)"
+              >
+                {{ $t('Add Zone') }}
+              </VBtn>
+
+              <VBtn
+                v-if="!readonly"
+                color="primary"
+                size="small"
+                prepend-icon="tabler-plus"
+                @click="openAddEquipment(selectedLocationAreaId)"
+              >
+                {{ $t('Add Equipment') }}
+              </VBtn>
+
+              <IconBtn
+                variant="tonal"
+                color="secondary"
+                size="small"
+                :title="$t('Refresh Data')"
+                :loading="loadingEquipment || loadingAreas"
+                @click="fetchAll"
+              >
+                <VIcon icon="tabler-refresh" />
+              </IconBtn>
+            </div>
           </div>
-        </div>
-        <div class="d-flex align-center gap-2 flex-wrap">
-          <VBtn
-            v-if="!smAndDown"
-            variant="tonal"
-            color="secondary"
-            size="small"
-            prepend-icon="tabler-building-estate"
-            :to="{ name: 'client-assets-sites-edit-id', params: { id: targetSiteId } }"
-          >
-            {{ $t('Site Journal') }}
-          </VBtn>
-          <IconBtn
-            v-else
-            variant="tonal"
-            color="secondary"
-            size="small"
-            :title="$t('Site Journal')"
-            :to="{ name: 'client-assets-sites-edit-id', params: { id: targetSiteId } }"
-          >
-            <VIcon icon="tabler-building-estate" />
-          </IconBtn>
-
-          <VBtn
-            v-if="!readonly && !smAndDown"
-            variant="tonal"
-            color="info"
-            size="small"
-            prepend-icon="tabler-hierarchy"
-            @click="openAreaDialog(null, selectedLocationAreaId)"
-          >
-            {{ $t('Add Zone') }}
-          </VBtn>
-
-          <VBtn
-            v-if="!readonly"
-            color="primary"
-            :size="smAndDown ? 'small' : 'default'"
-            prepend-icon="tabler-plus"
-            @click="openAddEquipment(selectedLocationAreaId)"
-          >
-            {{ $t('Add Equipment') }}
-          </VBtn>
-
-          <IconBtn
-            variant="tonal"
-            color="secondary"
-            size="small"
-            :title="$t('Refresh Data')"
-            :loading="loadingEquipment || loadingAreas"
-            @click="fetchAll"
-          >
-            <VIcon icon="tabler-refresh" />
-          </IconBtn>
-        </div>
-      </div>
+        </VCardText>
+      </VCard>
 
       <!-- KPI Cards -->
       <WpKpiGroup
         v-if="equipmentViewMode !== 'analytics'"
         :cols="{ xs: 2, sm: 2, md: 4, lg: 4 }"
-        class="mb-5"
       >
         <template #default="{ getColProps }">
           <VCol v-bind="getColProps(0)">
@@ -475,6 +667,8 @@ const handleDeleteArea = async area => {
               icon="tabler-hierarchy"
               icon-color="info"
               :loading="loadingAreas"
+              clickable
+              @click="isZoneSearchDialogOpen = true"
             />
           </VCol>
           <VCol v-bind="getColProps(1)">
@@ -511,21 +705,60 @@ const handleDeleteArea = async area => {
         </template>
       </WpKpiGroup>
 
-      <!-- Mobile Zone Selector -->
-      <VBtn
+      <!-- Mobile / Tablet Active Zone Filter Banner (Opens Standard SiteAreaSearchDialog) -->
+      <VCard
         v-if="lgAndDown"
-        block
-        variant="tonal"
-        color="primary"
-        prepend-icon="tabler-hierarchy"
-        append-icon="tabler-chevron-right"
-        class="mb-4"
-        @click="isMobileDrawerOpen = true"
+        variant="outlined"
+        class="pa-3 border bg-surface"
       >
-        <span class="text-truncate">
-          {{ $t('Zone:') }} <strong>{{ selectedAreaLabel }}</strong>
-        </span>
-      </VBtn>
+        <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+          <div
+            class="d-flex align-center gap-2 min-w-0 flex-grow-1 cursor-pointer"
+            @click="isZoneSearchDialogOpen = true"
+          >
+            <VAvatar
+              size="34"
+              :color="selectedLocationAreaId ? 'primary' : 'info'"
+              variant="tonal"
+              rounded
+            >
+              <VIcon
+                icon="tabler-hierarchy"
+                size="18"
+              />
+            </VAvatar>
+            <div class="min-w-0">
+              <div class="text-caption text-medium-emphasis">
+                {{ $t('Active Zone Filter') }}
+              </div>
+              <div class="text-subtitle-2 font-weight-bold text-truncate">
+                {{ selectedAreaLabel }}
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex align-center gap-1">
+            <VBtn
+              v-if="selectedLocationAreaId"
+              size="x-small"
+              variant="text"
+              color="secondary"
+              icon="tabler-x"
+              :title="$t('Reset to All Site Inventory')"
+              @click="selectedLocationAreaId = null"
+            />
+            <VBtn
+              size="small"
+              variant="tonal"
+              color="primary"
+              prepend-icon="tabler-search"
+              @click="isZoneSearchDialogOpen = true"
+            >
+              {{ $t('Change Zone') }}
+            </VBtn>
+          </div>
+        </div>
+      </VCard>
 
       <!-- Two-Column Explorer Layout -->
       <div
@@ -548,6 +781,17 @@ const handleDeleteArea = async area => {
               </div>
             </div>
             <div class="d-flex align-center">
+              <IconBtn
+                size="small"
+                color="primary"
+                :title="$t('Search Zones Dialog')"
+                @click="isZoneSearchDialogOpen = true"
+              >
+                <VIcon
+                  icon="tabler-search"
+                  size="16"
+                />
+              </IconBtn>
               <IconBtn
                 size="small"
                 :title="$t('Expand All')"
@@ -674,201 +918,201 @@ const handleDeleteArea = async area => {
           </div>
         </VCard>
 
-        <!-- Main Workbench -->
-        <VCard
-          class="explorer-workbench border"
-          variant="outlined"
-        >
-          <!-- Workbench Header -->
-          <div class="pa-4 pb-0">
-            <div class="d-flex flex-column flex-sm-row align-start align-sm-center justify-space-between gap-3 mb-3">
-              <div class="min-w-0">
-                <div class="d-flex align-center gap-2 flex-wrap">
-                  <VBtn
-                    v-if="isSidebarCollapsed && !lgAndDown"
-                    size="small"
-                    variant="tonal"
-                    color="primary"
-                    prepend-icon="tabler-layout-sidebar-left-expand"
-                    @click="isSidebarCollapsed = false"
-                  >
-                    {{ $t('Show Zones') }}
-                  </VBtn>
-                  <h2 class="text-subtitle-1 font-weight-bold mb-0">
-                    {{ selectedLocationAreaObj ? localizedValue(selectedLocationAreaObj.name) : $t('All Site Inventory') }}
-                  </h2>
-                  <VChip
-                    size="small"
-                    color="primary"
-                    variant="tonal"
-                  >
-                    {{ filteredEquipment.length }} {{ $t('Assets') }}
-                  </VChip>
-                </div>
-              </div>
-            </div>
-
-            <!-- View Mode Tabs -->
-            <VTabs
-              v-model="equipmentViewMode"
-              show-arrows
-              color="primary"
-              :density="smAndDown ? 'compact' : 'default'"
-              class="explorer-tabs"
-            >
-              <VTab
-                v-for="tab in viewTabs"
-                :key="tab.value"
-                :value="tab.value"
-              >
-                <VIcon
-                  :icon="tab.icon"
-                  size="18"
-                  class="me-2"
-                />
-                {{ tab.label }}
-                <VChip
-                  v-if="tab.value !== 'analytics'"
-                  size="x-small"
-                  class="ms-2 d-none d-sm-inline-flex"
+        <!-- Main Workbench with Standard AppHybridTabs -->
+        <div class="explorer-workbench min-w-0">
+          <AppHybridTabs
+            v-model="equipmentViewMode"
+            :tabs="viewTabs"
+            :swipeable="false"
+            crossfade
+          >
+            <template #append>
+              <div class="d-flex align-center gap-2 flex-wrap">
+                <VBtn
+                  v-if="isSidebarCollapsed && !lgAndDown"
+                  size="small"
                   variant="tonal"
                   color="primary"
+                  prepend-icon="tabler-layout-sidebar-left-expand"
+                  @click="isSidebarCollapsed = false"
                 >
-                  {{ filteredEquipment.length }}
+                  {{ $t('Show Zones') }}
+                </VBtn>
+
+                <VChip
+                  :color="selectedLocationAreaId ? 'primary' : 'info'"
+                  variant="tonal"
+                  size="small"
+                  :closable="Boolean(selectedLocationAreaId)"
+                  class="cursor-pointer font-weight-medium"
+                  @click="isZoneSearchDialogOpen = true"
+                  @click:close="selectedLocationAreaId = null"
+                >
+                  <VIcon
+                    start
+                    icon="tabler-hierarchy"
+                    size="14"
+                  />
+                  {{ selectedAreaLabel }}
                 </VChip>
-              </VTab>
-            </VTabs>
-          </div>
+              </div>
+            </template>
 
-          <VDivider />
+            <!-- Cards Tab -->
+            <template #tab-cards>
+              <SiteEquipmentFilterBar
+                ref="filterBarRef"
+                v-model:search-query="searchQuery"
+                v-model:lifecycle-status="filterLifecycleStatus"
+                v-model:compliance-status="filterComplianceStatus"
+                v-model:criticality="filterCriticality"
+                v-model:class-id="filterClassId"
+                :class-options="availableEquipmentClasses"
+                :selected-area-label="selectedAreaLabel"
+                :has-selected-area="Boolean(selectedLocationAreaId)"
+                show-class-filter
+                class="mb-4"
+                @open-zone-picker="isZoneSearchDialogOpen = true"
+                @clear-zone="selectedLocationAreaId = null"
+                @reset="resetFilters"
+              />
 
-          <!-- Filters & Search -->
-          <div
-            v-if="equipmentViewMode !== 'analytics'"
-            class="pa-4 pb-0"
-          >
-            <SiteEquipmentFilterBar
-              v-model:search-query="searchQuery"
-              v-model:lifecycle-status="filterLifecycleStatus"
-              v-model:compliance-status="filterComplianceStatus"
-              v-model:criticality="filterCriticality"
-              v-model:class-id="filterClassId"
-              :class-options="availableEquipmentClasses"
-              show-class-filter
-              @reset="resetFilters"
-            />
-          </div>
+              <WpLoadingState
+                v-if="loadingEquipment"
+                :text="$t('Loading equipment...')"
+                min-height="200px"
+              />
 
-          <!-- Content Area -->
-          <VCardText class="explorer-content pa-4">
+              <WpEmptyState
+                v-else-if="!filteredEquipment.length"
+                icon="tabler-packages"
+                :title="$t('No equipment assets found')"
+                :subtitle="$t('Try changing the search query, selecting another zone, or adding a new asset.')"
+              >
+                <template #action>
+                  <VBtn
+                    v-if="!readonly"
+                    color="primary"
+                    prepend-icon="tabler-plus"
+                    @click="openAddEquipment(selectedLocationAreaId)"
+                  >
+                    {{ $t('Add Equipment Asset') }}
+                  </VBtn>
+                </template>
+              </WpEmptyState>
+
+              <template v-else>
+                <div class="equipment-grid">
+                  <SiteEquipmentCard
+                    v-for="eq in paginatedEquipment"
+                    :key="eq.id"
+                    :equipment="eq"
+                    :area-label="areaLabel(eq)"
+                    :readonly="readonly"
+                    @view="openViewEquipment"
+                    @edit="openEditEquipment"
+                    @replace-qr="openReplaceQr"
+                    @transfer="openTransfer"
+                    @delete="openDeleteEquipment"
+                  />
+                </div>
+
+                <WpPagination
+                  v-model:page="page"
+                  v-model:items-per-page="itemsPerPage"
+                  :total-items="filteredEquipment.length"
+                  :page-size-options="[10, 12, 25, 50]"
+                  class="mt-4"
+                />
+              </template>
+            </template>
+
+            <!-- Table Tab -->
+            <template #tab-table>
+              <SiteEquipmentFilterBar
+                v-model:search-query="searchQuery"
+                v-model:lifecycle-status="filterLifecycleStatus"
+                v-model:compliance-status="filterComplianceStatus"
+                v-model:criticality="filterCriticality"
+                v-model:class-id="filterClassId"
+                :class-options="availableEquipmentClasses"
+                :selected-area-label="selectedAreaLabel"
+                :has-selected-area="Boolean(selectedLocationAreaId)"
+                show-class-filter
+                class="mb-4"
+                @open-zone-picker="isZoneSearchDialogOpen = true"
+                @clear-zone="selectedLocationAreaId = null"
+                @reset="resetFilters"
+              />
+
+              <WpLoadingState
+                v-if="loadingEquipment"
+                :text="$t('Loading equipment...')"
+                min-height="200px"
+              />
+
+              <WpEmptyState
+                v-else-if="!filteredEquipment.length"
+                icon="tabler-packages"
+                :title="$t('No equipment assets found')"
+                :subtitle="$t('Try changing the search query, selecting another zone, or adding a new asset.')"
+              >
+                <template #action>
+                  <VBtn
+                    v-if="!readonly"
+                    color="primary"
+                    prepend-icon="tabler-plus"
+                    @click="openAddEquipment(selectedLocationAreaId)"
+                  >
+                    {{ $t('Add Equipment Asset') }}
+                  </VBtn>
+                </template>
+              </WpEmptyState>
+
+              <template v-else>
+                <SiteEquipmentTable
+                  :items="paginatedEquipment"
+                  :readonly="readonly"
+                  :resolve-area-label="areaLabel"
+                  @view="openViewEquipment"
+                  @edit="openEditEquipment"
+                  @delete="openDeleteEquipment"
+                />
+
+                <WpPagination
+                  v-model:page="page"
+                  v-model:items-per-page="itemsPerPage"
+                  :total-items="filteredEquipment.length"
+                  :page-size-options="[10, 12, 25, 50]"
+                  class="mt-4"
+                />
+              </template>
+            </template>
+
             <!-- Analytics Tab -->
-            <div v-if="equipmentViewMode === 'analytics'">
+            <template #tab-analytics>
               <SiteEquipmentAnalyticsPanel
                 :equipment="filteredEquipment"
                 :areas-flat="siteAreasFlat"
                 :show-open-inventory="false"
               />
-            </div>
-
-            <!-- Loading -->
-            <WpLoadingState
-              v-else-if="loadingEquipment"
-              :text="$t('Loading equipment...')"
-              min-height="200px"
-            />
-
-            <!-- Empty State -->
-            <WpEmptyState
-              v-else-if="!filteredEquipment.length"
-              icon="tabler-packages"
-              :title="$t('No equipment assets found')"
-              :subtitle="$t('Try changing the search query, selecting another zone, or adding a new asset.')"
-            >
-              <template #action>
-                <VBtn
-                  v-if="!readonly"
-                  color="primary"
-                  prepend-icon="tabler-plus"
-                  @click="openAddEquipment(selectedLocationAreaId)"
-                >
-                  {{ $t('Add Equipment Asset') }}
-                </VBtn>
-              </template>
-            </WpEmptyState>
-
-            <!-- Cards View -->
-            <div
-              v-else-if="equipmentViewMode === 'cards'"
-              class="equipment-grid"
-            >
-              <SiteEquipmentCard
-                v-for="eq in paginatedEquipment"
-                :key="eq.id"
-                :equipment="eq"
-                :area-label="areaLabel(eq)"
-                :readonly="readonly"
-                @view="openViewEquipment"
-                @edit="openEditEquipment"
-                @replace-qr="openReplaceQr"
-                @transfer="openTransfer"
-                @delete="openDeleteEquipment"
-              />
-            </div>
-
-            <!-- Table View -->
-            <SiteEquipmentTable
-              v-else-if="equipmentViewMode === 'table'"
-              :items="paginatedEquipment"
-              :readonly="readonly"
-              :resolve-area-label="areaLabel"
-              @view="openViewEquipment"
-              @edit="openEditEquipment"
-              @delete="openDeleteEquipment"
-            />
-
-            <!-- Pagination -->
-            <WpPagination
-              v-if="equipmentViewMode !== 'analytics' && !loadingEquipment && filteredEquipment.length"
-              v-model:page="page"
-              v-model:items-per-page="itemsPerPage"
-              :total-items="filteredEquipment.length"
-              :page-size-options="[10, 12, 25, 50]"
-              class="mt-4"
-            />
-          </VCardText>
-        </VCard>
+            </template>
+          </AppHybridTabs>
+        </div>
       </div>
     </div>
 
-    <!-- Mobile Zone Drawer -->
-    <VNavigationDrawer
-      v-model="isMobileDrawerOpen"
-      location="start"
-      temporary
-      width="340"
-    >
-      <div class="pa-4 border-b d-flex align-center justify-space-between">
-        <span class="text-subtitle-1 font-weight-bold">{{ $t('Select Zone Area') }}</span>
-        <IconBtn
-          size="small"
-          @click="isMobileDrawerOpen = false"
-        >
-          <VIcon icon="tabler-x" />
-        </IconBtn>
-      </div>
-      <div class="pa-3">
-        <SiteLocationExplorer
-          :flattened-hierarchy="flattenedHierarchy"
-          :site-areas-flat="siteAreasFlat"
-          :site-equipment-count="siteEquipment.length"
-          :selected-location-area-id="selectedLocationAreaId"
-          :include-sub-areas="includeSubAreas"
-          @update:selected-location-area-id="onSelectLocation"
-          @update:include-sub-areas="includeSubAreas = $event"
-          @toggle-expand="toggleAreaExpand"
-        />
-      </div>
-    </VNavigationDrawer>
+    <!-- Standard Zone Filter Dialog (Replaces Mobile Navigation Drawer) -->
+    <SiteAreaSearchDialog
+      v-model="isZoneSearchDialogOpen"
+      :site-id="targetSiteId"
+      :areas-list="siteAreasFlat"
+      :current-area-id="selectedLocationAreaId"
+      allow-root
+      :root-label="$t('All Site Inventory')"
+      :title="$t('Filter by Zone / Building Area')"
+      @select="area => onSelectLocation(area?.id ?? null)"
+    />
 
     <!-- Dialogs -->
     <EquipmentWizardDialog
@@ -929,6 +1173,34 @@ const handleDeleteArea = async area => {
       :loading="isDeletingEquipment"
       @confirm="confirmDeleteEquipment"
     />
+
+    <WpDeleteDialog
+      v-model:is-open="isDeleteAreaDialogOpen"
+      :title="$t('Delete Zone / Area')"
+      :message="$t('Are you sure you want to delete zone {name}? This action cannot be undone.', { name: localizedValue(selectedAreaForDelete?.name) || '' })"
+      :loading="isDeletingArea"
+      @confirm="confirmDeleteArea"
+    />
+
+    <!-- Mobile Bottom Navigation -->
+    <AppBottomNav
+      v-if="smAndDown && fetchedSite"
+      v-model="equipmentViewMode"
+      :items="mobileNavItems"
+      fit-content
+      :show-badges="false"
+      :aria-label="$t('Inventory Explorer views')"
+    />
+
+    <!-- Mobile Speed Dial FAB -->
+    <AppFabSpeedDial
+      v-if="smAndDown && fetchedSite"
+      v-model="isMobileFabOpen"
+      class="d-md-none explorer-mobile-fab"
+      :actions="mobileFabActions"
+      icon="tabler-apps"
+      activator-rounded="lg"
+    />
   </div>
 </template>
 
@@ -936,6 +1208,10 @@ const handleDeleteArea = async area => {
 .explorer-container {
   max-inline-size: 100%;
   min-inline-size: 0;
+}
+
+.explorer-header-card {
+  background: rgb(var(--v-theme-surface));
 }
 
 .explorer-workspace {
@@ -970,5 +1246,15 @@ const handleDeleteArea = async area => {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+@media (max-width: 959px) {
+  .site-inventory-explorer {
+    padding-block-end: 7rem !important;
+  }
+
+  .explorer-mobile-fab {
+    inset-block-end: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
 }
 </style>

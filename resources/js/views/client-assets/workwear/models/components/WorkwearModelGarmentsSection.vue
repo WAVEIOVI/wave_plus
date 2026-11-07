@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable camelcase, vue/no-mutating-props */
-import { WpFormDialog, WpSectionCard } from '@/components/shared'
+import { AppHybridTabs, WpFormDialog, WpSectionCard } from '@/components/shared'
 import {
   WORKWEAR_CERTIFICATIONS_PRESETS,
   WORKWEAR_CUSTOM_CONSTRUCTION_PRESETS,
@@ -18,6 +18,26 @@ const props = defineProps({
 const { t } = useI18n()
 const isDialogOpen = ref(false)
 const activeTab = ref('standards')
+
+const dialogTabs = computed(() => [
+  {
+    value: 'standards',
+    title: t('Standards & Certifications'),
+    icon: 'tabler-shield-check',
+    badge: ((props.modelData.standards || []).length + (props.modelData.certifications || []).length) || undefined,
+  },
+  {
+    value: 'specs',
+    title: t('Technical Construction Specs'),
+    icon: 'tabler-sewing-machine',
+    badge: activeTechnicalSpecsList.value.length || undefined,
+  },
+  {
+    value: 'custom',
+    title: t('Bespoke & Fit Profile'),
+    icon: 'tabler-ruler-measure',
+  },
+])
 
 const standardComboItems = computed(() =>
   WORKWEAR_STANDARDS_CATALOG.map(s => `${s.code} — ${s.title}`),
@@ -129,7 +149,7 @@ const activeTechnicalSpecsList = computed(() => {
   const list = []
   for (const [key, preset] of Object.entries(WORKWEAR_TECHNICAL_CONSTRUCTION_PRESETS)) {
     if (specs[key]) {
-      list.push({ key, label: preset.title, value: specs[key] })
+      list.push({ key, label: preset.title || preset.label, value: specs[key] })
     }
   }
 
@@ -316,7 +336,7 @@ const activeTechnicalSpecsList = computed(() => {
                 :key="spec.key"
                 class="spec-pill"
               >
-                <span class="text-caption text-medium-emphasis d-block">{{ spec.label }}</span>
+                <span class="text-caption text-medium-emphasis d-block">{{ $t(spec.label) }}</span>
                 <span class="text-body-2 font-weight-medium text-break">{{ spec.value }}</span>
               </div>
             </div>
@@ -382,38 +402,13 @@ const activeTechnicalSpecsList = computed(() => {
         @submit="isDialogOpen = false"
         @cancel="isDialogOpen = false"
       >
-        <VTabs
-          v-model="activeTab"
-          density="compact"
-          color="primary"
-          show-arrows
-          class="border-b mb-5"
-        >
-          <VTab value="standards">
-            <VIcon
-              start
-              icon="tabler-shield-check"
-              size="16"
-            />
-            {{ $t('Standards & Certifications') }}
-          </VTab>
-          <VTab value="specs">
-            <VIcon
-              start
-              icon="tabler-sewing-machine"
-              size="16"
-            />
-            {{ $t('Technical Construction Specs') }}
-          </VTab>
-          <VTab value="custom">
-            <VIcon
-              start
-              icon="tabler-ruler-measure"
-              size="16"
-            />
-            {{ $t('Bespoke & Fit Profile') }}
-          </VTab>
-        </VTabs>
+        <div class="mb-5">
+          <AppHybridTabs
+            v-model="activeTab"
+            :tabs="dialogTabs"
+            density="compact"
+          />
+        </div>
 
         <!-- Tab 1 · Standards & certifications -->
         <div
@@ -425,7 +420,7 @@ const activeTechnicalSpecsList = computed(() => {
               {{ $t('Normative EN / ISO Standards') }}
             </div>
             <p class="text-body-2 text-medium-emphasis mb-3">
-              {{ $t('Select or enter applicable European PPE safety standards.') }}
+              {{ $t('Click any European PPE safety standard card below or enter custom standards.') }}
             </p>
             <AppCombobox
               v-model="modelData.standards"
@@ -437,20 +432,26 @@ const activeTechnicalSpecsList = computed(() => {
               closable-chips
               variant="outlined"
             />
-            <div class="d-flex flex-wrap gap-2 mt-3">
-              <VChip
+            <div class="standards-grid mt-3">
+              <button
                 v-for="std in WORKWEAR_STANDARDS_CATALOG"
                 :key="std.code"
-                size="small"
-                :color="isStandardSelected(std.code) ? 'primary' : 'secondary'"
-                :variant="isStandardSelected(std.code) ? 'flat' : 'tonal'"
-                :prepend-icon="isStandardSelected(std.code) ? 'tabler-check' : undefined"
-                class="font-mono"
+                type="button"
+                class="std-card"
+                :class="{ 'std-card--active': isStandardSelected(std.code) }"
                 :aria-pressed="isStandardSelected(std.code)"
                 @click="toggleStandardChip(std.code)"
               >
-                {{ std.code }}
-              </VChip>
+                <div class="d-flex align-center justify-space-between gap-2 w-100">
+                  <span class="font-mono font-weight-bold text-caption text-primary">{{ std.code }}</span>
+                  <VIcon
+                    :icon="isStandardSelected(std.code) ? 'tabler-circle-check-filled' : 'tabler-circle-plus'"
+                    size="16"
+                    :color="isStandardSelected(std.code) ? 'primary' : 'disabled'"
+                  />
+                </div>
+                <span class="text-body-2 font-weight-medium text-start">{{ $t(std.title) }}</span>
+              </button>
             </div>
           </div>
 
@@ -517,12 +518,12 @@ const activeTechnicalSpecsList = computed(() => {
                     size="18"
                     color="primary"
                   />
-                  <span class="text-subtitle-2 font-weight-bold">{{ preset.title }}</span>
+                  <span class="text-subtitle-2 font-weight-bold">{{ $t(preset.title || preset.label) }}</span>
                 </div>
                 <AppTextField
                   v-model="modelData.technical_specs[fieldKey]"
-                  :placeholder="preset.placeholder"
-                  :aria-label="preset.title"
+                  :placeholder="$t(preset.placeholder)"
+                  :aria-label="$t(preset.title || preset.label)"
                   density="compact"
                   variant="outlined"
                 />
@@ -658,6 +659,34 @@ const activeTechnicalSpecsList = computed(() => {
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.75rem;
+  }
+}
+
+.standards-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
+}
+
+.std-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgb(var(--v-theme-surface));
+  cursor: pointer;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: rgba(var(--v-theme-primary), 0.45);
+  }
+
+  &--active {
+    border-color: rgb(var(--v-theme-primary));
+    background: rgba(var(--v-theme-primary), 0.08);
   }
 }
 

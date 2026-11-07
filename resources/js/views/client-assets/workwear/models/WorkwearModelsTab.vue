@@ -2,7 +2,6 @@
 /* eslint-disable camelcase */
 import {
   WpActiveFilters,
-  WpBulkActions,
   WpDeleteDialog,
   WpFilterDialog,
   WpMobileCard,
@@ -19,7 +18,7 @@ import {
 } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import AddNewModelDialog from '@/views/client-assets/workwear/models/list/AddNewModelDialog.vue'
 import ViewModelDialog from '@/views/client-assets/workwear/models/list/ViewModelDialog.vue'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 
@@ -32,12 +31,10 @@ const {
   totalItems,
   loading,
   error,
-  searchQuery,
-  filters,
+  search,
   stagedFilters,
   activeFilters,
   activeFilterCount,
-  setFilter,
   removeFilter,
   resetFilters,
   applyStaged,
@@ -50,12 +47,20 @@ const {
   clientOptions,
   statusOptions,
   statusMap,
-  selectedIds,
-  clearSelection,
   loadFilterOptions,
 } = useWorkwearModelList()
 
 const isFilterDialogOpen = ref(false)
+
+const filterLabels = computed(() => ({
+  client_id: t('Client'),
+  status: t('Status'),
+}))
+
+const filterFormatters = computed(() => ({
+  client_id: val => clientOptions.value.find(c => c.value === val)?.title || val,
+  status: val => statusOptions.find(s => s.value === val)?.title || val,
+}))
 
 onMounted(() => {
   loadFilterOptions()
@@ -89,13 +94,6 @@ const handleConfirmDelete = async () => {
   }
 }
 
-const handleBulkDelete = async () => {
-  for (const id of selectedIds.value) {
-    await actions.deleteModel(id)
-  }
-  clearSelection()
-}
-
 // ── Row Actions Standard Contract ──────────────────────────────────────────
 const getRowActions = () => [
   { label: t('View Details'), icon: 'tabler-eye', emit: 'view' },
@@ -112,7 +110,7 @@ defineExpose({
 <template>
   <!-- 👉 Toolbar -->
   <WpPageToolbar
-    v-model:search="searchQuery"
+    v-model:search="search"
     :search-placeholder="$t('Search models by ref, name...')"
     :create-label="$t('New Model')"
     hide-create-on-mobile
@@ -125,63 +123,29 @@ defineExpose({
     @open-filters="isFilterDialogOpen = true"
     @refresh="refresh"
   >
-    <template #prepend>
-      <VAutocomplete
-        :model-value="filters.client_id"
-        :label="$t('Filter by Client')"
-        :items="clientOptions"
-        density="compact"
-        clearable
-        style="inline-size: 210px;"
-        class="me-2"
-        @update:model-value="val => setFilter('client_id', val)"
-      />
-      <VSelect
-        :model-value="filters.status"
-        :label="$t('Filter by Status')"
-        :items="statusOptions"
-        density="compact"
-        clearable
-        style="inline-size: 170px;"
-        class="me-2"
-        @update:model-value="val => setFilter('status', val)"
-      />
-    </template>
-
     <template #filter-chips>
       <WpActiveFilters
         v-if="activeFilters.length"
         :filters="activeFilters"
-        @remove="removeFilter"
+        :labels="filterLabels"
+        :formatters="filterFormatters"
+        @remove="f => removeFilter(f.key || f)"
         @clear-all="resetFilters"
       />
     </template>
   </WpPageToolbar>
-
-  <!-- 👉 Bulk Actions Bar -->
-  <div
-    v-if="selectedIds?.length"
-    class="px-4 pb-2"
-  >
-    <WpBulkActions
-      :selected-count="selectedIds?.length || 0"
-      @clear="clearSelection"
-      @delete="handleBulkDelete"
-    />
-  </div>
 
   <!-- 👉 Responsive List -->
   <WpResponsiveList
     v-model:page="page"
     v-model:items-per-page="itemsPerPage"
     v-model:sort-by="sortBy"
-    v-model:selected="selectedIds"
     :headers="headers"
     :items="items"
     :total-items="totalItems"
     :loading="loading"
     :error="error"
-    show-select
+    :show-select="false"
     item-value="id"
     @retry="refresh"
   >
@@ -325,7 +289,7 @@ defineExpose({
         label
         class="text-capitalize font-weight-medium"
       >
-        {{ item.status || 'draft' }}
+        {{ $t(item.status || 'draft') }}
       </VChip>
     </template>
 

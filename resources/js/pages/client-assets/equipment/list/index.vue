@@ -3,7 +3,6 @@
 import {
   AppFabSpeedDial,
   WpActiveFilters,
-  WpBulkActions,
   WpDeleteDialog,
   WpFilterDialog,
   WpKpiCard,
@@ -19,9 +18,9 @@ import { useEquipmentDialogs } from '@/composables/client-assets/equipment/useEq
 import { useEquipmentList } from '@/composables/client-assets/equipment/useEquipmentList'
 import { localizedValue } from '@/composables/useLocaleField'
 import EquipmentWizardDialog from '@/views/client-assets/equipment/dialogs/EquipmentWizardDialog.vue'
-import EquipmentViewModal from '@/views/client-assets/equipment/EquipmentViewModal.vue'
 import EquipmentReplaceQrDialog from '@/views/client-assets/equipment/EquipmentReplaceQrDialog.vue'
 import EquipmentTransferDialog from '@/views/client-assets/equipment/EquipmentTransferDialog.vue'
+import EquipmentViewModal from '@/views/client-assets/equipment/EquipmentViewModal.vue'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -75,8 +74,6 @@ const {
   resolveLifecycleVariant,
   resolveComplianceVariant,
   resolveCriticalityVariant,
-  selectedEquipment,
-  clearSelection,
   kpiCards,
 } = useEquipmentList()
 
@@ -88,6 +85,11 @@ const actions = useEquipmentActions({
   onRefresh: refresh,
 })
 
+const openFilterDialog = () => {
+  stageFilters()
+  dialogs.isFilterDialogOpen.value = true
+}
+
 const handleRowDelete = item => {
   dialogs.openDelete(item)
 }
@@ -97,13 +99,6 @@ const handleConfirmDelete = async () => {
     await actions.deleteEquipment(dialogs.activeEquipment.value.id)
     dialogs.closeDelete()
   }
-}
-
-const handleBulkDelete = async () => {
-  for (const id of selectedEquipment.value) {
-    await actions.deleteEquipment(id)
-  }
-  clearSelection()
 }
 
 const handleKpiClick = kpi => {
@@ -127,6 +122,43 @@ const isKpiActive = kpi => {
   return false
 }
 
+// ── Filter Chip Formatters ─────────────────────────────────────────────────
+const filterLabelMap = computed(() => ({
+  client_id: t('Client'),
+  site_id: t('Site'),
+  equipment_class_id: t('Equipment Class'),
+  blueprint_id: t('Catalog Blueprint'),
+  lifecycle_status: t('Lifecycle Status'),
+  compliance_status: t('Compliance Status'),
+  criticality: t('Criticality'),
+}))
+
+const filterValueFormatters = {
+  client_id: val => {
+    const found = clientsList.value.find(c => String(c.id) === String(val))
+
+    return found ? localizedValue(found.commercial_name, localizedValue(found.legal_name)) : val
+  },
+  site_id: val => {
+    const found = sitesList.value.find(s => String(s.id) === String(val))
+
+    return found ? localizedValue(found.name) : val
+  },
+  equipment_class_id: val => {
+    const found = classesList.value.find(c => String(c.id) === String(val))
+
+    return found ? localizedValue(found.name) : val
+  },
+  blueprint_id: val => {
+    const found = blueprintsList.value.find(b => String(b.id) === String(val))
+
+    return found ? localizedValue(found.name) : val
+  },
+  lifecycle_status: val => lifecycleOptions.find(o => o.value === val)?.title || val,
+  compliance_status: val => complianceOptions.find(o => o.value === val)?.title || val,
+  criticality: val => criticalityOptions.find(o => o.value === val)?.title || val,
+}
+
 // ── Row Actions Standard Contract ──────────────────────────────────────────
 const getRowActions = () => [
   { label: t('View Details'), icon: 'tabler-eye', emit: 'view' },
@@ -143,19 +175,13 @@ const mobileFabActions = computed(() => [
     id: 'new-equipment',
     icon: 'tabler-plus',
     title: t('New Equipment'),
-    onClick: () => router.push({ name: 'client-assets-equipment-edit-id', params: { id: 'new' } }),
-  },
-  {
-    id: 'quick-add',
-    icon: 'tabler-bolt',
-    title: t('Quick Add'),
     onClick: () => dialogs.openAdd(),
   },
   {
     id: 'filter-equipment',
     icon: 'tabler-filter',
     title: t('wp.filters.label', 'Filters'),
-    onClick: () => { dialogs.isFilterDialogOpen.value = true },
+    onClick: openFilterDialog,
   },
 ])
 </script>
@@ -206,56 +232,33 @@ const mobileFabActions = computed(() => [
         hide-filter-on-mobile
         :active-filter-count="activeFilterCount"
         :loading="loading"
-        @create="router.push({ name: 'client-assets-equipment-edit-id', params: { id: 'new' } })"
-        @open-filters="dialogs.isFilterDialogOpen.value = true"
+        @create="dialogs.openAdd"
+        @open-filters="openFilterDialog"
         @refresh="refresh"
       >
-        <template #prepend>
-          <VBtn
-            class="d-none d-md-inline-flex"
-            variant="tonal"
-            color="secondary"
-            prepend-icon="tabler-bolt"
-            @click="dialogs.openAdd"
-          >
-            {{ $t('Quick Add') }}
-          </VBtn>
-        </template>
-
         <template #filter-chips>
           <WpActiveFilters
-            v-if="activeFilters.length"
+            v-if="activeFilterCount > 0"
             :filters="activeFilters"
-            @remove="removeFilter"
+            :label-map="filterLabelMap"
+            :value-formatters="filterValueFormatters"
+            @remove="removeFilter($event?.key ?? $event)"
             @clear-all="resetFilters"
           />
         </template>
       </WpPageToolbar>
-
-      <!-- 👉 Bulk Actions Bar -->
-      <div
-        v-if="selectedEquipment.length"
-        class="px-4 pb-2"
-      >
-        <WpBulkActions
-          :selected-count="selectedEquipment.length"
-          @clear="clearSelection"
-          @delete="handleBulkDelete"
-        />
-      </div>
 
       <!-- 👉 Responsive List (Desktop Table + Mobile Cards) -->
       <WpResponsiveList
         v-model:page="page"
         v-model:items-per-page="itemsPerPage"
         v-model:sort-by="sortBy"
-        v-model:selected="selectedEquipment"
         :headers="headers"
         :items="equipment"
         :total-items="totalEquipment"
         :loading="loading"
         :error="error"
-        show-select
+        :show-select="false"
         item-value="id"
         @retry="refresh"
       >
@@ -389,7 +392,7 @@ const mobileFabActions = computed(() => [
             label
             class="text-capitalize font-weight-medium"
           >
-            {{ (item.lifecycle_status || 'draft').replace(/_/g, ' ') }}
+            {{ $t((item.lifecycle_status || 'draft').replace(/_/g, ' ')) }}
           </VChip>
         </template>
 
@@ -401,7 +404,7 @@ const mobileFabActions = computed(() => [
             label
             class="text-capitalize font-weight-medium"
           >
-            {{ (item.compliance_status || 'not_applicable').replace(/_/g, ' ') }}
+            {{ $t((item.compliance_status || 'not_applicable').replace(/_/g, ' ')) }}
           </VChip>
         </template>
 
@@ -414,7 +417,7 @@ const mobileFabActions = computed(() => [
             label
             class="text-capitalize"
           >
-            {{ item.criticality || 'low' }}
+            {{ $t(item.criticality || 'low') }}
           </VChip>
         </template>
 
@@ -439,6 +442,7 @@ const mobileFabActions = computed(() => [
             icon="tabler-fire-extinguisher"
             :status="item.lifecycle_status"
             :status-color="resolveLifecycleVariant(item.lifecycle_status)"
+            :show-select="false"
             clickable
             @click="dialogs.openView(item)"
           >
@@ -449,7 +453,7 @@ const mobileFabActions = computed(() => [
                 label
                 class="text-capitalize"
               >
-                {{ (item.compliance_status || 'not_applicable').replace(/_/g, ' ') }}
+                {{ $t((item.compliance_status || 'not_applicable').replace(/_/g, ' ')) }}
               </VChip>
             </template>
 
@@ -531,6 +535,7 @@ const mobileFabActions = computed(() => [
     <WpFilterDialog
       v-model:is-open="dialogs.isFilterDialogOpen.value"
       :title="$t('Filter Equipment')"
+      :active-count="activeFilterCount"
       @apply="applyStaged"
       @reset="resetStaged"
     >
@@ -631,7 +636,7 @@ const mobileFabActions = computed(() => [
       @updated="refresh"
     />
 
-    <!-- 👉 Quick Add Equipment Dialog -->
+    <!-- 👉 Add New Equipment Wizard Dialog -->
     <EquipmentWizardDialog
       v-model:is-dialog-visible="dialogs.addDialog.isOpen.value"
       is-new

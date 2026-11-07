@@ -33,11 +33,12 @@ const emit = defineEmits([
 const { t } = useI18n()
 const { showSuccess, showWarning } = useAppSnackbar()
 
+// WpJournalNav internally handles smooth scrolling on click and updates v-model on scroll-spy.
+// Do NOT emit scrollToSection inside set() or it triggers smooth-scroll loops during user scroll.
 const currentActive = computed({
   get: () => props.modelValue || props.activeSection,
   set: val => {
     emit('update:modelValue', val)
-    emit('scrollToSection', val)
   },
 })
 
@@ -70,7 +71,7 @@ const copyQr = async () => {
   <WpJournalNav
     v-model="currentActive"
     :sections="sections"
-    :title="form.model_name || form.equipment_code || $t('New Equipment')"
+    :title="form.model_name || form.equipment_code || $t('Edit Equipment')"
     :subtitle="form.equipment_code || equipment?.equipment_code || '—'"
     :id-prefix="idPrefix"
   >
@@ -114,11 +115,11 @@ const copyQr = async () => {
           </div>
           <VChip
             size="x-small"
-            :color="isNew ? 'warning' : 'success'"
+            color="success"
             variant="tonal"
             label
           >
-            {{ isNew ? $t('Pending') : $t('Active') }}
+            {{ $t('Active') }}
           </VChip>
         </div>
 
@@ -128,7 +129,7 @@ const copyQr = async () => {
 
         <div class="d-flex gap-1.5 flex-wrap">
           <VBtn
-            v-if="!isNew && !readonly"
+            v-if="!readonly"
             size="x-small"
             variant="tonal"
             color="warning"
@@ -139,7 +140,6 @@ const copyQr = async () => {
             {{ $t('Replace') }}
           </VBtn>
           <VBtn
-            v-if="!isNew"
             size="x-small"
             variant="tonal"
             color="secondary"
@@ -165,18 +165,17 @@ const copyQr = async () => {
         <VBtn
           block
           color="primary"
-          :disabled="saving || (!isDirty && !isNew)"
+          :disabled="saving || !isDirty"
           :loading="saving"
           prepend-icon="tabler-device-floppy"
-          :aria-label="isNew ? $t('Create Equipment') : $t('Save Changes')"
+          :aria-label="$t('Save Changes')"
           class="font-weight-semibold"
           @click="emit('save')"
         >
-          {{ isNew ? $t('Create Equipment') : $t('Save Changes') }}
+          {{ $t('Save Changes') }}
         </VBtn>
 
         <VBtn
-          v-if="!isNew"
           block
           variant="tonal"
           color="info"
@@ -189,7 +188,7 @@ const copyQr = async () => {
         </VBtn>
 
         <VBtn
-          v-if="!isNew && canDelete"
+          v-if="canDelete"
           block
           variant="tonal"
           color="error"

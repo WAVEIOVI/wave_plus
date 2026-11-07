@@ -1,9 +1,11 @@
 <script setup>
 /* eslint-disable camelcase */
+import { WpPartnerCard, WpSectionCard, WpWizardDialog } from '@/components/shared'
+import { WORKWEAR_STANDARD_SIZES } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import { useAppSnackbar } from '@/composables/useAppSnackbar'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import { requiredValidator } from '@core/utils/validators'
-import { ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -14,10 +16,11 @@ const emit = defineEmits(['update:isDialogVisible', 'employeeCreated', 'addEmplo
 
 const { t } = useI18n()
 const store = useClientAssetStore()
-const { showSuccess, showError } = useAppSnackbar()
+const { showSuccess, showError, showWarning } = useAppSnackbar()
 
 const isSubmitting = ref(false)
-const clientOptions = ref([])
+const activeStep = ref('client')
+const selectedClientObj = ref(null)
 
 const formData = ref({
   first_name: '',
@@ -32,11 +35,11 @@ const formData = ref({
   status: 'active',
   notes: '',
   sizes: {
-    top: '',
-    bottom: '',
-    shoes: '',
-    gloves: '',
-    head: '',
+    top: 'L',
+    bottom: '42',
+    shoes: '42',
+    gloves: '9',
+    head: 'M',
   },
   measurements: {
     chest: '',
@@ -47,27 +50,59 @@ const formData = ref({
   },
 })
 
-const statusOptions = [
-  { title: 'Active', value: 'active' },
-  { title: 'Inactive', value: 'inactive' },
-  { title: 'Terminated', value: 'terminated' },
-]
+const statusOptions = computed(() => [
+  { title: t('Active'), value: 'active' },
+  { title: t('Inactive'), value: 'inactive' },
+  { title: t('Terminated'), value: 'terminated' },
+])
 
-const fetchClients = async () => {
-  try {
-    clientOptions.value = await store.fetchClientOptions({ limit: 100 })
-  } catch (err) {
-    console.error('Failed to fetch clients:', err)
-  }
-}
+const steps = computed(() => [
+  {
+    id: 'client',
+    title: t('Client & Identity'),
+    subtitle: t('Employer & staff name'),
+    icon: 'tabler-user-check',
+  },
+  {
+    id: 'role',
+    title: t('Department & Contact'),
+    subtitle: t('Role, phone & email'),
+    icon: 'tabler-briefcase',
+  },
+  {
+    id: 'sizes',
+    title: t('Sizes & Measurements'),
+    subtitle: t('PPE & garment sizing'),
+    icon: 'tabler-ruler-measure',
+  },
+])
 
-watch(() => props.isDialogVisible, val => {
-  if (val && !clientOptions.value.length) {
-    fetchClients()
+const isStepValid = computed(() => {
+  if (activeStep.value === 'client') {
+    return Boolean(
+      formData.value.client_id
+      && formData.value.first_name?.trim()
+      && formData.value.last_name?.trim(),
+    )
   }
+
+  return true
 })
 
+const handleSelectClient = client => {
+  if (!client) {
+    selectedClientObj.value = null
+    formData.value.client_id = null
+
+    return
+  }
+  selectedClientObj.value = client
+  formData.value.client_id = client.id
+}
+
 const resetForm = () => {
+  activeStep.value = 'client'
+  selectedClientObj.value = null
   formData.value = {
     first_name: '',
     last_name: '',
@@ -81,11 +116,11 @@ const resetForm = () => {
     status: 'active',
     notes: '',
     sizes: {
-      top: '',
-      bottom: '',
-      shoes: '',
-      gloves: '',
-      head: '',
+      top: 'L',
+      bottom: '42',
+      shoes: '42',
+      gloves: '9',
+      head: 'M',
     },
     measurements: {
       chest: '',
@@ -98,22 +133,29 @@ const resetForm = () => {
 }
 
 const onSubmit = async () => {
+  if (!formData.value.client_id || !formData.value.first_name?.trim() || !formData.value.last_name?.trim()) {
+    showWarning(t('Please select a client and enter the employee first and last name'))
+    activeStep.value = 'client'
+
+    return
+  }
+
   isSubmitting.value = true
   try {
     await store.createWorkwearEmployee({
-      first_name: formData.value.first_name,
-      last_name: formData.value.last_name,
+      first_name: formData.value.first_name.trim(),
+      last_name: formData.value.last_name.trim(),
       client_id: formData.value.client_id,
-      employee_ref: formData.value.employee_ref || null,
-      email: formData.value.email || null,
-      phone: formData.value.phone || null,
-      department: formData.value.department || null,
-      role: formData.value.role || null,
-      position: formData.value.position || null,
+      employee_ref: formData.value.employee_ref?.trim() || null,
+      email: formData.value.email?.trim() || null,
+      phone: formData.value.phone?.trim() || null,
+      department: formData.value.department?.trim() || null,
+      role: formData.value.role?.trim() || null,
+      position: formData.value.position?.trim() || null,
       status: formData.value.status,
       sizes: formData.value.sizes,
       measurements: formData.value.measurements,
-      notes: formData.value.notes || null,
+      notes: formData.value.notes?.trim() || null,
     })
 
     showSuccess(t('Workwear employee created successfully'))
@@ -137,250 +179,289 @@ const closeDialog = () => {
 </script>
 
 <template>
-  <WpFormDialog
+  <WpWizardDialog
     :model-value="props.isDialogVisible"
+    v-model:active-step="activeStep"
+    :steps="steps"
     :title="$t('Add Workwear Employee')"
-    :subtitle="$t('Enroll a client employee for uniform assignments and sizing.')"
+    :subtitle="$t('Enroll a client employee for workwear item assignments and PPE sizing.')"
     icon="tabler-user-plus"
     icon-color="primary"
-    size="medium"
+    :max-width="880"
     :loading="isSubmitting"
+    :is-step-valid="isStepValid"
     :submit-label="$t('Create Employee')"
     @submit="onSubmit"
     @cancel="closeDialog"
-    @update:model-value="val => emit('update:isDialogVisible', val)"
+    @update:model-value="val => { if (!val) closeDialog(); else emit('update:isDialogVisible', val) }"
   >
-    <VRow>
-      <!-- Name -->
-      <VCol
-        cols="12"
-        md="6"
+    <!-- ━━━ STEP 1: Client & Identity ━━━ -->
+    <template #step-client>
+      <div class="d-flex flex-column gap-4">
+        <WpSectionCard
+          icon="tabler-building"
+          :title="$t('1. Client Account (Employer)')"
+          :subtitle="$t('Select the client organization this employee belongs to.')"
+        >
+          <WpPartnerCard
+            :partner="selectedClientObj"
+            partner-type="client"
+            :can-change="true"
+            :select-dialog-props="{ confirmBehavior: 'immediate' }"
+            @select="handleSelectClient"
+          />
+        </WpSectionCard>
+
+        <WpSectionCard
+          icon="tabler-id"
+          :title="$t('2. Employee Identity')"
+          :subtitle="$t('Staff member full name, badge reference, and enrollment status.')"
+        >
+          <VRow>
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppTextField
+                v-model="formData.first_name"
+                :rules="[requiredValidator]"
+                :label="$t('First Name *')"
+                :placeholder="$t('e.g. Mohamed')"
+                variant="outlined"
+              />
+            </VCol>
+
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppTextField
+                v-model="formData.last_name"
+                :rules="[requiredValidator]"
+                :label="$t('Last Name *')"
+                :placeholder="$t('e.g. Ben Ali')"
+                variant="outlined"
+              />
+            </VCol>
+
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppTextField
+                v-model="formData.employee_ref"
+                :label="$t('Badge / Employee Ref #')"
+                :placeholder="$t('e.g. EMP-1042 (Auto-generated if blank)')"
+                variant="outlined"
+              />
+            </VCol>
+
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <AppSelect
+                v-model="formData.status"
+                :items="statusOptions"
+                :label="$t('Status')"
+                variant="outlined"
+              />
+            </VCol>
+          </VRow>
+        </WpSectionCard>
+      </div>
+    </template>
+
+    <!-- ━━━ STEP 2: Department & Contact ━━━ -->
+    <template #step-role>
+      <WpSectionCard
+        icon="tabler-briefcase"
+        :title="$t('Operational Role & Contact Details')"
+        :subtitle="$t('Specify department, job position, and contact coordinates for handover notifications.')"
       >
-        <AppTextField
-          v-model="formData.first_name"
-          :rules="[requiredValidator]"
-          :label="$t('First Name')"
-          variant="outlined"
-        />
-      </VCol>
+        <VRow>
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <AppTextField
+              v-model="formData.department"
+              :label="$t('Department')"
+              :placeholder="$t('e.g. Maintenance, Logistics')"
+              variant="outlined"
+            />
+          </VCol>
 
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <AppTextField
-          v-model="formData.last_name"
-          :rules="[requiredValidator]"
-          :label="$t('Last Name')"
-          variant="outlined"
-        />
-      </VCol>
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <AppTextField
+              v-model="formData.position"
+              :label="$t('Position / Job Title')"
+              :placeholder="$t('e.g. Senior Technician')"
+              variant="outlined"
+            />
+          </VCol>
 
-      <!-- Client & Ref -->
-      <VCol
-        cols="12"
-        md="8"
-      >
-        <AppAutocomplete
-          v-model="formData.client_id"
-          :rules="[requiredValidator]"
-          :items="clientOptions"
-          :label="$t('Client')"
-          :placeholder="$t('Select client')"
-          variant="outlined"
-        />
-      </VCol>
+          <VCol
+            cols="12"
+            md="4"
+          >
+            <AppTextField
+              v-model="formData.role"
+              :label="$t('Operational Role')"
+              :placeholder="$t('e.g. Field Operator')"
+              variant="outlined"
+            />
+          </VCol>
 
-      <VCol
-        cols="12"
-        md="4"
-      >
-        <AppTextField
-          v-model="formData.employee_ref"
-          :label="$t('Badge / Ref #')"
-          :placeholder="$t('e.g. EMP-1042')"
-          variant="outlined"
-        />
-      </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <AppTextField
+              v-model="formData.email"
+              :label="$t('Email Address')"
+              :placeholder="$t('employee_email_placeholder')"
+              type="email"
+              prepend-inner-icon="tabler-mail"
+              variant="outlined"
+            />
+          </VCol>
 
-      <!-- Contact -->
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <AppTextField
-          v-model="formData.email"
-          :label="$t('Email Address')"
-          type="email"
-          variant="outlined"
-        />
-      </VCol>
+          <VCol
+            cols="12"
+            md="6"
+          >
+            <AppTextField
+              v-model="formData.phone"
+              :label="$t('Phone Number')"
+              :placeholder="$t('+216 ...')"
+              prepend-inner-icon="tabler-phone"
+              variant="outlined"
+            />
+          </VCol>
+        </VRow>
+      </WpSectionCard>
+    </template>
 
-      <VCol
-        cols="12"
-        md="6"
-      >
-        <AppTextField
-          v-model="formData.phone"
-          :label="$t('Phone Number')"
-          variant="outlined"
-        />
-      </VCol>
+    <!-- ━━━ STEP 3: Sizes & Measurements ━━━ -->
+    <template #step-sizes>
+      <div class="d-flex flex-column gap-4">
+        <WpSectionCard
+          icon="tabler-shirt"
+          :title="$t('Standard Workwear & PPE Sizes')"
+          :subtitle="$t('Used to match available workwear items during garment issuance.')"
+        >
+          <VRow>
+            <VCol
+              cols="12"
+              sm="6"
+              md="4"
+            >
+              <AppCombobox
+                v-model="formData.sizes.top"
+                :items="WORKWEAR_STANDARD_SIZES"
+                :label="$t('Top / Jacket / Coverall Size')"
+                variant="outlined"
+              />
+            </VCol>
 
-      <!-- Department & Position -->
-      <VCol
-        cols="12"
-        md="4"
-      >
-        <AppTextField
-          v-model="formData.department"
-          :label="$t('Department')"
-          :placeholder="$t('e.g. Maintenance')"
-          variant="outlined"
-        />
-      </VCol>
+            <VCol
+              cols="12"
+              sm="6"
+              md="4"
+            >
+              <AppCombobox
+                v-model="formData.sizes.bottom"
+                :items="['38', '40', '42', '44', '46', '48', '50', '52', 'S', 'M', 'L', 'XL', '2XL']"
+                :label="$t('Bottom / Trousers Size')"
+                variant="outlined"
+              />
+            </VCol>
 
-      <VCol
-        cols="12"
-        md="4"
-      >
-        <AppTextField
-          v-model="formData.position"
-          :label="$t('Position / Title')"
-          :placeholder="$t('e.g. Electrician')"
-          variant="outlined"
-        />
-      </VCol>
+            <VCol
+              cols="12"
+              sm="6"
+              md="4"
+            >
+              <AppCombobox
+                v-model="formData.sizes.shoes"
+                :items="['38', '39', '40', '41', '42', '43', '44', '45', '46', '47']"
+                :label="$t('Safety Footwear Size (EU)')"
+                variant="outlined"
+              />
+            </VCol>
 
-      <VCol
-        cols="12"
-        md="4"
-      >
-        <AppSelect
-          v-model="formData.status"
-          :items="statusOptions"
-          :label="$t('Status')"
-          variant="outlined"
-        />
-      </VCol>
+            <VCol
+              cols="12"
+              sm="6"
+              md="6"
+            >
+              <AppCombobox
+                v-model="formData.sizes.gloves"
+                :items="['7 (S)', '8 (M)', '9 (L)', '10 (XL)', '11 (2XL)']"
+                :label="$t('Protective Gloves Size')"
+                variant="outlined"
+              />
+            </VCol>
 
-      <!-- Standard Body Sizes -->
-      <VCol cols="12">
-        <VDivider class="my-2" />
-        <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mb-2">
-          {{ $t('Workwear Measurements & Sizes') }}
-        </div>
-      </VCol>
+            <VCol
+              cols="12"
+              sm="6"
+              md="6"
+            >
+              <AppCombobox
+                v-model="formData.sizes.head"
+                :items="['Adjustable', 'S (54-56cm)', 'M (56-58cm)', 'L (58-60cm)', 'XL (60-62cm)']"
+                :label="$t('Helmet / Headwear Size')"
+                variant="outlined"
+              />
+            </VCol>
+          </VRow>
+        </WpSectionCard>
 
-      <VCol
-        cols="6"
-        sm="4"
-        md="2"
-      >
-        <AppTextField
-          v-model="formData.sizes.top"
-          :label="$t('Top / Jacket')"
-          :placeholder="$t('L, XL...')"
-          density="compact"
-          variant="outlined"
-        />
-      </VCol>
+        <WpSectionCard
+          icon="tabler-ruler-measure"
+          :title="$t('Body Measurements (cm) & Notes')"
+          :subtitle="$t('Optional anthropometric measurements for custom or tailored garments.')"
+        >
+          <VRow>
+            <VCol
+              v-for="m in [
+                { key: 'height', label: 'Height' },
+                { key: 'chest', label: 'Chest' },
+                { key: 'waist', label: 'Waist' },
+                { key: 'hips', label: 'Hips' },
+                { key: 'inseam', label: 'Inseam' },
+              ]"
+              :key="m.key"
+              cols="6"
+              sm="4"
+              md="2"
+            >
+              <AppTextField
+                v-model="formData.measurements[m.key]"
+                :label="$t(m.label)"
+                suffix="cm"
+                density="compact"
+                variant="outlined"
+              />
+            </VCol>
 
-      <VCol
-        cols="6"
-        sm="4"
-        md="2"
-      >
-        <AppTextField
-          v-model="formData.sizes.bottom"
-          :label="$t('Bottom / Pants')"
-          :placeholder="$t('34, 36...')"
-          density="compact"
-          variant="outlined"
-        />
-      </VCol>
-
-      <VCol
-        cols="6"
-        sm="4"
-        md="2"
-      >
-        <AppTextField
-          v-model="formData.sizes.shoes"
-          :label="$t('Safety Shoes')"
-          :placeholder="$t('42, 43...')"
-          density="compact"
-          variant="outlined"
-        />
-      </VCol>
-
-      <VCol
-        cols="6"
-        sm="4"
-        md="3"
-      >
-        <AppTextField
-          v-model="formData.sizes.gloves"
-          :label="$t('Gloves Size')"
-          :placeholder="$t('9, 10, L...')"
-          density="compact"
-          variant="outlined"
-        />
-      </VCol>
-
-      <VCol
-        cols="6"
-        sm="4"
-        md="3"
-      >
-        <AppTextField
-          v-model="formData.sizes.head"
-          :label="$t('Helmet / Hat')"
-          :placeholder="$t('58cm, M...')"
-          density="compact"
-          variant="outlined"
-        />
-      </VCol>
-
-      <!-- Body Measurements -->
-      <VCol cols="12">
-        <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis mt-2 mb-1">
-          {{ $t('Body Measurements (cm)') }}
-        </div>
-      </VCol>
-
-      <VCol
-        v-for="m in [
-          { key: 'chest', label: 'Chest' },
-          { key: 'waist', label: 'Waist' },
-          { key: 'hips', label: 'Hips' },
-          { key: 'height', label: 'Height' },
-          { key: 'inseam', label: 'Inseam' },
-        ]"
-        :key="m.key"
-        cols="6"
-        sm="4"
-        md="2"
-      >
-        <AppTextField
-          v-model="formData.measurements[m.key]"
-          :label="$t(m.label)"
-          suffix="cm"
-          density="compact"
-          variant="outlined"
-        />
-      </VCol>
-
-      <!-- Notes -->
-      <VCol cols="12">
-        <AppTextarea
-          v-model="formData.notes"
-          :label="$t('Notes / Remarks')"
-          :placeholder="$t('Optional employee notes or medical/fit considerations...')"
-          rows="2"
-          variant="outlined"
-        />
-      </VCol>
-    </VRow>
-  </WpFormDialog>
+            <VCol cols="12">
+              <AppTextarea
+                v-model="formData.notes"
+                :label="$t('Notes / Remarks')"
+                :placeholder="$t('Optional employee notes or special PPE fit considerations...')"
+                rows="2"
+                variant="outlined"
+              />
+            </VCol>
+          </VRow>
+        </WpSectionCard>
+      </div>
+    </template>
+  </WpWizardDialog>
 </template>

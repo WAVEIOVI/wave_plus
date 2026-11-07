@@ -1,8 +1,9 @@
 <script setup>
 /* eslint-disable camelcase */
-import { WpPartnerCard, WpSearchSelectDialog } from '@/components/shared'
+import { WpPartnerCard } from '@/components/shared'
+import { localizedValue } from '@/composables/useLocaleField'
 import { useClientStore } from '@/stores/useClientStore'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
@@ -15,14 +16,14 @@ const emit = defineEmits(['update:client', 'update:modelValue', 'change'])
 const { t } = useI18n()
 const clientStore = useClientStore()
 
-const isSearchDialogOpen = ref(false)
-
 const currentClient = computed(() => props.client || props.modelValue || null)
 
+// Single-click selection via WpPartnerCard's built-in WpSearchSelectDialog
 const clientSearchConfig = computed(() => ({
   title: t('Select Owning Client Company'),
   entityLabel: t('Client'),
   icon: 'tabler-building-store',
+  confirmBehavior: 'immediate',
   fetcher: async ({ page, perPage, search, filters, sortBy, sortDir, signal }) => {
     const res = await clientStore.fetchClients({
       page,
@@ -57,8 +58,13 @@ const clientSearchConfig = computed(() => ({
     },
   ],
   display: {
-    title: item => item.legal_name || item.name || `Client #${item.id}`,
-    subtitle: item => (item.commercial_name ? `${item.commercial_name} • ${item.client_id || ''}` : (item.client_id || item.primary_email || '')),
+    title: item => localizedValue(item.legal_name) || item.legal_name || item.name || `Client #${item.id}`,
+    subtitle: item => {
+      const trade = localizedValue(item.commercial_name)
+      const code = item.client_id || item.code || ''
+
+      return trade ? `${trade}${code ? ` • ${code}` : ''}` : (code || item.primary_email || '')
+    },
     avatar: item => item.logo_url,
     chips: [item => ({ label: item.status, color: item.status === 'active' ? 'success' : 'secondary' })],
   },
@@ -80,28 +86,19 @@ function onPartnerClear() {
 <template>
   <div class="workwear-wizard-client-step d-flex flex-column gap-4">
     <p class="text-body-2 text-medium-emphasis mb-0">
-      {{ $t('Assign owning client company') }}
+      {{ $t('Select the owning client company for this workwear model.') }}
     </p>
 
-    <!-- Standard BP Partner Card -->
+    <!-- Standard BP Partner Card (Includes built-in single-click WpSearchSelectDialog) -->
     <WpPartnerCard
       :partner="currentClient"
       :partner-label="$t('Client')"
       status-type="client"
       :search-config="clientSearchConfig"
+      :can-view="false"
       clearable
       @change="onPartnerChange"
       @clear="onPartnerClear"
-      @request-select="isSearchDialogOpen = true"
-    />
-
-    <!-- Dedicated Search Select Dialog for top button & direct trigger -->
-    <WpSearchSelectDialog
-      v-model="isSearchDialogOpen"
-      :selected="currentClient"
-      v-bind="clientSearchConfig"
-      confirm-behavior="immediate"
-      @select="onPartnerChange"
     />
   </div>
 </template>

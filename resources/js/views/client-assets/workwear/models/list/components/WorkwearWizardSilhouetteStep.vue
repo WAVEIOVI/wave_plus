@@ -1,6 +1,8 @@
 <script setup>
 /* eslint-disable camelcase */
 import {
+  WORKWEAR_STANDARD_SIZES,
+  extractCatalogColorsAndSizes,
   extractSilhouetteSpecBadge,
   findSilhouetteItemMeta,
   formatSilhouetteShortTitle,
@@ -24,7 +26,9 @@ const props = defineProps({
   fabricId: { type: [String, Number], default: null },
   fabric: { type: String, default: '' },
   colors: { type: Array, default: () => ['navy', 'hi-vis-yellow'] },
+  sizeRange: { type: Array, default: () => ['S', 'M', 'L', 'XL', '2XL'] },
   fabrics: { type: Array, default: () => [] },
+  catalogItem: { type: Object, default: null },
 })
 
 const emit = defineEmits([
@@ -35,45 +39,39 @@ const emit = defineEmits([
   'update:fabricId',
   'update:fabric',
   'update:colors',
+  'update:sizeRange',
 ])
 
 const { t, locale } = useI18n()
 
-// Preview view is local: the compact drawing's Front/Back pill needs a listener.
 const previewView = ref('front')
-
-// Active color slot being edited: 0 = Primary Color, 1 = Contrast Color
 const activeColorSlot = ref(0)
 
 const {
+  localizedSilhouettes,
   localizedSilhouetteCatalog,
   localizedColorPalette,
   WORKWEAR_SILHOUETTES,
 } = useWorkwearStudioConstants()
 
-// Current category object
 const activeCategoryObj = computed(() =>
   localizedSilhouetteCatalog.value.find(c => c.value === props.category) || localizedSilhouetteCatalog.value[0],
 )
 
-// Subcategories of active category
 const subcategories = computed(() =>
   activeCategoryObj.value?.subcategories || [],
 )
 
-// Specific silhouette items in active subcategory
 const silhouetteItems = computed(() => {
   const activeSub = subcategories.value.find(s => s.value === props.subcategory) || subcategories.value[0]
 
   return activeSub?.items || []
 })
 
-// Selected fabric details
 const selectedFabricObj = computed(() =>
   props.fabrics.find(f => f.id === props.fabricId) || null,
 )
 
-// Live silhouette display summary for CAD preview
 const silhouetteSummary = computed(() =>
   resolveSilhouetteDisplay({
     silhouette_category: props.category,
@@ -83,7 +81,22 @@ const silhouetteSummary = computed(() =>
   }, { locale: locale.value, t }),
 )
 
-// Helper to get silhouette icon from renderer
+const catalogExtracted = computed(() =>
+  extractCatalogColorsAndSizes(props.catalogItem, locale.value),
+)
+
+const availableSizeOptions = computed(() => {
+  const base = [...WORKWEAR_STANDARD_SIZES]
+  for (const sz of catalogExtracted.value.sizes) {
+    if (!base.includes(sz)) base.push(sz)
+  }
+  for (const sz of (props.sizeRange || [])) {
+    if (!base.includes(sz)) base.push(sz)
+  }
+
+  return base
+})
+
 function getSilhouetteIcon(renderer) {
   const match = WORKWEAR_SILHOUETTES.find(s => s.value === renderer)
 
@@ -126,6 +139,24 @@ function onSelectSilhouetteItem(item) {
   emit('update:silhouette', renderer)
 }
 
+function onSelectDirectSilhouette(silValue) {
+  emit('update:silhouette', silValue)
+
+  // Also align category/subcategory/item if a matching item exists
+  for (const cat of localizedSilhouetteCatalog.value) {
+    for (const sub of cat.subcategories || []) {
+      const matchedItem = (sub.items || []).find(i => i.renderer === silValue)
+      if (matchedItem) {
+        emit('update:category', cat.value)
+        emit('update:subcategory', sub.value)
+        emit('update:silhouetteItem', matchedItem.value)
+
+        return
+      }
+    }
+  }
+}
+
 function onFabricChange(fabricId) {
   emit('update:fabricId', fabricId)
 
@@ -135,22 +166,27 @@ function onFabricChange(fabricId) {
   }
 }
 
-// ── Color Selection Handlers (Editing Primary and Contrast Slots) ──────────────
+function syncCatalogColorsAndSizes() {
+  if (catalogExtracted.value.colors.length) {
+    emit('update:colors', catalogExtracted.value.colors.slice(0, 2))
+  }
+  if (catalogExtracted.value.sizes.length) {
+    emit('update:sizeRange', [...catalogExtracted.value.sizes])
+  }
+}
+
+// ── Color Selection Handlers ────────────────────────────────────────────────────
 function selectColor(colorValue) {
   const currentColors = props.colors && props.colors.length ? [...props.colors] : ['navy']
 
   if (activeColorSlot.value === 0) {
-    // Directly update the Primary color (Slot 0)
     if (currentColors[1] === colorValue) {
-      // If user sets primary to existing contrast, swap them
       currentColors[1] = currentColors[0]
     }
     currentColors[0] = colorValue
     emit('update:colors', currentColors)
   } else {
-    // Directly update or add the Contrast color (Slot 1)
     if (currentColors[0] === colorValue) {
-      // If same as primary, keep single-color garment
       emit('update:colors', [currentColors[0]])
     } else {
       currentColors[1] = colorValue
@@ -170,6 +206,14 @@ function swapColors() {
   if (props.colors.length >= 2) {
     emit('update:colors', [props.colors[1], props.colors[0]])
   }
+}
+
+function toggleSize(sz) {
+  const current = Array.isArray(props.sizeRange) ? [...props.sizeRange] : []
+  const idx = current.indexOf(sz)
+  if (idx >= 0) current.splice(idx, 1)
+  else current.push(sz)
+  emit('update:sizeRange', current)
 }
 </script>
 
@@ -199,7 +243,7 @@ function swapColors() {
             variant="tonal"
             class="font-mono"
           >
-            {{ silhouetteSummary.renderer }}
+            {{ props.silhouette }}
           </VChip>
         </div>
 
@@ -221,7 +265,7 @@ function swapColors() {
             <div class="text-caption text-medium-emphasis text-truncate">
               {{ silhouetteSummary.categoryTitle }} › {{ formatSubcategoryShortTitle(subcategories.find(s => s.value === props.subcategory) || { title: silhouetteSummary.subcategoryTitle }, locale) }}
             </div>
-            <div class="d-flex flex-wrap align-center gap-2 mt-2">
+            <div class="d-flex flex-wrap align-center justify-center justify-sm-start justify-md-center gap-2 mt-2">
               <span class="d-inline-flex align-center gap-1">
                 <span
                   class="mini-dot"
@@ -264,21 +308,59 @@ function swapColors() {
               size="20"
             />
           </VAvatar>
-          <div>
+          <div class="flex-grow-1">
             <h4 class="text-subtitle-1 font-weight-bold mb-0">
-              {{ $t('Silhouette Classification') }}
+              {{ $t('Workwear & PPE Silhouette Classification') }}
             </h4>
             <div class="text-caption text-medium-emphasis">
-              {{ $t('Category › Sub-Category › Garment Silhouette') }}
+              {{ $t('Select by Category & Sub-Category, or pick a 2D Silhouette directly') }}
             </div>
           </div>
         </div>
 
-        <!-- Tier 1 -->
+        <!-- Quick 2D Garment Silhouette Bar -->
         <div class="mb-5">
+          <div class="tier-label justify-space-between">
+            <div class="d-flex align-center gap-2">
+              <VIcon
+                icon="tabler-shirt"
+                size="16"
+                color="primary"
+              />
+              <span class="text-body-2 font-weight-medium">{{ $t('Quick 2D Silhouette Picker') }}</span>
+            </div>
+            <span class="text-caption text-medium-emphasis">
+              {{ localizedSilhouettes.length }} {{ $t('models') }}
+            </span>
+          </div>
+
+          <div class="d-flex flex-wrap gap-1.5">
+            <VChip
+              v-for="sil in localizedSilhouettes"
+              :key="sil.value"
+              size="small"
+              :color="props.silhouette === sil.value ? 'primary' : 'secondary'"
+              :variant="props.silhouette === sil.value ? 'flat' : 'tonal'"
+              class="cursor-pointer font-weight-medium"
+              @click="onSelectDirectSilhouette(sil.value)"
+            >
+              <VIcon
+                start
+                :icon="sil.icon"
+                size="14"
+              />
+              {{ sil.title }}
+            </VChip>
+          </div>
+        </div>
+
+        <VDivider class="mb-4" />
+
+        <!-- Tier 1: Category -->
+        <div class="mb-4">
           <div class="tier-label">
             <span class="tier-number">1</span>
-            <span class="text-body-2 font-weight-medium">{{ $t('Product Category') }}</span>
+            <span class="text-body-2 font-weight-medium">{{ $t('Product Family') }}</span>
           </div>
 
           <div
@@ -301,11 +383,11 @@ function swapColors() {
               <VAvatar
                 :color="props.category === cat.value ? 'primary' : 'secondary'"
                 :variant="props.category === cat.value ? 'flat' : 'tonal'"
-                size="36"
+                size="34"
               >
                 <VIcon
                   :icon="cat.icon"
-                  size="20"
+                  size="18"
                 />
               </VAvatar>
               <span class="text-body-2 font-weight-medium text-truncate w-100 text-center">
@@ -315,18 +397,18 @@ function swapColors() {
           </div>
         </div>
 
-        <!-- Tier 2 -->
+        <!-- Tier 2: Sub-Category -->
         <div
           v-if="subcategories.length"
-          class="mb-5"
+          class="mb-4"
         >
           <div class="tier-label justify-space-between">
             <div class="d-flex align-center gap-2">
               <span class="tier-number">2</span>
-              <span class="text-body-2 font-weight-medium">{{ $t('Sub-Category') }}</span>
+              <span class="text-body-2 font-weight-medium">{{ $t('Garment Group') }}</span>
             </div>
             <span class="text-caption text-medium-emphasis">
-              {{ subcategories.length }} {{ $t('subcategories') }}
+              {{ subcategories.length }} {{ $t('groups') }}
             </span>
           </div>
 
@@ -372,12 +454,12 @@ function swapColors() {
           </div>
         </div>
 
-        <!-- Tier 3 -->
+        <!-- Tier 3: Specific Garment Item -->
         <div>
           <div class="tier-label justify-space-between">
             <div class="d-flex align-center gap-2">
               <span class="tier-number">3</span>
-              <span class="text-body-2 font-weight-medium">{{ $t('Specific Garment Silhouette') }}</span>
+              <span class="text-body-2 font-weight-medium">{{ $t('Specific Workwear Model') }}</span>
             </div>
             <span class="text-caption text-medium-emphasis">
               {{ silhouetteItems.length }} {{ $t('available') }}
@@ -534,7 +616,7 @@ function swapColors() {
         </div>
       </VCard>
 
-      <!-- 3 · Colors -->
+      <!-- 3 · Colors & Sizes (with Catalog Import) -->
       <VCard
         variant="outlined"
         class="pa-4"
@@ -553,13 +635,23 @@ function swapColors() {
           </VAvatar>
           <div class="flex-grow-1">
             <h4 class="text-subtitle-1 font-weight-bold mb-0">
-              {{ $t('Color Scheme (Max 2 Colors)') }}
+              {{ $t('Color Scheme & Size Range') }}
             </h4>
             <div class="text-caption text-medium-emphasis">
-              {{ $t('Select a slot below to edit Primary or Contrast color') }}
+              {{ $t('Primary & contrast colors plus approved garment sizes') }}
             </div>
           </div>
-          <div class="d-flex align-center gap-2">
+          <div class="d-flex align-center gap-2 flex-wrap">
+            <VBtn
+              v-if="catalogExtracted.colors.length || catalogExtracted.sizes.length"
+              size="small"
+              variant="tonal"
+              color="info"
+              prepend-icon="tabler-download"
+              @click="syncCatalogColorsAndSizes"
+            >
+              {{ $t('Import from Catalog') }}
+            </VBtn>
             <VBtn
               v-if="props.colors.length >= 2"
               size="small"
@@ -571,14 +663,6 @@ function swapColors() {
             >
               {{ $t('Swap') }}
             </VBtn>
-            <VChip
-              size="small"
-              :color="props.colors.length === 2 ? 'primary' : 'secondary'"
-              variant="tonal"
-              class="font-weight-bold"
-            >
-              {{ props.colors.length }} / 2 {{ $t('Selected') }}
-            </VChip>
           </div>
         </div>
 
@@ -672,12 +756,8 @@ function swapColors() {
           </div>
         </div>
 
-        <p class="text-body-2 text-medium-emphasis mt-3 mb-3">
-          {{ activeColorSlot === 0 ? $t('Click any palette swatch below to change the Primary Garment Color:') : $t('Click any palette swatch below to set or update the Contrast Color:') }}
-        </p>
-
         <!-- Palette -->
-        <div class="swatch-grid">
+        <div class="swatch-grid mt-3">
           <button
             v-for="sw in localizedColorPalette"
             :key="sw.value"
@@ -703,13 +783,46 @@ function swapColors() {
             >2</span>
           </button>
         </div>
+
+        <VDivider class="my-4" />
+
+        <!-- Approved Size Range -->
+        <div>
+          <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-2">
+            <span class="text-body-2 font-weight-medium d-flex align-center gap-1.5">
+              <VIcon
+                icon="tabler-ruler-2"
+                size="16"
+                color="primary"
+              />
+              {{ $t('Approved Size Range') }}
+            </span>
+            <span class="text-caption text-medium-emphasis">
+              {{ (props.sizeRange || []).length }} {{ $t('sizes selected') }}
+            </span>
+          </div>
+
+          <div class="d-flex flex-wrap gap-1.5">
+            <VChip
+              v-for="sz in availableSizeOptions"
+              :key="sz"
+              size="small"
+              :color="(props.sizeRange || []).includes(sz) ? 'primary' : 'secondary'"
+              :variant="(props.sizeRange || []).includes(sz) ? 'flat' : 'tonal'"
+              :prepend-icon="(props.sizeRange || []).includes(sz) ? 'tabler-check' : undefined"
+              class="cursor-pointer font-mono font-weight-bold"
+              @click="toggleSize(sz)"
+            >
+              {{ sz }}
+            </VChip>
+          </div>
+        </div>
       </VCard>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-/* ── Layout: preview first and pinned on phones, side column from md ───── */
 .silhouette-step {
   display: grid;
   gap: 1rem;
@@ -749,7 +862,6 @@ function swapColors() {
   }
 }
 
-/* ── Preview ──────────────────────────────────────────────────────────── */
 .preview-head {
   align-items: center;
   justify-content: space-between;
@@ -800,30 +912,22 @@ function swapColors() {
 }
 
 .preview-summary {
-  min-inline-size: 0;
   flex: 1;
-
-  @media (min-width: 960px) {
-    inline-size: 100%;
-
-    .d-flex {
-      justify-content: center;
-    }
-  }
+  min-inline-size: 0;
 }
 
 .mini-dot {
-  border: 1px solid rgba(var(--v-border-color), 0.4);
+  border: 1px solid rgba(var(--v-border-color), 0.35);
   border-radius: 50%;
-  block-size: 12px;
-  inline-size: 12px;
+  block-size: 10px;
+  display: inline-block;
+  inline-size: 10px;
 }
 
-/* ── Card headers & tiers ─────────────────────────────────────────────── */
 .step-head {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.75rem;
   margin-block-end: 1rem;
 }
@@ -832,7 +936,7 @@ function swapColors() {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-block-end: 0.5rem;
+  margin-block-end: 0.625rem;
 }
 
 .tier-number {
@@ -840,53 +944,12 @@ function swapColors() {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.14);
   block-size: 20px;
-  color: rgb(var(--v-theme-on-primary));
+  color: rgb(var(--v-theme-primary));
   font-size: 0.75rem;
   font-weight: 700;
   inline-size: 20px;
-}
-
-/* ── Selectable cards (radio semantics, keyboard reachable) ───────────── */
-.pick-card {
-  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  border-radius: 10px;
-  background: rgb(var(--v-theme-surface));
-  cursor: pointer;
-  min-inline-size: 0;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-
-  &:hover {
-    border-color: rgba(var(--v-theme-primary), 0.5);
-    background: rgba(var(--v-theme-primary), 0.03);
-  }
-
-  &:focus-visible {
-    outline: 2px solid rgb(var(--v-theme-primary));
-    outline-offset: 2px;
-  }
-
-  &--active {
-    border-color: rgb(var(--v-theme-primary));
-    background: rgba(var(--v-theme-primary), 0.08);
-  }
-
-  &--row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-block-size: 44px;
-    padding-inline: 0.625rem;
-  }
-
-  &--tall {
-    min-block-size: 48px;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    transition: none;
-  }
 }
 
 .category-grid {
@@ -899,67 +962,94 @@ function swapColors() {
   }
 }
 
-.category-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  padding: 0.75rem 0.5rem;
-}
-
 .pick-grid {
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(1, minmax(0, 1fr));
 
-  @media (min-width: 520px) {
+  @media (min-width: 540px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-.pick-title {
+.pick-card {
+  display: flex;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 10px;
+  background: rgb(var(--v-theme-surface));
+  cursor: pointer;
+  gap: 0.5rem;
   min-inline-size: 0;
-  overflow: hidden;
+  padding: 0.625rem;
+  transition: all 0.16s ease;
+
+  &:hover {
+    border-color: rgba(var(--v-theme-primary), 0.45);
+    background: rgba(var(--v-theme-primary), 0.03);
+  }
+
+  &--active {
+    border-color: rgb(var(--v-theme-primary));
+    background: rgba(var(--v-theme-primary), 0.08);
+    box-shadow: 0 0 0 1px rgba(var(--v-theme-primary), 0.25);
+  }
+
+  &--row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  &--tall {
+    padding-block: 0.7rem;
+  }
+}
+
+.category-card {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0.75rem;
+}
+
+.pick-title {
+  flex: 1;
   font-size: 0.8125rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
+  min-inline-size: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.silhouette-items-scrollbar {
-  max-block-size: 280px;
-  padding: 2px;
+.spec-badge {
+  border-radius: 4px;
+  background: rgba(var(--v-theme-info), 0.12);
+  color: rgb(var(--v-theme-info));
+  flex-shrink: 0;
+  font-family: monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 5px;
 }
 
-.spec-badge {
-  flex-shrink: 0;
-  border-radius: 4px;
-  background: rgba(var(--v-theme-primary), 0.12);
-  color: rgb(var(--v-theme-primary));
-  font-family: monospace;
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1.1;
-  padding-block: 1px;
-  padding-inline: 4px;
-  white-space: nowrap;
+.silhouette-items-scrollbar {
+  max-block-size: 230px;
 }
 
 .fabric-info {
-  border-radius: 10px;
-  background: rgba(var(--v-theme-on-surface), 0.04);
-  padding: 0.75rem;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 8px;
+  background: rgba(var(--v-theme-on-surface), 0.02);
+  padding: 0.625rem 0.75rem;
 }
 
-/* ── Colors ───────────────────────────────────────────────────────────── */
 .color-slots {
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: minmax(0, 1fr);
+  gap: 0.625rem;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
 
-  @media (min-width: 600px) {
+  @media (min-width: 540px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -970,79 +1060,69 @@ function swapColors() {
   border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 10px;
   cursor: pointer;
-  gap: 0.75rem;
+  gap: 0.625rem;
   min-inline-size: 0;
-  padding: 0.5rem 0.75rem;
-
-  &:focus-visible {
-    outline: 2px solid rgb(var(--v-theme-primary));
-    outline-offset: 2px;
-  }
+  padding: 0.625rem 0.75rem;
+  transition: all 0.15s ease;
 
   &--active {
     border-color: rgb(var(--v-theme-primary));
-    background: rgba(var(--v-theme-primary), 0.05);
-    box-shadow: 0 0 0 1px rgb(var(--v-theme-primary));
+    background: rgba(var(--v-theme-primary), 0.06);
   }
 }
 
 .color-dot {
-  flex-shrink: 0;
-  border: 1px solid rgba(var(--v-border-color), 0.4);
+  border: 1px solid rgba(var(--v-border-color), 0.35);
   border-radius: 50%;
   block-size: 24px;
+  flex-shrink: 0;
   inline-size: 24px;
 
   &--empty {
     border-style: dashed;
+    background: transparent;
   }
 }
 
 .swatch-grid {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
 }
 
 .swatch {
   position: relative;
-  border: 2px solid transparent;
+  border: 2px solid rgba(var(--v-border-color), 0.25);
   border-radius: 8px;
-  aspect-ratio: 1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 15%);
+  block-size: 36px;
   cursor: pointer;
-  min-block-size: 36px;
+  inline-size: 36px;
+  transition: transform 0.14s ease;
 
-  &:focus-visible {
-    outline: 2px solid rgb(var(--v-theme-primary));
-    outline-offset: 2px;
+  &:hover {
+    transform: scale(1.08);
   }
 
-  &--primary {
-    outline: 2px solid rgb(var(--v-theme-primary));
-    outline-offset: 1px;
-  }
-
+  &--primary,
   &--contrast {
-    outline: 2px solid rgb(var(--v-theme-warning));
-    outline-offset: 1px;
+    border-color: rgb(var(--v-theme-surface));
+    outline: 2px solid rgb(var(--v-theme-primary));
   }
 
   &__badge {
     position: absolute;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: rgb(var(--v-theme-surface));
+    background: rgba(15, 23, 42, 0.85);
     block-size: 16px;
-    color: rgb(var(--v-theme-on-surface));
+    color: #fff;
     font-size: 0.65rem;
     font-weight: 700;
     inline-size: 16px;
-    inset-block-start: -6px;
-    inset-inline-end: -6px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 30%);
+    inset-block-end: -4px;
+    inset-inline-end: -4px;
   }
 }
 </style>

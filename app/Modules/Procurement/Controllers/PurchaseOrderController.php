@@ -49,6 +49,14 @@ class PurchaseOrderController extends Controller
             $query->whereIn('status', explode(',', $status));
         }
 
+        if ($supplierId = $request->input('filter.supplier_id')) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        if ($siteId = $request->input('filter.site_id')) {
+            $query->where('site_id', $siteId);
+        }
+
         $perPage = $this->queryService->cappedPerPage($request);
 
         return PurchaseOrderResource::collection($query->latest()->paginate($perPage));
@@ -57,7 +65,7 @@ class PurchaseOrderController extends Controller
     public function show(PurchaseOrder $purchaseOrder)
     {
         $this->authorize('view', $purchaseOrder);
-        $purchaseOrder->load(['supplier', 'lines.catalogItem.product', 'lines.catalogItem.consumable', 'lines.catalogItem.eqServicing', 'lines.variant']);
+        $purchaseOrder->load(['supplier', 'site', 'goodsReceiptNotes.lines', 'lines.catalogItem.product', 'lines.catalogItem.consumable', 'lines.catalogItem.eqServicing', 'lines.variant']);
 
         return new PurchaseOrderResource($purchaseOrder);
     }

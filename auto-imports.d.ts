@@ -26,10 +26,12 @@ declare global {
   const DEFAULT_ADJUST: typeof import('./resources/js/composables/documents/scanEngine.js')['DEFAULT_ADJUST']
   const DEFAULT_CORNERS: typeof import('./resources/js/composables/documents/scanEngine.js')['DEFAULT_CORNERS']
   const DEFAULT_ICONS: typeof import('./resources/js/composables/useAppSnackbar.js')['DEFAULT_ICONS']
+  const DEFAULT_PERMISSION_MAP: typeof import('./resources/js/composables/documents/useDocumentWorkflow.js')['DEFAULT_PERMISSION_MAP']
   const DEFAULT_TIMEOUTS: typeof import('./resources/js/composables/useAppSnackbar.js')['DEFAULT_TIMEOUTS']
   const DELIVERY_NOTE_STATUS_MAP: typeof import('./resources/js/utils/logistics-constants.js')['DELIVERY_NOTE_STATUS_MAP']
   const DN_STATUS_MAP: typeof import('./resources/js/utils/logistics-constants.js')['DN_STATUS_MAP']
   const DOCUMENT_ACCEPT: typeof import('./resources/js/composables/documents/documentFiles.js')['DOCUMENT_ACCEPT']
+  const DOCUMENT_ACTIONS: typeof import('./resources/js/composables/documents/useDocumentActions.js')['DOCUMENT_ACTIONS']
   const DOCUMENT_PRESETS: typeof import('./resources/js/composables/documents/documentPresets.js')['DOCUMENT_PRESETS']
   const DOCUMENT_PRESET_META: typeof import('./resources/js/composables/documents/documentPresets.js')['DOCUMENT_PRESET_META']
   const DWO_STATUS_MAP: typeof import('./resources/js/utils/logistics-constants.js')['DWO_STATUS_MAP']
@@ -46,6 +48,7 @@ declare global {
   const ITEM_STATUS_MAP: typeof import('./resources/js/utils/logistics-constants.js')['ITEM_STATUS_MAP']
   const LIFECYCLE_META: typeof import('./resources/js/composables/client-assets/sites/useSiteEquipmentAnalytics.js')['LIFECYCLE_META']
   const LIFECYCLE_STATUS_MAP: typeof import('./resources/js/composables/client-assets/equipment/useEquipmentHelpers.js')['LIFECYCLE_STATUS_MAP']
+  const LINE_ERROR_KEYS: typeof import('./resources/js/composables/documents/useDocumentItems.js')['LINE_ERROR_KEYS']
   const MATCH_TYPES: typeof import('./resources/js/composables/useConditionBuilder.js')['MATCH_TYPES']
   const MISSION_MODES: typeof import('./resources/js/utils/operational-hub-constants.js')['MISSION_MODES']
   const MISSION_STATUSES: typeof import('./resources/js/utils/operational-hub-constants.js')['MISSION_STATUSES']
@@ -76,6 +79,8 @@ declare global {
   const SWO_TRANSITIONS: typeof import('./resources/js/utils/operational-hub-constants.js')['SWO_TRANSITIONS']
   const SWO_WORKFLOW_BUCKETS: typeof import('./resources/js/utils/operational-hub-constants.js')['SWO_WORKFLOW_BUCKETS']
   const THUMB_LONG_SIDE: typeof import('./resources/js/composables/documents/scanEngine.js')['THUMB_LONG_SIDE']
+  const TOTALS_FIELD_PRESETS: typeof import('./resources/js/composables/documents/documentTotals.js')['TOTALS_FIELD_PRESETS']
+  const TRACEABILITY_ROUTES: typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['TRACEABILITY_ROUTES']
   const TRACKING_EVENT_MAP: typeof import('./resources/js/utils/logistics-constants.js')['TRACKING_EVENT_MAP']
   const URGENCY_MAP: typeof import('./resources/js/utils/procurement-constants.js')['URGENCY_MAP']
   const VEHICLE_TYPES: typeof import('./resources/js/utils/logistics-constants.js')['VEHICLE_TYPES']
@@ -124,6 +129,7 @@ declare global {
   const buildAreaBreadcrumb: typeof import('./resources/js/composables/client-assets/sites/areaHierarchyHelper.js')['buildAreaBreadcrumb']
   const buildBatchExportPayload: typeof import('./resources/js/composables/shared/exportFormats.js')['buildBatchExportPayload']
   const buildBusinessPartnerListQuery: typeof import('./resources/js/composables/business-partners/businessPartnerListQuery.js')['buildBusinessPartnerListQuery']
+  const buildTraceability: typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['buildTraceability']
   const canvasToBlob: typeof import('./resources/js/composables/documents/scanEngine.js')['canvasToBlob']
   const categoryMatchesScope: typeof import('./resources/js/composables/useCatalogSelection.js')['categoryMatchesScope']
   const childNodes: typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['childNodes']
@@ -136,6 +142,9 @@ declare global {
   const collectSelectedOptionValueIds: typeof import('./resources/js/composables/catalog/blueprints/useBlueprintSimulation.js')['collectSelectedOptionValueIds']
   const collectStepErrors: typeof import('./resources/js/composables/shared/useWizard.js')['collectStepErrors']
   const complianceStatusOptions: typeof import('./resources/js/composables/client-assets/equipment/useEquipmentConstants.js')['complianceStatusOptions']
+  const computeDocumentTotals: typeof import('./resources/js/composables/documents/documentTotals.js')['computeDocumentTotals']
+  const computeLifecycleSteps: typeof import('./resources/js/composables/documents/workflowConfigs.js')['computeLifecycleSteps']
+  const computeLineAmounts: typeof import('./resources/js/composables/documents/documentTotals.js')['computeLineAmounts']
   const computePlacementGeometry: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['computePlacementGeometry']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
@@ -155,6 +164,7 @@ declare global {
   const createGenericProjection: typeof import('@vueuse/math')['createGenericProjection']
   const createGlobalState: typeof import('@vueuse/core')['createGlobalState']
   const createInjectionState: typeof import('@vueuse/core')['createInjectionState']
+  const createLineFactory: typeof import('./resources/js/composables/documents/useDocumentItems.js')['createLineFactory']
   const createLogoRecovery: typeof import('./resources/js/composables/branding/logoRecovery.js')['createLogoRecovery']
   const createPinia: typeof import('pinia')['createPinia']
   const createProjection: typeof import('@vueuse/math')['createProjection']
@@ -195,6 +205,7 @@ declare global {
   const extendRef: typeof import('@vueuse/core')['extendRef']
   const extensionForMime: typeof import('./resources/js/composables/documents/documentFiles.js')['extensionForMime']
   const extractArray: typeof import('./resources/js/utils/extractArray.js')['extractArray']
+  const extractCatalogColorsAndSizes: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['extractCatalogColorsAndSizes']
   const extractEmployeeBadgeCode: typeof import('./resources/js/composables/scanner/useQrScanner.js')['extractEmployeeBadgeCode']
   const extractEquipmentQrCode: typeof import('./resources/js/composables/scanner/useQrScanner.js')['extractEquipmentQrCode']
   const extractSilhouetteSpecBadge: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['extractSilhouetteSpecBadge']
@@ -281,6 +292,7 @@ declare global {
   const getMissionStatusChip: typeof import('./resources/js/utils/operational-hub-constants.js')['getMissionStatusChip']
   const getMissionStatusColor: typeof import('./resources/js/utils/operational-hub-constants.js')['getMissionStatusColor']
   const getMovementTypeChip: typeof import('./resources/js/utils/procurement-constants.js')['getMovementTypeChip']
+  const getNextStatuses: typeof import('./resources/js/composables/documents/workflowConfigs.js')['getNextStatuses']
   const getOrganisationScopes: typeof import('./resources/js/utils/bp-constants.js')['getOrganisationScopes']
   const getOrganisationStatuses: typeof import('./resources/js/utils/bp-constants.js')['getOrganisationStatuses']
   const getOrganisationTableHeaders: typeof import('./resources/js/utils/bp-constants.js')['getOrganisationTableHeaders']
@@ -331,6 +343,7 @@ declare global {
   const humanize: typeof import('./resources/js/composables/client-assets/sites/useSiteConstants.js')['humanize']
   const humanizeEquipmentValue: typeof import('./resources/js/composables/client-assets/equipment/useEquipmentHelpers.js')['humanizeEquipmentValue']
   const humanizeWpStatus: typeof import('./resources/js/utils/wp-status.js')['humanizeWpStatus']
+  const hydrateLineFromCatalog: typeof import('./resources/js/composables/documents/useDocumentItems.js')['hydrateLineFromCatalog']
   const idsEqual: typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['idsEqual']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
@@ -341,6 +354,7 @@ declare global {
   const isConvexQuad: typeof import('./resources/js/composables/documents/scanEngine.js')['isConvexQuad']
   const isDeepEqual: typeof import('./resources/js/composables/shared/useDirtyState.js')['isDeepEqual']
   const isDefined: typeof import('@vueuse/core')['isDefined']
+  const isEditableStatus: typeof import('./resources/js/composables/documents/workflowConfigs.js')['isEditableStatus']
   const isEmpty: typeof import('./resources/js/@core/utils/helpers.js')['isEmpty']
   const isEmptyArray: typeof import('./resources/js/@core/utils/helpers.js')['isEmptyArray']
   const isEmptyId: typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['isEmptyId']
@@ -371,6 +385,7 @@ declare global {
   const logicNot: typeof import('@vueuse/math')['logicNot']
   const logicOr: typeof import('@vueuse/math')['logicOr']
   const makeDestructurable: typeof import('@vueuse/core')['makeDestructurable']
+  const makeNode: typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['makeNode']
   const mapActions: typeof import('pinia')['mapActions']
   const mapGetters: typeof import('pinia')['mapGetters']
   const mapResolveLinesResponse: typeof import('./resources/js/composables/catalog/blueprints/useBlueprintSimulation.js')['mapResolveLinesResponse']
@@ -379,8 +394,10 @@ declare global {
   const mapWritableState: typeof import('pinia')['mapWritableState']
   const markRaw: typeof import('vue')['markRaw']
   const matchesAccept: typeof import('./resources/js/composables/documents/documentFiles.js')['matchesAccept']
+  const moveItem: typeof import('./resources/js/composables/documents/useDocumentItems.js')['moveItem']
   const moveRect: typeof import('./resources/js/composables/media/imageTransforms.js')['moveRect']
   const movementTypeOptions: typeof import('./resources/js/utils/procurement-constants.js')['movementTypeOptions']
+  const newLineKey: typeof import('./resources/js/composables/documents/useDocumentItems.js')['newLineKey']
   const nextTick: typeof import('vue')['nextTick']
   const normaliseRotation: typeof import('./resources/js/composables/media/imageTransforms.js')['normaliseRotation']
   const normalisedToRect: typeof import('./resources/js/composables/media/imageTransforms.js')['normalisedToRect']
@@ -420,6 +437,7 @@ declare global {
   const passwordValidator: typeof import('./resources/js/@core/utils/validators.js')['passwordValidator']
   const pausableWatch: typeof import('@vueuse/core')['pausableWatch']
   const paymentTermsOptions: typeof import('./resources/js/utils/procurement-constants.js')['paymentTermsOptions']
+  const pickLocalized: typeof import('./resources/js/composables/documents/useDocumentItems.js')['pickLocalized']
   const pickingListStatusOptions: typeof import('./resources/js/utils/logistics-constants.js')['pickingListStatusOptions']
   const pickingStatusOptions: typeof import('./resources/js/utils/logistics-constants.js')['pickingStatusOptions']
   const poStatusOptions: typeof import('./resources/js/utils/procurement-constants.js')['poStatusOptions']
@@ -456,6 +474,7 @@ declare global {
   const resolveAreaName: typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['resolveAreaName']
   const resolveAreaTypeIcon: typeof import('./resources/js/composables/client-assets/sites/useSiteConstants.js')['resolveAreaTypeIcon']
   const resolveColorHex: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['resolveColorHex']
+  const resolveColorLabel: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['resolveColorLabel']
   const resolveComplianceVariant: typeof import('./resources/js/composables/client-assets/equipment/useEquipmentHelpers.js')['resolveComplianceVariant']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveConditionVariant: typeof import('./resources/js/composables/client-assets/equipment/useEquipmentConstants.js')['resolveConditionVariant']
@@ -491,12 +510,14 @@ declare global {
   const resolveStatusIcon: typeof import('./resources/js/utils/procurement-constants.js')['resolveStatusIcon']
   const resolveStatusLabel: typeof import('./resources/js/utils/procurement-constants.js')['resolveStatusLabel']
   const resolveStatusVariant: typeof import('./resources/js/utils/procurement-constants.js')['resolveStatusVariant']
+  const resolveTotalsFields: typeof import('./resources/js/composables/documents/documentTotals.js')['resolveTotalsFields']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
   const resolveUrgencyIcon: typeof import('./resources/js/utils/procurement-constants.js')['resolveUrgencyIcon']
   const resolveUrgencyLabel: typeof import('./resources/js/utils/procurement-constants.js')['resolveUrgencyLabel']
   const resolveUrgencyVariant: typeof import('./resources/js/utils/procurement-constants.js')['resolveUrgencyVariant']
   const resolveVuetifyTheme: typeof import('./resources/js/@core/utils/vuetify.js')['resolveVuetifyTheme']
   const resolveWizardPreset: typeof import('./resources/js/composables/shared/wizardPresets.js')['resolveWizardPreset']
+  const resolveWorkflowConfig: typeof import('./resources/js/composables/documents/workflowConfigs.js')['resolveWorkflowConfig']
   const resolveWpStatusColor: typeof import('./resources/js/utils/wp-status.js')['resolveWpStatusColor']
   const resolveWpStatusIcon: typeof import('./resources/js/utils/wp-status.js')['resolveWpStatusIcon']
   const resolveWpStatusMeta: typeof import('./resources/js/utils/wp-status.js')['resolveWpStatusMeta']
@@ -508,6 +529,7 @@ declare global {
   const riskClassOptions: typeof import('./resources/js/composables/client-assets/sites/useSiteConstants.js')['riskClassOptions']
   const rotateCorners: typeof import('./resources/js/composables/documents/scanEngine.js')['rotateCorners']
   const rotatedSize: typeof import('./resources/js/composables/media/imageTransforms.js')['rotatedSize']
+  const roundMoney: typeof import('./resources/js/composables/documents/documentTotals.js')['roundMoney']
   const runFieldRules: typeof import('./resources/js/composables/shared/useWizard.js')['runFieldRules']
   const safeMediaUrl: typeof import('./resources/js/composables/media/mediaFieldUtils.js')['safeMediaUrl']
   const safeString: typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['safeString']
@@ -535,11 +557,13 @@ declare global {
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
   const titleFromFileName: typeof import('./resources/js/composables/documents/documentFiles.js')['titleFromFileName']
   const toDateInputValue: typeof import('./resources/js/composables/documents/documentFiles.js')['toDateInputValue']
+  const toNumber: typeof import('./resources/js/composables/documents/documentTotals.js')['toNumber']
   const toRaw: typeof import('vue')['toRaw']
   const toReactive: typeof import('@vueuse/core')['toReactive']
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toValue: typeof import('vue')['toValue']
+  const toViewerItem: typeof import('./resources/js/composables/documents/useDocumentAttachments.js')['toViewerItem']
   const triggerRef: typeof import('vue')['triggerRef']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
@@ -632,8 +656,15 @@ declare global {
   const useDialog: typeof import('./resources/js/composables/dialog/useDialog.js')['useDialog']
   const useDirtyState: typeof import('./resources/js/composables/shared/useDirtyState.js')['useDirtyState']
   const useDisplayMedia: typeof import('@vueuse/core')['useDisplayMedia']
+  const useDocumentActions: typeof import('./resources/js/composables/documents/useDocumentActions.js')['useDocumentActions']
+  const useDocumentAttachments: typeof import('./resources/js/composables/documents/useDocumentAttachments.js')['useDocumentAttachments']
+  const useDocumentForm: typeof import('./resources/js/composables/documents/useDocumentForm.js')['useDocumentForm']
+  const useDocumentItems: typeof import('./resources/js/composables/documents/useDocumentItems.js')['useDocumentItems']
   const useDocumentScanner: typeof import('./resources/js/composables/documents/useDocumentScanner.js')['useDocumentScanner']
+  const useDocumentTotals: typeof import('./resources/js/composables/documents/documentTotals.js')['useDocumentTotals']
+  const useDocumentTraceability: typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['useDocumentTraceability']
   const useDocumentVisibility: typeof import('@vueuse/core')['useDocumentVisibility']
+  const useDocumentWorkflow: typeof import('./resources/js/composables/documents/useDocumentWorkflow.js')['useDocumentWorkflow']
   const useDraggable: typeof import('@vueuse/core')['useDraggable']
   const useDriverDialogs: typeof import('./resources/js/composables/fleet/useDriverDialogs.js')['useDriverDialogs']
   const useDriverForm: typeof import('./resources/js/composables/fleet/useDriverForm.js')['useDriverForm']
@@ -747,6 +778,7 @@ declare global {
   const usePreferredLanguages: typeof import('@vueuse/core')['usePreferredLanguages']
   const usePreferredReducedMotion: typeof import('@vueuse/core')['usePreferredReducedMotion']
   const usePrevious: typeof import('@vueuse/core')['usePrevious']
+  const useProcurementHelpers: typeof import('./resources/js/composables/supply-chain-procurement/useProcurementHelpers.js')['useProcurementHelpers']
   const useProjection: typeof import('@vueuse/math')['useProjection']
   const useQrCode: typeof import('./resources/js/composables/scanner/useQrCode.js')['useQrCode']
   const useQrScanner: typeof import('./resources/js/composables/scanner/useQrScanner.js')['useQrScanner']
@@ -863,6 +895,8 @@ declare global {
   const useWorkwearModelList: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearModelList.js')['useWorkwearModelList']
   const useWorkwearStudioConstants: typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['useWorkwearStudioConstants']
   const validateFile: typeof import('./resources/js/composables/media/mediaFieldUtils.js')['validateFile']
+  const validateLine: typeof import('./resources/js/composables/documents/useDocumentItems.js')['validateLine']
+  const validateLines: typeof import('./resources/js/composables/documents/useDocumentItems.js')['validateLines']
   const warpDocument: typeof import('./resources/js/composables/documents/scanEngine.js')['warpDocument']
   const watch: typeof import('vue')['watch']
   const watchArray: typeof import('@vueuse/core')['watchArray']
@@ -881,6 +915,7 @@ declare global {
   const watchWithFilter: typeof import('@vueuse/core')['watchWithFilter']
   const waveStatusOptions: typeof import('./resources/js/utils/logistics-constants.js')['waveStatusOptions']
   const whenever: typeof import('@vueuse/core')['whenever']
+  const workflowConfigs: typeof import('./resources/js/composables/documents/workflowConfigs.js')['workflowConfigs']
 }
 // for type re-export
 declare global {
@@ -914,10 +949,12 @@ declare module 'vue' {
     readonly DEFAULT_ADJUST: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['DEFAULT_ADJUST']>
     readonly DEFAULT_CORNERS: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['DEFAULT_CORNERS']>
     readonly DEFAULT_ICONS: UnwrapRef<typeof import('./resources/js/composables/useAppSnackbar.js')['DEFAULT_ICONS']>
+    readonly DEFAULT_PERMISSION_MAP: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentWorkflow.js')['DEFAULT_PERMISSION_MAP']>
     readonly DEFAULT_TIMEOUTS: UnwrapRef<typeof import('./resources/js/composables/useAppSnackbar.js')['DEFAULT_TIMEOUTS']>
     readonly DELIVERY_NOTE_STATUS_MAP: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['DELIVERY_NOTE_STATUS_MAP']>
     readonly DN_STATUS_MAP: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['DN_STATUS_MAP']>
     readonly DOCUMENT_ACCEPT: UnwrapRef<typeof import('./resources/js/composables/documents/documentFiles.js')['DOCUMENT_ACCEPT']>
+    readonly DOCUMENT_ACTIONS: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentActions.js')['DOCUMENT_ACTIONS']>
     readonly DOCUMENT_PRESETS: UnwrapRef<typeof import('./resources/js/composables/documents/documentPresets.js')['DOCUMENT_PRESETS']>
     readonly DOCUMENT_PRESET_META: UnwrapRef<typeof import('./resources/js/composables/documents/documentPresets.js')['DOCUMENT_PRESET_META']>
     readonly DWO_STATUS_MAP: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['DWO_STATUS_MAP']>
@@ -934,6 +971,7 @@ declare module 'vue' {
     readonly ITEM_STATUS_MAP: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['ITEM_STATUS_MAP']>
     readonly LIFECYCLE_META: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteEquipmentAnalytics.js')['LIFECYCLE_META']>
     readonly LIFECYCLE_STATUS_MAP: UnwrapRef<typeof import('./resources/js/composables/client-assets/equipment/useEquipmentHelpers.js')['LIFECYCLE_STATUS_MAP']>
+    readonly LINE_ERROR_KEYS: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['LINE_ERROR_KEYS']>
     readonly MATCH_TYPES: UnwrapRef<typeof import('./resources/js/composables/useConditionBuilder.js')['MATCH_TYPES']>
     readonly MISSION_MODES: UnwrapRef<typeof import('./resources/js/utils/operational-hub-constants.js')['MISSION_MODES']>
     readonly MISSION_STATUSES: UnwrapRef<typeof import('./resources/js/utils/operational-hub-constants.js')['MISSION_STATUSES']>
@@ -963,6 +1001,8 @@ declare module 'vue' {
     readonly SWO_TRANSITIONS: UnwrapRef<typeof import('./resources/js/utils/operational-hub-constants.js')['SWO_TRANSITIONS']>
     readonly SWO_WORKFLOW_BUCKETS: UnwrapRef<typeof import('./resources/js/utils/operational-hub-constants.js')['SWO_WORKFLOW_BUCKETS']>
     readonly THUMB_LONG_SIDE: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['THUMB_LONG_SIDE']>
+    readonly TOTALS_FIELD_PRESETS: UnwrapRef<typeof import('./resources/js/composables/documents/documentTotals.js')['TOTALS_FIELD_PRESETS']>
+    readonly TRACEABILITY_ROUTES: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['TRACEABILITY_ROUTES']>
     readonly TRACKING_EVENT_MAP: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['TRACKING_EVENT_MAP']>
     readonly URGENCY_MAP: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['URGENCY_MAP']>
     readonly VEHICLE_TYPES: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['VEHICLE_TYPES']>
@@ -1011,6 +1051,7 @@ declare module 'vue' {
     readonly buildAreaBreadcrumb: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/areaHierarchyHelper.js')['buildAreaBreadcrumb']>
     readonly buildBatchExportPayload: UnwrapRef<typeof import('./resources/js/composables/shared/exportFormats.js')['buildBatchExportPayload']>
     readonly buildBusinessPartnerListQuery: UnwrapRef<typeof import('./resources/js/composables/business-partners/businessPartnerListQuery.js')['buildBusinessPartnerListQuery']>
+    readonly buildTraceability: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['buildTraceability']>
     readonly canvasToBlob: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['canvasToBlob']>
     readonly categoryMatchesScope: UnwrapRef<typeof import('./resources/js/composables/useCatalogSelection.js')['categoryMatchesScope']>
     readonly childNodes: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['childNodes']>
@@ -1023,6 +1064,9 @@ declare module 'vue' {
     readonly collectSelectedOptionValueIds: UnwrapRef<typeof import('./resources/js/composables/catalog/blueprints/useBlueprintSimulation.js')['collectSelectedOptionValueIds']>
     readonly collectStepErrors: UnwrapRef<typeof import('./resources/js/composables/shared/useWizard.js')['collectStepErrors']>
     readonly complianceStatusOptions: UnwrapRef<typeof import('./resources/js/composables/client-assets/equipment/useEquipmentConstants.js')['complianceStatusOptions']>
+    readonly computeDocumentTotals: UnwrapRef<typeof import('./resources/js/composables/documents/documentTotals.js')['computeDocumentTotals']>
+    readonly computeLifecycleSteps: UnwrapRef<typeof import('./resources/js/composables/documents/workflowConfigs.js')['computeLifecycleSteps']>
+    readonly computeLineAmounts: UnwrapRef<typeof import('./resources/js/composables/documents/documentTotals.js')['computeLineAmounts']>
     readonly computePlacementGeometry: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['computePlacementGeometry']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
@@ -1042,6 +1086,7 @@ declare module 'vue' {
     readonly createGenericProjection: UnwrapRef<typeof import('@vueuse/math')['createGenericProjection']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
     readonly createInjectionState: UnwrapRef<typeof import('@vueuse/core')['createInjectionState']>
+    readonly createLineFactory: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['createLineFactory']>
     readonly createLogoRecovery: UnwrapRef<typeof import('./resources/js/composables/branding/logoRecovery.js')['createLogoRecovery']>
     readonly createPinia: UnwrapRef<typeof import('pinia')['createPinia']>
     readonly createProjection: UnwrapRef<typeof import('@vueuse/math')['createProjection']>
@@ -1082,6 +1127,7 @@ declare module 'vue' {
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly extensionForMime: UnwrapRef<typeof import('./resources/js/composables/documents/documentFiles.js')['extensionForMime']>
     readonly extractArray: UnwrapRef<typeof import('./resources/js/utils/extractArray.js')['extractArray']>
+    readonly extractCatalogColorsAndSizes: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['extractCatalogColorsAndSizes']>
     readonly extractEmployeeBadgeCode: UnwrapRef<typeof import('./resources/js/composables/scanner/useQrScanner.js')['extractEmployeeBadgeCode']>
     readonly extractEquipmentQrCode: UnwrapRef<typeof import('./resources/js/composables/scanner/useQrScanner.js')['extractEquipmentQrCode']>
     readonly extractSilhouetteSpecBadge: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['extractSilhouetteSpecBadge']>
@@ -1168,6 +1214,7 @@ declare module 'vue' {
     readonly getMissionStatusChip: UnwrapRef<typeof import('./resources/js/utils/operational-hub-constants.js')['getMissionStatusChip']>
     readonly getMissionStatusColor: UnwrapRef<typeof import('./resources/js/utils/operational-hub-constants.js')['getMissionStatusColor']>
     readonly getMovementTypeChip: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['getMovementTypeChip']>
+    readonly getNextStatuses: UnwrapRef<typeof import('./resources/js/composables/documents/workflowConfigs.js')['getNextStatuses']>
     readonly getOrganisationScopes: UnwrapRef<typeof import('./resources/js/utils/bp-constants.js')['getOrganisationScopes']>
     readonly getOrganisationStatuses: UnwrapRef<typeof import('./resources/js/utils/bp-constants.js')['getOrganisationStatuses']>
     readonly getOrganisationTableHeaders: UnwrapRef<typeof import('./resources/js/utils/bp-constants.js')['getOrganisationTableHeaders']>
@@ -1218,6 +1265,7 @@ declare module 'vue' {
     readonly humanize: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteConstants.js')['humanize']>
     readonly humanizeEquipmentValue: UnwrapRef<typeof import('./resources/js/composables/client-assets/equipment/useEquipmentHelpers.js')['humanizeEquipmentValue']>
     readonly humanizeWpStatus: UnwrapRef<typeof import('./resources/js/utils/wp-status.js')['humanizeWpStatus']>
+    readonly hydrateLineFromCatalog: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['hydrateLineFromCatalog']>
     readonly idsEqual: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['idsEqual']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
@@ -1228,6 +1276,7 @@ declare module 'vue' {
     readonly isConvexQuad: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['isConvexQuad']>
     readonly isDeepEqual: UnwrapRef<typeof import('./resources/js/composables/shared/useDirtyState.js')['isDeepEqual']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
+    readonly isEditableStatus: UnwrapRef<typeof import('./resources/js/composables/documents/workflowConfigs.js')['isEditableStatus']>
     readonly isEmpty: UnwrapRef<typeof import('./resources/js/@core/utils/helpers.js')['isEmpty']>
     readonly isEmptyArray: UnwrapRef<typeof import('./resources/js/@core/utils/helpers.js')['isEmptyArray']>
     readonly isEmptyId: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['isEmptyId']>
@@ -1257,6 +1306,7 @@ declare module 'vue' {
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
     readonly logicOr: UnwrapRef<typeof import('@vueuse/math')['logicOr']>
     readonly makeDestructurable: UnwrapRef<typeof import('@vueuse/core')['makeDestructurable']>
+    readonly makeNode: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['makeNode']>
     readonly mapActions: UnwrapRef<typeof import('pinia')['mapActions']>
     readonly mapGetters: UnwrapRef<typeof import('pinia')['mapGetters']>
     readonly mapResolveLinesResponse: UnwrapRef<typeof import('./resources/js/composables/catalog/blueprints/useBlueprintSimulation.js')['mapResolveLinesResponse']>
@@ -1265,8 +1315,10 @@ declare module 'vue' {
     readonly mapWritableState: UnwrapRef<typeof import('pinia')['mapWritableState']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly matchesAccept: UnwrapRef<typeof import('./resources/js/composables/documents/documentFiles.js')['matchesAccept']>
+    readonly moveItem: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['moveItem']>
     readonly moveRect: UnwrapRef<typeof import('./resources/js/composables/media/imageTransforms.js')['moveRect']>
     readonly movementTypeOptions: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['movementTypeOptions']>
+    readonly newLineKey: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['newLineKey']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
     readonly normaliseRotation: UnwrapRef<typeof import('./resources/js/composables/media/imageTransforms.js')['normaliseRotation']>
     readonly normalisedToRect: UnwrapRef<typeof import('./resources/js/composables/media/imageTransforms.js')['normalisedToRect']>
@@ -1306,6 +1358,7 @@ declare module 'vue' {
     readonly passwordValidator: UnwrapRef<typeof import('./resources/js/@core/utils/validators.js')['passwordValidator']>
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
     readonly paymentTermsOptions: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['paymentTermsOptions']>
+    readonly pickLocalized: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['pickLocalized']>
     readonly pickingListStatusOptions: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['pickingListStatusOptions']>
     readonly pickingStatusOptions: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['pickingStatusOptions']>
     readonly poStatusOptions: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['poStatusOptions']>
@@ -1342,6 +1395,7 @@ declare module 'vue' {
     readonly resolveAreaName: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['resolveAreaName']>
     readonly resolveAreaTypeIcon: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteConstants.js')['resolveAreaTypeIcon']>
     readonly resolveColorHex: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['resolveColorHex']>
+    readonly resolveColorLabel: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['resolveColorLabel']>
     readonly resolveComplianceVariant: UnwrapRef<typeof import('./resources/js/composables/client-assets/equipment/useEquipmentHelpers.js')['resolveComplianceVariant']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveConditionVariant: UnwrapRef<typeof import('./resources/js/composables/client-assets/equipment/useEquipmentConstants.js')['resolveConditionVariant']>
@@ -1377,12 +1431,14 @@ declare module 'vue' {
     readonly resolveStatusIcon: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['resolveStatusIcon']>
     readonly resolveStatusLabel: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['resolveStatusLabel']>
     readonly resolveStatusVariant: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['resolveStatusVariant']>
+    readonly resolveTotalsFields: UnwrapRef<typeof import('./resources/js/composables/documents/documentTotals.js')['resolveTotalsFields']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
     readonly resolveUrgencyIcon: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['resolveUrgencyIcon']>
     readonly resolveUrgencyLabel: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['resolveUrgencyLabel']>
     readonly resolveUrgencyVariant: UnwrapRef<typeof import('./resources/js/utils/procurement-constants.js')['resolveUrgencyVariant']>
     readonly resolveVuetifyTheme: UnwrapRef<typeof import('./resources/js/@core/utils/vuetify.js')['resolveVuetifyTheme']>
     readonly resolveWizardPreset: UnwrapRef<typeof import('./resources/js/composables/shared/wizardPresets.js')['resolveWizardPreset']>
+    readonly resolveWorkflowConfig: UnwrapRef<typeof import('./resources/js/composables/documents/workflowConfigs.js')['resolveWorkflowConfig']>
     readonly resolveWpStatusColor: UnwrapRef<typeof import('./resources/js/utils/wp-status.js')['resolveWpStatusColor']>
     readonly resolveWpStatusIcon: UnwrapRef<typeof import('./resources/js/utils/wp-status.js')['resolveWpStatusIcon']>
     readonly resolveWpStatusMeta: UnwrapRef<typeof import('./resources/js/utils/wp-status.js')['resolveWpStatusMeta']>
@@ -1394,6 +1450,7 @@ declare module 'vue' {
     readonly riskClassOptions: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteConstants.js')['riskClassOptions']>
     readonly rotateCorners: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['rotateCorners']>
     readonly rotatedSize: UnwrapRef<typeof import('./resources/js/composables/media/imageTransforms.js')['rotatedSize']>
+    readonly roundMoney: UnwrapRef<typeof import('./resources/js/composables/documents/documentTotals.js')['roundMoney']>
     readonly runFieldRules: UnwrapRef<typeof import('./resources/js/composables/shared/useWizard.js')['runFieldRules']>
     readonly safeMediaUrl: UnwrapRef<typeof import('./resources/js/composables/media/mediaFieldUtils.js')['safeMediaUrl']>
     readonly safeString: UnwrapRef<typeof import('./resources/js/composables/client-assets/sites/useSiteAreaTree.js')['safeString']>
@@ -1421,11 +1478,13 @@ declare module 'vue' {
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
     readonly titleFromFileName: UnwrapRef<typeof import('./resources/js/composables/documents/documentFiles.js')['titleFromFileName']>
     readonly toDateInputValue: UnwrapRef<typeof import('./resources/js/composables/documents/documentFiles.js')['toDateInputValue']>
+    readonly toNumber: UnwrapRef<typeof import('./resources/js/composables/documents/documentTotals.js')['toNumber']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
     readonly toReactive: UnwrapRef<typeof import('@vueuse/core')['toReactive']>
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
+    readonly toViewerItem: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentAttachments.js')['toViewerItem']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
@@ -1516,8 +1575,15 @@ declare module 'vue' {
     readonly useDialog: UnwrapRef<typeof import('./resources/js/composables/dialog/useDialog.js')['useDialog']>
     readonly useDirtyState: UnwrapRef<typeof import('./resources/js/composables/shared/useDirtyState.js')['useDirtyState']>
     readonly useDisplayMedia: UnwrapRef<typeof import('@vueuse/core')['useDisplayMedia']>
+    readonly useDocumentActions: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentActions.js')['useDocumentActions']>
+    readonly useDocumentAttachments: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentAttachments.js')['useDocumentAttachments']>
+    readonly useDocumentForm: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentForm.js')['useDocumentForm']>
+    readonly useDocumentItems: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['useDocumentItems']>
     readonly useDocumentScanner: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentScanner.js')['useDocumentScanner']>
+    readonly useDocumentTotals: UnwrapRef<typeof import('./resources/js/composables/documents/documentTotals.js')['useDocumentTotals']>
+    readonly useDocumentTraceability: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentTraceability.js')['useDocumentTraceability']>
     readonly useDocumentVisibility: UnwrapRef<typeof import('@vueuse/core')['useDocumentVisibility']>
+    readonly useDocumentWorkflow: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentWorkflow.js')['useDocumentWorkflow']>
     readonly useDraggable: UnwrapRef<typeof import('@vueuse/core')['useDraggable']>
     readonly useDriverDialogs: UnwrapRef<typeof import('./resources/js/composables/fleet/useDriverDialogs.js')['useDriverDialogs']>
     readonly useDriverForm: UnwrapRef<typeof import('./resources/js/composables/fleet/useDriverForm.js')['useDriverForm']>
@@ -1631,6 +1697,7 @@ declare module 'vue' {
     readonly usePreferredLanguages: UnwrapRef<typeof import('@vueuse/core')['usePreferredLanguages']>
     readonly usePreferredReducedMotion: UnwrapRef<typeof import('@vueuse/core')['usePreferredReducedMotion']>
     readonly usePrevious: UnwrapRef<typeof import('@vueuse/core')['usePrevious']>
+    readonly useProcurementHelpers: UnwrapRef<typeof import('./resources/js/composables/supply-chain-procurement/useProcurementHelpers.js')['useProcurementHelpers']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
     readonly useQrCode: UnwrapRef<typeof import('./resources/js/composables/scanner/useQrCode.js')['useQrCode']>
     readonly useQrScanner: UnwrapRef<typeof import('./resources/js/composables/scanner/useQrScanner.js')['useQrScanner']>
@@ -1747,6 +1814,8 @@ declare module 'vue' {
     readonly useWorkwearModelList: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearModelList.js')['useWorkwearModelList']>
     readonly useWorkwearStudioConstants: UnwrapRef<typeof import('./resources/js/composables/client-assets/workwear/useWorkwearStudioConstants.js')['useWorkwearStudioConstants']>
     readonly validateFile: UnwrapRef<typeof import('./resources/js/composables/media/mediaFieldUtils.js')['validateFile']>
+    readonly validateLine: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['validateLine']>
+    readonly validateLines: UnwrapRef<typeof import('./resources/js/composables/documents/useDocumentItems.js')['validateLines']>
     readonly warpDocument: UnwrapRef<typeof import('./resources/js/composables/documents/scanEngine.js')['warpDocument']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>
@@ -1765,5 +1834,6 @@ declare module 'vue' {
     readonly watchWithFilter: UnwrapRef<typeof import('@vueuse/core')['watchWithFilter']>
     readonly waveStatusOptions: UnwrapRef<typeof import('./resources/js/utils/logistics-constants.js')['waveStatusOptions']>
     readonly whenever: UnwrapRef<typeof import('@vueuse/core')['whenever']>
+    readonly workflowConfigs: UnwrapRef<typeof import('./resources/js/composables/documents/workflowConfigs.js')['workflowConfigs']>
   }
 }

@@ -1,6 +1,7 @@
 <script setup>
 /* eslint-disable camelcase, vue/no-mutating-props */
 import { WpFormDialog, WpSectionCard, WpStatusChip } from '@/components/shared'
+import { extractCatalogColorsAndSizes } from '@/composables/client-assets/workwear/useWorkwearStudioConstants'
 import { localizedValue } from '@/composables/useLocaleField'
 import { useClientAssetStore } from '@/stores/useClientAssetStore'
 import { computed, onMounted, ref } from 'vue'
@@ -22,7 +23,8 @@ const catalogItemOptions = ref([])
 const loadingLookups = ref(false)
 const copiedRef = ref(false)
 
-const canChangeClient = computed(() => (props.modelData.items_count ?? props.itemsCount ?? 0) === 0)
+// Client is locked once the model record is saved
+const canChangeClient = computed(() => !props.modelData?.id)
 
 const totalItems = computed(() => props.modelData.items_count ?? props.itemsCount ?? 0)
 const availableItems = computed(() => props.modelData.available_items_count ?? 0)
@@ -79,6 +81,22 @@ function handleFabricChange(fabricId) {
   }
 }
 
+function importCatalogAttributes(item) {
+  if (!item) return
+
+  const extracted = extractCatalogColorsAndSizes(item, locale.value)
+  if (extracted.colors.length > 0) {
+    const nextColors = [...extracted.colors]
+    if (nextColors.length === 1) {
+      nextColors.push(props.modelData.colors?.[1] || 'hi-vis-yellow')
+    }
+    props.modelData.colors = nextColors
+  }
+  if (extracted.sizes.length > 0) {
+    props.modelData.size_range = extracted.sizes
+  }
+}
+
 async function handleCatalogItemChange(catalogItemId) {
   props.modelData.catalog_item_id = catalogItemId
   if (!catalogItemId) {
@@ -107,6 +125,8 @@ async function handleCatalogItemChange(catalogItemId) {
         supplierOptions.value.push({ title: prefName, value: prefSupplierId })
       }
     }
+
+    importCatalogAttributes(item)
   }
 }
 
@@ -236,7 +256,7 @@ onMounted(async () => {
 
             <div
               v-if="linkedCatalogItem"
-              class="context-card__foot"
+              class="context-card__foot justify-space-between"
             >
               <RouterLink
                 :to="`/catalog/items/edit/${linkedCatalogItem.id}`"
@@ -249,6 +269,15 @@ onMounted(async () => {
                   size="14"
                 />
               </RouterLink>
+              <VBtn
+                size="x-small"
+                variant="text"
+                color="primary"
+                prepend-icon="tabler-refresh"
+                @click="importCatalogAttributes(linkedCatalogItem)"
+              >
+                {{ $t('Sync Options') }}
+              </VBtn>
             </div>
           </div>
         </VCol>
@@ -295,12 +324,12 @@ onMounted(async () => {
 
             <div class="context-card__foot">
               <VIcon
-                :icon="canChangeClient ? 'tabler-lock-open' : 'tabler-lock'"
+                icon="tabler-lock"
                 size="14"
                 class="me-1"
               />
               <span class="text-caption text-medium-emphasis">
-                {{ canChangeClient ? $t('Editable (No items)') : $t('Locked by physical items') }}
+                {{ $t('Locked after creation') }}
               </span>
             </div>
           </div>
@@ -458,7 +487,7 @@ onMounted(async () => {
       <WpFormDialog
         v-model="isEditDialogOpen"
         :title="$t('Edit Model Basic Information')"
-        :subtitle="$t('Update core model attributes, status, client account, and linked catalog product.')"
+        :subtitle="$t('Update core model attributes, status, linked catalog product, and supplier.')"
         icon="tabler-edit"
         icon-color="primary"
         size="medium"
@@ -498,7 +527,7 @@ onMounted(async () => {
               :items="clientOptions"
               :disabled="!canChangeClient"
               :label="$t('Client Account')"
-              :hint="!canChangeClient ? $t('Client cannot be changed when physical items exist.') : ''"
+              :hint="$t('Client account cannot be changed after creation.')"
               persistent-hint
               variant="outlined"
             />
@@ -515,7 +544,7 @@ onMounted(async () => {
               :loading="loadingLookups"
               :label="$t('Linked Catalog Product (Physical)')"
               :placeholder="$t('Select physical product from Catalog...')"
-              :hint="$t('Linking a product imports its options and preferred supplier.')"
+              :hint="$t('Linking a product imports its colors, sizes, options, and preferred supplier.')"
               persistent-hint
               clearable
               variant="outlined"

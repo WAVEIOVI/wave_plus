@@ -5,14 +5,13 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * WAVE PLUS Standard Zoom Dialog for Equipment Inventory Exploration.
  * Uses WpZoomDialog as the standard fullscreen/large container.
- * Features collapsible zone hierarchy sidebar, multi-criteria filtering,
+ * Features collapsible zone hierarchy sidebar, standard SiteAreaSearchDialog,
+ * multi-criteria filtering via SiteEquipmentFilterBar (WpFilterDialog),
  * cards/table view toggle, quick KPI badges, and full mobile-first support.
  */
-import {
-  WpEmptyState,
+import { AppHybridTabs, WpEmptyState,
   WpPagination,
-  WpZoomDialog,
-} from '@/components/shared'
+  WpZoomDialog, } from '@/components/shared'
 import {
   brandLabel,
   classLabel,
@@ -23,6 +22,7 @@ import { localizedValue } from '@/composables/useLocaleField'
 import SiteEquipmentCard from '@/views/client-assets/sites/components/SiteEquipmentCard.vue'
 import SiteEquipmentFilterBar from '@/views/client-assets/sites/components/SiteEquipmentFilterBar.vue'
 import SiteEquipmentTable from '@/views/client-assets/sites/components/SiteEquipmentTable.vue'
+import SiteAreaSearchDialog from '@/views/client-assets/sites/edit/SiteAreaSearchDialog.vue'
 import SiteLocationExplorer from '@/views/client-assets/sites/edit/SiteLocationExplorer.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -64,7 +64,7 @@ const { smAndDown } = useDisplay()
 const { areaLabel: helperAreaLabel } = useEquipmentHelpers()
 
 // ── State ────────────────────────────────────────────────────────────────────
-const isMobileExplorerOpen = ref(false)
+const isZoneSearchDialogOpen = ref(false)
 const isSidebarCollapsed = ref(false)
 const isRefreshing = ref(false)
 const searchQuery = ref('')
@@ -93,7 +93,7 @@ watch(() => props.initialViewMode, val => {
 
 watch(() => props.modelValue, open => {
   if (open) {
-    isMobileExplorerOpen.value = false
+    isZoneSearchDialogOpen.value = false
   }
 })
 
@@ -180,7 +180,7 @@ const resolvedSubtitle = computed(() => {
 
 const selectedAreaLabel = computed(() => {
   if (!props.selectedLocationAreaId) return t('All Facility')
-  const area = effectiveFlatAreas.value.find(a => a.id === props.selectedLocationAreaId)
+  const area = effectiveFlatAreas.value.find(a => String(a.id) === String(props.selectedLocationAreaId))
 
   return area ? localizedValue(area.name) : t('Selected Zone')
 })
@@ -208,15 +208,15 @@ const filteredEquipment = computed(() => {
   if (props.selectedLocationAreaId) {
     if (props.includeSubAreas) {
       const descendants = getAllDescendantAreaIds(effectiveFlatAreas.value, props.selectedLocationAreaId)
-      const targetIds = [props.selectedLocationAreaId, ...descendants]
+      const targetIds = [props.selectedLocationAreaId, ...descendants].map(String)
 
       list = list.filter(eq =>
-        targetIds.includes(eq.area_id) || (eq.area?.id && targetIds.includes(eq.area.id)),
+        targetIds.includes(String(eq.area_id)) || (eq.area?.id && targetIds.includes(String(eq.area.id))),
       )
     }
     else {
       list = list.filter(eq =>
-        eq.area_id === props.selectedLocationAreaId || eq.area?.id === props.selectedLocationAreaId,
+        String(eq.area_id) === String(props.selectedLocationAreaId) || String(eq.area?.id) === String(props.selectedLocationAreaId),
       )
     }
   }
@@ -251,7 +251,7 @@ const filteredEquipment = computed(() => {
     list = list.filter(eq => eq.criticality === filterCriticality.value)
   }
   if (filterClassId.value) {
-    list = list.filter(eq => eq.equipment_class_id === filterClassId.value)
+    list = list.filter(eq => String(eq.equipment_class_id) === String(filterClassId.value))
   }
 
   return list
@@ -303,10 +303,8 @@ const resetFilters = () => {
 }
 
 const onSelectLocation = id => {
-  emit('update:selectedLocationAreaId', id)
-  if (smAndDown.value) {
-    isMobileExplorerOpen.value = false
-  }
+  emit('update:selectedLocationAreaId', id ?? null)
+  isZoneSearchDialogOpen.value = false
 }
 
 const onToggleExpand = areaId => {
@@ -464,18 +462,32 @@ const handleEdit = item => {
             />
             {{ $t('Filter by Zone') }}
           </span>
-          <IconBtn
-            size="x-small"
-            variant="text"
-            :title="$t('Hide Sidebar')"
-            :aria-label="$t('Hide Sidebar')"
-            @click="isSidebarCollapsed = true"
-          >
-            <VIcon
-              icon="tabler-layout-sidebar-left-collapse"
-              size="16"
-            />
-          </IconBtn>
+          <div class="d-flex align-center">
+            <IconBtn
+              size="x-small"
+              variant="text"
+              color="primary"
+              :title="$t('Search Zones Dialog')"
+              @click="isZoneSearchDialogOpen = true"
+            >
+              <VIcon
+                icon="tabler-search"
+                size="15"
+              />
+            </IconBtn>
+            <IconBtn
+              size="x-small"
+              variant="text"
+              :title="$t('Hide Sidebar')"
+              :aria-label="$t('Hide Sidebar')"
+              @click="isSidebarCollapsed = true"
+            >
+              <VIcon
+                icon="tabler-layout-sidebar-left-collapse"
+                size="16"
+              />
+            </IconBtn>
+          </div>
         </div>
         <div class="pa-3 overflow-y-auto flex-grow-1">
           <SiteLocationExplorer
@@ -495,33 +507,6 @@ const handleEdit = item => {
       <div class="zoom-main d-flex flex-column">
         <!-- Controls & Filters Toolbar -->
         <div class="zoom-controls pa-3 pa-sm-4 border-b">
-          <!-- Mobile Zone Trigger & Active Filter Header -->
-          <div
-            v-if="smAndDown"
-            class="d-flex align-center gap-2 mb-3"
-          >
-            <VBtn
-              size="small"
-              variant="tonal"
-              color="primary"
-              prepend-icon="tabler-map-pin"
-              class="flex-grow-1 text-truncate"
-              @click="isMobileExplorerOpen = true"
-            >
-              {{ selectedAreaLabel }}
-            </VBtn>
-
-            <VBtn
-              v-if="hasActiveFilters"
-              size="small"
-              variant="text"
-              color="secondary"
-              icon="tabler-filter-off"
-              :title="$t('Reset Filters')"
-              @click="resetFilters"
-            />
-          </div>
-
           <!-- Active Filter Location Chip (Desktop) -->
           <div
             v-if="!smAndDown && selectedLocationAreaId"
@@ -532,6 +517,8 @@ const handleEdit = item => {
               variant="tonal"
               closable
               size="small"
+              class="cursor-pointer"
+              @click="isZoneSearchDialogOpen = true"
               @click:close="emit('update:selectedLocationAreaId', null)"
             >
               <VIcon
@@ -549,7 +536,7 @@ const handleEdit = item => {
             </span>
           </div>
 
-          <!-- Multi-criteria Filter Bar -->
+          <!-- Standard Multi-criteria Filter Bar (WpSearchField + WpFilterDialog + WpActiveFilters) -->
           <SiteEquipmentFilterBar
             v-model:search-query="searchQuery"
             v-model:lifecycle-status="filterLifecycleStatus"
@@ -557,7 +544,12 @@ const handleEdit = item => {
             v-model:criticality="filterCriticality"
             v-model:class-id="filterClassId"
             :class-options="availableEquipmentClasses"
+            :selected-area-label="selectedAreaLabel"
+            :has-selected-area="Boolean(selectedLocationAreaId)"
+            :show-zone-button="smAndDown || isSidebarCollapsed"
             show-class-filter
+            @open-zone-picker="isZoneSearchDialogOpen = true"
+            @clear-zone="emit('update:selectedLocationAreaId', null)"
             @reset="resetFilters"
           />
         </div>
@@ -666,41 +658,18 @@ const handleEdit = item => {
     </div>
   </WpZoomDialog>
 
-  <!-- Mobile Zone Hierarchy Bottom Sheet -->
-  <VBottomSheet
-    v-if="smAndDown && visible"
-    v-model="isMobileExplorerOpen"
-    scrollable
-  >
-    <VCard class="rounded-t-lg">
-      <VCardItem>
-        <VCardTitle class="d-flex align-center gap-2">
-          <VIcon
-            icon="tabler-hierarchy-2"
-            size="20"
-          />
-          {{ $t('Select Zone Location') }}
-        </VCardTitle>
-        <template #append>
-          <IconBtn @click="isMobileExplorerOpen = false">
-            <VIcon icon="tabler-x" />
-          </IconBtn>
-        </template>
-      </VCardItem>
-      <VCardText class="pt-0 pb-6">
-        <SiteLocationExplorer
-          :flattened-hierarchy="effectiveFlattenedHierarchy"
-          :site-areas-flat="effectiveFlatAreas"
-          :site-equipment-count="equipment.length"
-          :selected-location-area-id="selectedLocationAreaId"
-          :include-sub-areas="includeSubAreas"
-          @update:selected-location-area-id="onSelectLocation"
-          @update:include-sub-areas="emit('update:includeSubAreas', $event)"
-          @toggle-expand="onToggleExpand"
-        />
-      </VCardText>
-    </VCard>
-  </VBottomSheet>
+  <!-- Standard Zone Filter Dialog (Replaces Mobile Bottom Sheet) -->
+  <SiteAreaSearchDialog
+    v-if="visible"
+    v-model="isZoneSearchDialogOpen"
+    :site-id="resolvedSiteId"
+    :areas-list="effectiveFlatAreas"
+    :current-area-id="selectedLocationAreaId"
+    allow-root
+    :root-label="$t('All Facility')"
+    :title="$t('Filter by Zone / Building Area')"
+    @select="area => onSelectLocation(area?.id ?? null)"
+  />
 </template>
 
 <style lang="scss" scoped>

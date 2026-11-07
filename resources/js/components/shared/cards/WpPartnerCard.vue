@@ -47,6 +47,7 @@ const props = defineProps({
   details: { type: Array, default: () => [] },
   statusType: { type: String, default: '' },
   searchConfig: { type: Object, default: null },
+  selectDialogProps: { type: Object, default: () => ({}) },
   loading: { type: Boolean, default: false },
   compact: { type: Boolean, default: false },
   canChange: { type: Boolean, default: true },
@@ -425,7 +426,7 @@ const onNameClick = () => {
       :entity-label="label"
       icon="tabler-user-search"
       :selected="partner"
-      v-bind="searchConfig"
+      v-bind="{ ...searchConfig, ...selectDialogProps }"
       @select="onPicked"
     />
   </VCard>
