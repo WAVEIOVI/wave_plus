@@ -192,7 +192,7 @@ export function isEditableStatus(config, status) {
 export function computeLifecycleSteps(config, status, options = {}) {
   const order = config?.lifecycle || []
   const negative = config?.negative || {}
-  const steps = order.map((s, index) => ({ status: s, state: 'upcoming', index }))
+  const steps = order.map((s, index) => ({ status: s, key: s, state: 'upcoming', index }))
 
   if (Object.prototype.hasOwnProperty.call(negative, status)) {
     const anchor = negative[status]
@@ -203,7 +203,7 @@ export function computeLifecycleSteps(config, status, options = {}) {
       if (step.index <= anchorIndex) step.state = 'done'
     })
     if (anchorIndex < 0 && steps[0] && !anchor) steps[0].state = 'done'
-    steps.push({ status, state: 'terminal-negative', index: steps.length })
+    steps.push({ status, key: status, state: 'terminal-negative', index: steps.length })
 
     return steps
   }

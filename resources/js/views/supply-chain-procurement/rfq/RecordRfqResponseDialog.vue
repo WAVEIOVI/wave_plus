@@ -17,13 +17,14 @@ const emit = defineEmits(['update:modelValue', 'submitted'])
 const { t } = useI18n()
 const rfqStore = useRfqStore()
 const { format: formatMoney } = useCurrency()
-const { showSuccess, showError } = useAppSnackbar()
+const { success, showApiError } = useAppSnackbar()
 
 const {
   supplierOptions,
   ensureSuppliers,
   rfqPaymentTermsOptions,
   resolveLineItemName,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const submitting = ref(false)
@@ -42,7 +43,7 @@ const availableSupplierOptions = computed(() => {
   if (invited.length) {
     return invited.map(s => ({
       value: s.id,
-      title: s.legal_name || s.trade_name || s.supplier_code || String(s.id),
+      title: resolveSupplierName(s),
     }))
   }
 
@@ -66,7 +67,8 @@ watch(
       offered_qty: Number(l.qty_requested) || 1,
       offered_unit_price_ht: Number(l.target_price_ht) || 0,
       offered_lead_time_days: 7,
-      certifications_confirmed: true,
+      required_certifications: Array.isArray(l.required_certifications) ? l.required_certifications : [],
+      certifications_confirmed: Array.isArray(l.required_certifications) ? [...l.required_certifications] : [],
     }))
   },
   { immediate: true },
@@ -92,18 +94,20 @@ const handleSubmit = async () => {
         offered_unit_price_ht: Number(l.offered_unit_price_ht) || 0,
         offered_qty: Number(l.offered_qty) || 1,
         offered_lead_time_days: Number(l.offered_lead_time_days) || null,
-        certifications_confirmed: Boolean(l.certifications_confirmed),
+        certifications_confirmed: Array.isArray(l.certifications_confirmed)
+          ? l.certifications_confirmed
+          : (l.required_certifications || []),
       })),
     }
 
     const res = await rfqStore.submitResponse(props.rfq.id, payload)
 
-    showSuccess(t('scp.rfq.snackbar.response_submitted'))
+    success(t('scp.rfq.snackbar.response_submitted'))
     emit('submitted', res)
     emit('update:modelValue', false)
   }
   catch (err) {
-    showError(err?.data?.message || t('scp.rfq.snackbar.error_generic'))
+    showApiError(err, t('scp.rfq.snackbar.error_generic'))
   }
   finally {
     submitting.value = false
@@ -115,7 +119,7 @@ const handleSubmit = async () => {
   <WpFormDialog
     :model-value="modelValue"
     :title="t('scp.rfq.response_dialog.title')"
-    :subtitle="rfq?.rfq_number"
+    :subtitle="rfq?.reference"
     icon="tabler-file-dollar"
     size="large"
     :loading="submitting"

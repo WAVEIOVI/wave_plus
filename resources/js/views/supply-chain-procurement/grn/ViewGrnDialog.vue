@@ -19,6 +19,7 @@ const {
   resolveStatusVariant,
   formatDate,
   resolveLineItemName,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const lines = computed(() => props.grn?.lines || [])
@@ -27,8 +28,8 @@ const lines = computed(() => props.grn?.lines || [])
 <template>
   <WpDetailDialog
     :model-value="modelValue"
-    :title="grn?.grn_number || t('scp.grn.title')"
-    :subtitle="grn?.supplier?.legal_name || grn?.supplier?.trade_name || t('scp.grn.subtitle')"
+    :title="grn?.reference || t('scp.grn.title')"
+    :subtitle="grn?.supplier ? resolveSupplierName(grn.supplier) : t('scp.grn.subtitle')"
     :loading="loading"
     size="large"
     @update:model-value="emit('update:modelValue', $event)"
@@ -55,13 +56,13 @@ const lines = computed(() => props.grn?.lines || [])
           dot
         />
         <VChip
-          v-if="grn.purchase_order?.po_number"
+          v-if="grn.purchase_order?.reference"
           size="small"
           label
           variant="tonal"
           color="primary"
         >
-          {{ grn.purchase_order.po_number }}
+          {{ grn.purchase_order.reference }}
         </VChip>
         <VChip
           v-if="grn.supplier_delivery_note_ref"
@@ -82,7 +83,7 @@ const lines = computed(() => props.grn?.lines || [])
         >
           <WpInfoItem
             :label="t('scp.common.supplier')"
-            :value="grn.supplier?.legal_name || grn.supplier?.trade_name || '—'"
+            :value="resolveSupplierName(grn.supplier)"
             icon="tabler-building-store"
           />
         </VCol>
@@ -104,7 +105,7 @@ const lines = computed(() => props.grn?.lines || [])
         >
           <WpInfoItem
             :label="t('scp.grn.fields.received_by')"
-            :value="grn.receiver?.name || '—'"
+            :value="grn.received_by_user?.name || grn.receiver?.name || '—'"
             icon="tabler-user-check"
           />
         </VCol>

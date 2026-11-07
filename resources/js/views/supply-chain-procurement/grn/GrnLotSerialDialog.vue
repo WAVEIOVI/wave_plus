@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable camelcase */
-import { reactive, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useProcurementHelpers } from '@/composables/supply-chain-procurement/useProcurementHelpers'
 
@@ -13,7 +13,13 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'save'])
 
 const { t } = useI18n()
-const { warehouseOptions, qcResultOptions } = useProcurementHelpers()
+const { zoneOptions, locationOptions, qcResultOptions } = useProcurementHelpers()
+
+const CERTIFICATE_OPTIONS = ['CoC', 'MSDS', 'Warranty', 'Calibration', 'Test Report', 'ISO']
+
+const selectedZoneId = ref(null)
+
+const filteredLocationOptions = computed(() => locationOptions(selectedZoneId.value))
 
 const form = reactive({
   qty_received: 0,
@@ -25,12 +31,14 @@ const form = reactive({
   expiry_date: '',
   qc_result: 'passed',
   qc_notes: '',
+  certificates_received: [],
 })
 
 watch(
   () => props.modelValue,
   open => {
     if (!open || !props.line) return
+    selectedZoneId.value = null
     form.qty_received = Number(props.line.qty_received) || 0
     form.qty_accepted = Number(props.line.qty_accepted ?? props.line.qty_received) || 0
     form.qty_rejected = Number(props.line.qty_rejected) || 0
@@ -40,6 +48,9 @@ watch(
     form.expiry_date = props.line.expiry_date ? String(props.line.expiry_date).slice(0, 10) : ''
     form.qc_result = props.line.qc_result || 'passed'
     form.qc_notes = props.line.qc_notes || ''
+    form.certificates_received = Array.isArray(props.line.certificates_received)
+      ? [...props.line.certificates_received]
+      : []
   },
   { immediate: true },
 )
@@ -56,6 +67,9 @@ const onRejectedChange = val => {
 
   form.qty_rejected = rej
   form.qty_accepted = Math.max(0, (Number(form.qty_received) || 0) - rej)
+  if (rej > 0 && form.qc_result === 'passed') {
+    form.qc_result = 'passed_with_remarks'
+  }
 }
 
 const handleSave = () => {
@@ -70,6 +84,7 @@ const handleSave = () => {
     expiry_date: form.expiry_date || null,
     qc_result: form.qc_result || 'passed',
     qc_notes: form.qc_notes || null,
+    certificates_received: Array.isArray(form.certificates_received) ? [...form.certificates_received] : [],
   })
   emit('update:modelValue', false)
 }
@@ -134,11 +149,28 @@ const handleSave = () => {
           sm="6"
         >
           <VSelect
+            v-model="selectedZoneId"
+            :items="zoneOptions"
+            item-title="title"
+            item-value="value"
+            :label="t('scp.grn.fields.warehouse_zone', 'Warehouse Zone (Filter)')"
+            prepend-inner-icon="tabler-layers"
+            :readonly="readonly"
+            clearable
+          />
+        </VCol>
+
+        <VCol
+          cols="12"
+          sm="6"
+        >
+          <VSelect
             v-model="form.storage_location_id"
-            :items="warehouseOptions"
+            :items="filteredLocationOptions"
             item-title="title"
             item-value="value"
             :label="t('scp.grn.fields.storage_location')"
+            prepend-inner-icon="tabler-map-pin"
             :readonly="readonly"
             clearable
           />
@@ -154,6 +186,22 @@ const handleSave = () => {
             item-title="title"
             item-value="value"
             :label="t('scp.grn.fields.qc_result')"
+            :readonly="readonly"
+          />
+        </VCol>
+
+        <VCol
+          cols="12"
+          sm="6"
+        >
+          <VCombobox
+            v-model="form.certificates_received"
+            :items="CERTIFICATE_OPTIONS"
+            :label="t('scp.grn.fields.certificates_received', 'Certificates Received')"
+            prepend-inner-icon="tabler-certificate"
+            multiple
+            chips
+            closable-chips
             :readonly="readonly"
           />
         </VCol>

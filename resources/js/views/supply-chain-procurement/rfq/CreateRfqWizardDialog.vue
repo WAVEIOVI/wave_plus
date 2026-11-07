@@ -41,9 +41,9 @@ watch(
     if (!open) return
     await ensureSuppliers()
     try {
-      const res = await iprStore.fetchIprs({ status: 'approved', perPage: 50 })
+      const res = await iprStore.fetchList({ 'filter[status]': 'approved', per_page: 50 })
 
-      approvedIprs.value = res?.items || iprStore.iprs || []
+      approvedIprs.value = res?.data || iprStore.list || []
     }
     catch {
       approvedIprs.value = []
@@ -52,12 +52,21 @@ watch(
   { immediate: true },
 )
 
-const approvedIprOptions = computed(() =>
-  approvedIprs.value.map(ipr => ({
+const approvedIprOptions = computed(() => {
+  const list = approvedIprs.value.map(ipr => ({
     value: ipr.id,
-    title: `${ipr.ipr_number} — ${ipr.requester?.name || ''}`.trim(),
-  })),
-)
+    title: `${ipr.reference} — ${ipr.requested_by_user?.name || ''}`.trim().replace(/—\s*$/, '').trim(),
+  }))
+
+  if (props.prefillIpr?.id && !list.some(o => o.value === props.prefillIpr.id)) {
+    list.unshift({
+      value: props.prefillIpr.id,
+      title: `${props.prefillIpr.reference} — ${props.prefillIpr.requested_by_user?.name || ''}`.trim().replace(/—\s*$/, '').trim(),
+    })
+  }
+
+  return list
+})
 
 const mapCatalogToRfqLine = (item, quantity = 1) => {
   const price = Number(item.unit_price ?? item.purchase_price_ht ?? 0) || 0
@@ -66,6 +75,7 @@ const mapCatalogToRfqLine = (item, quantity = 1) => {
   return {
     is_ad_hoc: false,
     catalog_item_id: item.id,
+    variant_id: item.variant_id || null,
     item_name: item.item_name || item.name || item.sku,
     sku: item.sku || '',
     unit: item.unit || '',
@@ -79,29 +89,76 @@ const mapCatalogToRfqLine = (item, quantity = 1) => {
   }
 }
 
-const initialValues = computed(() => {
-  const ipr = props.prefillIpr
-
-  const prefilledLines = (ipr?.lines || []).map(l => {
-    const qty = Number(l.qty_requested ?? l.quantity ?? 1) || 1
-    const price = Number(l.estimated_unit_cost ?? l.unit_price ?? 0) || 0
-
-    return {
-      is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
-      catalog_item_id: l.catalog_item_id || null,
-      item_name: resolveLineItemName(l),
-      sku: resolveLineItemSku(l),
-      quantity: qty,
-      qty_requested: qty,
-      unit_price: price,
-      target_price_ht: price,
-      line_total: qty * price,
-      description: l.ad_hoc_description || '',
-    }
-  })
+const mapIprLineToRfqLine = (l, sourceIprId = null) => {
+  const qty = Number(l.qty_requested ?? l.quantity ?? 1) || 1
+  const price = Number(l.estimated_unit_cost ?? l.unit_price ?? 0) || 0
 
   return {
-    title: ipr ? `${t('scp.rfq.title')} — ${ipr.ipr_number}` : '',
+    source_ipr_id: sourceIprId || l.ipr_id || null,
+    source_ipr_line_id: l.id || null,
+    is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
+    catalog_item_id: l.catalog_item_id || null,
+    variant_id: l.variant_id || null,
+    ad_hoc_name: l.ad_hoc_name || (!l.catalog_item_id ? resolveLineItemName(l) : null),
+    ad_hoc_sku: l.ad_hoc_sku || (!l.catalog_item_id ? resolveLineItemSku(l) : null),
+    item_name: resolveLineItemName(l),
+    sku: resolveLineItemSku(l),
+    unit_id: l.unit_id || l.catalog_item?.uom_id || null,
+    quantity: qty,
+    qty_requested: qty,
+    unit_price: price,
+    target_price_ht: price,
+    line_total: qty * price,
+    description: l.ad_hoc_description || '',
+  }
+}
+
+const onIprIdsChanged = async (nextIds, form, setValue) => {
+  const ids = Array.isArray(nextIds) ? nextIds : []
+
+  setValue('ipr_ids', ids)
+
+  const currentLines = Array.isArray(form.lines) ? form.lines : []
+  const keptLines = currentLines.filter(l => !l.source_ipr_id || ids.includes(l.source_ipr_id))
+  const representedIprIds = new Set(keptLines.map(l => l.source_ipr_id).filter(Boolean))
+  const addedLines = []
+
+  for (const id of ids) {
+    if (representedIprIds.has(id)) continue
+
+    let ipr = (props.prefillIpr?.id === id ? props.prefillIpr : null)
+      || approvedIprs.value.find(item => item.id === id)
+      || null
+
+    if (!ipr?.lines?.length) {
+      try {
+        const fetched = await iprStore.fetchDetails(id)
+        if (fetched) {
+          ipr = fetched
+
+          const idx = approvedIprs.value.findIndex(item => item.id === id)
+          if (idx >= 0) approvedIprs.value[idx] = fetched
+        }
+      }
+      catch {
+        // Ignore detail fetch failure
+      }
+    }
+
+    for (const l of ipr?.lines || []) {
+      addedLines.push(mapIprLineToRfqLine(l, id))
+    }
+  }
+
+  setValue('lines', [...keptLines, ...addedLines])
+}
+
+const initialValues = computed(() => {
+  const ipr = props.prefillIpr
+  const prefilledLines = (ipr?.lines || []).map(l => mapIprLineToRfqLine(l, ipr?.id))
+
+  return {
+    title: ipr ? `${t('scp.rfq.title')} — ${ipr.reference}` : '',
     response_deadline: defaultDeadline(),
     required_delivery_date: ipr?.needed_by_date ? String(ipr.needed_by_date).slice(0, 10) : '',
     ipr_ids: ipr?.id ? [ipr.id] : [],
@@ -183,7 +240,9 @@ const handleSubmit = async form => {
     lines: (form.lines || []).map(l => ({
       is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
       catalog_item_id: l.catalog_item_id || null,
+      variant_id: l.variant_id || null,
       ad_hoc_name: !l.catalog_item_id ? (l.item_name || l.ad_hoc_name || 'Ad-hoc Item') : null,
+      ad_hoc_sku: !l.catalog_item_id ? (l.sku || l.ad_hoc_sku || null) : null,
       description_for_supplier: l.description || l.description_for_supplier || null,
       qty_requested: Number(l.quantity ?? l.qty_requested ?? 1) || 1,
       unit_id: l.unit_id || null,
@@ -191,7 +250,7 @@ const handleSubmit = async form => {
     })),
   }
 
-  const created = await rfqStore.createRfq(payload)
+  const created = await rfqStore.create(payload)
 
   emit('created', created)
 
@@ -267,7 +326,7 @@ const handleSubmit = async form => {
             chips
             closable-chips
             clearable
-            @update:model-value="setValue('ipr_ids', $event)"
+            @update:model-value="onIprIdsChanged($event, form, setValue)"
           />
         </VCol>
       </VRow>

@@ -6,7 +6,7 @@
  * Visual chain of linked upstream/downstream documents (e.g., IPR → RFQ → PO → GRN)
  * with clickable router-link chips/badges and an optional chronological audit timeline.
  *
- *   items: [{ type, id, reference, status, to, route, current }]
+ *   items / chain: [{ type, id, reference, status, to, route, current }]
  *   activity: [{ id, title, actor, at, icon, color }]
  *   bare: render without the WpSectionCard shell
  */
@@ -16,6 +16,8 @@ import WpSectionCard from '@/components/shared/layout/WpSectionCard.vue'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
+  /** Alias for `items` — accept `chain` from buildTraceability() output directly. */
+  chain: { type: Array, default: null },
   activity: { type: Array, default: () => [] },
   title: { type: String, default: '' },
   activityTitle: { type: String, default: '' },
@@ -26,7 +28,7 @@ const props = defineProps({
 const { t, locale } = useI18n()
 
 const TYPE_META = {
-  ipr: { icon: 'tabler-file-Import', color: 'info' },
+  ipr: { icon: 'tabler-file-import', color: 'info' },
   rfq: { icon: 'tabler-scale', color: 'warning' },
   po: { icon: 'tabler-file-invoice', color: 'primary' },
   grn: { icon: 'tabler-package-import', color: 'success' },
@@ -34,7 +36,10 @@ const TYPE_META = {
   stock_movement: { icon: 'tabler-arrows-exchange', color: 'secondary' },
 }
 
-const chainNodes = computed(() => (props.items || []).map((item, idx) => {
+// Accept either `chain` (alias) or `items`
+const sourceItems = computed(() => props.chain ?? props.items ?? [])
+
+const chainNodes = computed(() => (sourceItems.value || []).map((item, idx) => {
   const type = String(item?.type || '').toLowerCase()
   const meta = TYPE_META[type] || { icon: 'tabler-file-text', color: 'primary' }
   const target = item?.to || item?.route || null

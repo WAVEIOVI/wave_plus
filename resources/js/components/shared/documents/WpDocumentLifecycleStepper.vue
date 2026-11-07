@@ -37,7 +37,20 @@ const STATE_META = {
 }
 
 const normalized = computed(() => (props.steps || []).map((step, index) => {
-  const state = STATE_META[step.state] ? step.state : 'pending'
+  // Map states from computeLifecycleSteps output to the UI state vocabulary.
+  // computeLifecycleSteps emits: 'done' | 'current' | 'upcoming' | 'terminal-negative'
+  // WpDocumentLifecycleStepper recognises: 'done' | 'current' | 'pending' | 'skipped' | 'rejected' | 'cancelled'
+  let state = step.state
+  if (state === 'upcoming') {
+    state = 'pending'
+  }
+  else if (state === 'terminal-negative') {
+    const s = step.status || step.key || ''
+
+    state = (s === 'rejected' || s === 'fully_rejected') ? 'rejected' : 'cancelled'
+  }
+  if (!STATE_META[state]) state = 'pending'
+
   const meta = STATE_META[state]
 
   return {

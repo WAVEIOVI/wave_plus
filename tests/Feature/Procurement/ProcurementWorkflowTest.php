@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Procurement;
 
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use App\Modules\BusinessPartners\Models\Supplier;
 use App\Modules\Catalog\Models\CatalogCategory;
@@ -14,8 +16,6 @@ use App\Modules\Procurement\Models\InternalPurchaseRequest;
 use App\Modules\Procurement\Models\PurchaseOrder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-use App\Models\Permission;
-use App\Models\Role;
 use Tests\TestCase;
 
 class ProcurementWorkflowTest extends TestCase
@@ -129,7 +129,7 @@ class ProcurementWorkflowTest extends TestCase
         $payload['lines'][0]['id'] = $lineId;
         $payload['lines'][0]['estimated_unit_cost'] = 30;
 
-        $this->putJson('/api/procurement/iprs/' . $created->json('data.id'), $payload)
+        $this->putJson('/api/procurement/iprs/'.$created->json('data.id'), $payload)
             ->assertOk()
             ->assertJsonPath('data.lines.0.estimated_unit_cost', 30);
     }

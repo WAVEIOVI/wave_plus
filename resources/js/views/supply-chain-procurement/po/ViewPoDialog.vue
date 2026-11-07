@@ -22,6 +22,7 @@ const {
   resolveStatusVariant,
   formatDate,
   resolveLineItemName,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const lines = computed(() => props.po?.lines || [])
@@ -34,8 +35,8 @@ const isReceivable = computed(() =>
 <template>
   <WpDetailDialog
     :model-value="modelValue"
-    :title="po?.po_number || t('scp.po.title')"
-    :subtitle="po?.supplier?.legal_name || po?.supplier?.trade_name || t('scp.po.subtitle')"
+    :title="po?.reference || t('scp.po.title')"
+    :subtitle="po?.supplier ? resolveSupplierName(po.supplier) : t('scp.po.subtitle')"
     :loading="loading"
     size="large"
     @update:model-value="emit('update:modelValue', $event)"
@@ -108,7 +109,7 @@ const isReceivable = computed(() =>
         >
           <WpInfoItem
             :label="t('scp.common.supplier')"
-            :value="po.supplier?.legal_name || po.supplier?.trade_name || '—'"
+            :value="resolveSupplierName(po.supplier)"
             icon="tabler-building-store"
           />
         </VCol>
@@ -130,7 +131,7 @@ const isReceivable = computed(() =>
         >
           <WpInfoItem
             :label="t('wp.docs.totals.subtotal')"
-            :value="formatMoney(po.subtotal_ht || 0, { currency: po.currency })"
+            :value="formatMoney(po.total_ht || 0, { currency: po.currency })"
             icon="tabler-calculator"
           />
         </VCol>
@@ -187,7 +188,7 @@ const isReceivable = computed(() =>
                 {{ formatMoney(line.unit_price_ht || 0, { currency: po.currency }) }}
               </td>
               <td class="text-end font-weight-bold">
-                {{ formatMoney(line.line_total_ttc || line.line_total_ht || 0, { currency: po.currency }) }}
+                {{ formatMoney(line.total_ttc || line.total_ht || 0, { currency: po.currency }) }}
               </td>
             </tr>
           </tbody>

@@ -26,13 +26,14 @@ const route = useRoute()
 const router = useRouter()
 const rfqStore = useRfqStore()
 const iprStore = useIprStore()
-const { showSuccess, showError } = useAppSnackbar()
+const { success, showApiError } = useAppSnackbar()
 
 const {
   statusLabel,
   resolveStatusVariant,
   rfqStatusSelectOptions,
   formatDate,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const searchQuery = ref('')
@@ -55,21 +56,23 @@ const draftFilters = reactive({
   status: null,
 })
 
+const metaStats = ref({})
+
 const loadList = async () => {
   await Promise.all([
-    rfqStore.fetchRfqs({
+    rfqStore.fetchList({
       page: page.value,
-      perPage: perPage.value,
-      q: searchQuery.value.trim(),
-      status: filters.status,
+      per_page: perPage.value,
+      q: searchQuery.value.trim() || undefined,
+      'filter[status]': filters.status || undefined,
     }),
-    rfqStore.fetchMeta(),
+    rfqStore.fetchMeta().then(meta => { metaStats.value = meta || {} }).catch(() => {}),
   ])
 }
 
 onMounted(async () => {
   if (route.query.from_ipr) {
-    const ipr = await iprStore.fetchIpr(route.query.from_ipr)
+    const ipr = await iprStore.fetchDetails(route.query.from_ipr)
     if (ipr) {
       prefillIpr.value = ipr
       createDialogOpen.value = true
@@ -121,42 +124,42 @@ const activeFilterChips = computed(() => {
   return chips
 })
 
-const removeFilterChip = key => {
-  filters[key] = null
+const removeFilterChip = filter => {
+  const k = typeof filter === 'object' ? filter?.key : filter
+  if (k) filters[k] = null
   page.value = 1
   loadList()
 }
 
 const kpiItems = computed(() => {
-  const sc = rfqStore.meta?.status_counts || {}
-  const total = Object.values(sc).reduce((s, n) => s + (Number(n) || 0), 0) || rfqStore.total
+  const ms = metaStats.value
 
   return [
     {
       key: 'total',
       title: t('scp.rfq.kpi.total'),
-      value: total,
+      value: ms.total_rfqs ?? rfqStore.totalItems ?? 0,
       icon: 'tabler-scale',
       color: 'primary',
     },
     {
       key: 'open',
       title: t('scp.rfq.kpi.open'),
-      value: (sc.sent ?? 0) + (sc.awaiting_responses ?? 0),
+      value: (ms.awaiting_responses ?? 0) + (ms.draft ?? 0),
       icon: 'tabler-send',
       color: 'info',
     },
     {
       key: 'evaluation',
       title: t('scp.rfq.kpi.under_evaluation'),
-      value: sc.under_evaluation ?? 0,
+      value: ms.under_evaluation ?? 0,
       icon: 'tabler-git-compare',
       color: 'warning',
     },
     {
       key: 'awarded',
       title: t('scp.rfq.kpi.awarded'),
-      value: sc.awarded ?? 0,
+      value: ms.awarded ?? 0,
       icon: 'tabler-award',
       color: 'success',
     },
@@ -164,12 +167,12 @@ const kpiItems = computed(() => {
 })
 
 const headers = computed(() => [
-  { title: t('scp.common.reference'), key: 'rfq_number', sortable: false },
+  { title: t('scp.common.reference'), key: 'reference', sortable: false },
   { title: t('scp.rfq.fields.title'), key: 'title', sortable: false },
   { title: t('scp.rfq.fields.response_deadline'), key: 'response_deadline', sortable: false },
   { title: t('scp.rfq.fields.invited_suppliers'), key: 'invitations_count', align: 'center', sortable: false },
   { title: t('scp.rfq.sections.responses'), key: 'responses_count', align: 'center', sortable: false },
-  { title: t('scp.rfq.fields.awarded_supplier'), key: 'awarded_supplier', sortable: false },
+  { title: t('scp.rfq.fields.awarded_supplier'), key: 'awarded_to', sortable: false },
   { title: t('scp.common.status'), key: 'status', sortable: false },
   { title: t('common.actions'), key: 'actions', align: 'end', sortable: false },
 ])
@@ -178,7 +181,7 @@ const openView = async item => {
   selectedRfq.value = item
   viewDialogOpen.value = true
 
-  const full = await rfqStore.fetchRfq(item.id)
+  const full = await rfqStore.fetchDetails(item.id)
   if (full) selectedRfq.value = full
 }
 
@@ -195,32 +198,56 @@ const handleDelete = async () => {
   if (!selectedRfq.value?.id) return
   deleting.value = true
   try {
-    await rfqStore.deleteRfq(selectedRfq.value.id)
-    showSuccess(t('scp.rfq.snackbar.deleted_success'))
+    await rfqStore.deleteItem(selectedRfq.value.id)
+    success(t('scp.rfq.snackbar.deleted_success'))
     deleteDialogOpen.value = false
     await loadList()
   }
   catch (err) {
-    showError(err?.data?.message || t('scp.rfq.snackbar.error_delete'))
+    showApiError(err, t('scp.rfq.snackbar.error_delete'))
   }
   finally {
     deleting.value = false
   }
 }
 
-const rowExtraActions = item => {
-  const actions = []
+const getRowActions = item => {
+  const actions = [
+    { label: t('scp.action.view'), icon: 'tabler-eye', emit: 'view' },
+    { label: t('scp.action.edit'), icon: 'tabler-edit', emit: 'edit' },
+  ]
+
   if (item.status === 'awarded') {
     actions.push({
-      id: 'convert_po',
-      title: t('scp.action.convert_to_po'),
+      label: t('scp.action.convert_to_po'),
       icon: 'tabler-shopping-cart-plus',
+      emit: 'convert_po',
       color: 'success',
       handler: () => router.push({ path: '/supply-chain-procurement/po/list', query: { from_rfq: item.id } }),
     })
   }
+  if (['draft', 'cancelled'].includes(item.status)) {
+    actions.push({
+      label: t('scp.action.delete'),
+      icon: 'tabler-trash',
+      emit: 'delete',
+      color: 'error',
+      dividerBefore: true,
+    })
+  }
 
   return actions
+}
+
+const handleRowAction = (item, act) => {
+  if (typeof act === 'object' && typeof act?.handler === 'function') {
+    act.handler()
+
+    return
+  }
+  const found = getRowActions(item).find(a => a.emit === act)
+
+  found?.handler?.()
 }
 
 const onCreated = created => {
@@ -270,7 +297,8 @@ const onCreated = created => {
     <WpPageToolbar
       v-model:search="searchQuery"
       :search-placeholder="t('scp.rfq.search_placeholder')"
-      :active-filters-count="activeFilterChips.length"
+      show-filter
+      :active-filter-count="activeFilterChips.length"
       @open-filters="openFilterDialog"
       @refresh="loadList"
     />
@@ -278,28 +306,29 @@ const onCreated = created => {
     <WpActiveFilters
       v-if="activeFilterChips.length"
       :filters="activeFilterChips"
+      :label-map="{ status: t('scp.common.status') }"
       class="mb-4"
       @remove="removeFilterChip"
       @clear-all="resetFilters"
     />
 
     <WpResponsiveList
-      :items="rfqStore.rfqs"
+      :items="rfqStore.list"
       :headers="headers"
       :loading="rfqStore.loading"
-      :total-items="rfqStore.total"
+      :total-items="rfqStore.totalItems"
       :page="page"
       :items-per-page="perPage"
       :show-select="false"
       @update:page="page = $event"
       @update:items-per-page="perPage = $event"
     >
-      <template #item.rfq_number="{ item }">
+      <template #item.reference="{ item }">
         <RouterLink
           :to="`/supply-chain-procurement/rfq/edit/${item.id}`"
           class="font-weight-bold text-primary text-decoration-none"
         >
-          {{ item.rfq_number }}
+          {{ item.reference }}
         </RouterLink>
       </template>
 
@@ -335,9 +364,9 @@ const onCreated = created => {
         </VChip>
       </template>
 
-      <template #item.awarded_supplier="{ item }">
-        <span v-if="item.awarded_supplier">
-          {{ item.awarded_supplier.legal_name || item.awarded_supplier.trade_name }}
+      <template #item.awarded_to="{ item }">
+        <span v-if="item.awarded_to">
+          {{ resolveSupplierName(item.awarded_to) }}
         </span>
         <span
           v-else
@@ -356,39 +385,25 @@ const onCreated = created => {
 
       <template #item.actions="{ item }">
         <WpRowActions
-          can-view
-          can-edit
-          :can-delete="['draft', 'cancelled'].includes(item.status)"
-          :extra-actions="rowExtraActions(item)"
+          :actions="getRowActions(item)"
           @view="openView(item)"
           @edit="openEdit(item)"
           @delete="confirmDelete(item)"
+          @action="act => handleRowAction(item, act)"
         />
       </template>
 
       <template #mobile-card="{ item }">
-        <WpMobileCard @click="openEdit(item)">
-          <template #header>
-            <div>
-              <div class="font-weight-bold text-primary">
-                {{ item.rfq_number }}
-              </div>
-              <div class="text-body-2 font-weight-medium">
-                {{ item.title }}
-              </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ t('scp.rfq.fields.response_deadline') }}: {{ formatDate(item.response_deadline) }}
-              </div>
-            </div>
-            <WpStatusChip
-              :status="item.status"
-              :label="statusLabel(item.status)"
-              :color="resolveStatusVariant(item.status)"
-              dot
-            />
-          </template>
-
-          <div class="d-flex flex-wrap align-center gap-2 mt-2">
+        <WpMobileCard
+          :title="item.reference"
+          :subtitle="`${item.title} · ${formatDate(item.response_deadline)}`"
+          :status="item.status"
+          :status-color="resolveStatusVariant(item.status)"
+          :status-label="statusLabel(item.status)"
+          clickable
+          @click="openEdit(item)"
+        >
+          <template #badges>
             <VChip
               size="x-small"
               label
@@ -405,17 +420,24 @@ const onCreated = created => {
             >
               {{ item.responses?.length ?? 0 }} {{ t('scp.rfq.sections.responses') }}
             </VChip>
-          </div>
+          </template>
+
+          <template #content>
+            <div
+              v-if="item.awarded_to"
+              class="text-caption text-medium-emphasis"
+            >
+              {{ t('scp.rfq.fields.awarded_supplier') }}: {{ resolveSupplierName(item.awarded_to) }}
+            </div>
+          </template>
 
           <template #actions>
             <WpRowActions
-              can-view
-              can-edit
-              :can-delete="['draft', 'cancelled'].includes(item.status)"
-              :extra-actions="rowExtraActions(item)"
+              :actions="getRowActions(item)"
               @view="openView(item)"
               @edit="openEdit(item)"
               @delete="confirmDelete(item)"
+              @action="act => handleRowAction(item, act)"
             />
           </template>
         </WpMobileCard>
@@ -455,7 +477,7 @@ const onCreated = created => {
 
     <WpDeleteDialog
       v-model="deleteDialogOpen"
-      :item-name="selectedRfq?.rfq_number"
+      :item-name="selectedRfq?.reference"
       :loading="deleting"
       @confirm="handleDelete"
     />

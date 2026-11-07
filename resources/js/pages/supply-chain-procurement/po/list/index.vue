@@ -30,7 +30,7 @@ const poStore = usePoStore()
 const iprStore = useIprStore()
 const rfqStore = useRfqStore()
 const { format: formatMoney } = useCurrency()
-const { showSuccess, showError } = useAppSnackbar()
+const { success, showApiError } = useAppSnackbar()
 
 const {
   statusLabel,
@@ -41,6 +41,7 @@ const {
   ensureSuppliers,
   ensureWarehouses,
   formatDate,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const searchQuery = ref('')
@@ -68,17 +69,19 @@ const draftFilters = reactive({
   site_id: null,
 })
 
+const metaStats = ref({})
+
 const loadList = async () => {
   await Promise.all([
-    poStore.fetchPos({
+    poStore.fetchList({
       page: page.value,
-      perPage: perPage.value,
-      q: searchQuery.value.trim(),
-      status: filters.status,
-      supplier_id: filters.supplier_id,
-      site_id: filters.site_id,
+      per_page: perPage.value,
+      q: searchQuery.value.trim() || undefined,
+      'filter[status]': filters.status || undefined,
+      'filter[supplier_id]': filters.supplier_id || undefined,
+      'filter[site_id]': filters.site_id || undefined,
     }),
-    poStore.fetchMeta(),
+    poStore.fetchMeta().then(meta => { metaStats.value = meta || {} }).catch(() => {}),
   ])
 }
 
@@ -87,14 +90,14 @@ onMounted(async () => {
   ensureWarehouses()
 
   if (route.query.from_rfq) {
-    const rfq = await rfqStore.fetchRfq(route.query.from_rfq)
+    const rfq = await rfqStore.fetchDetails(route.query.from_rfq)
     if (rfq) {
       prefillRfq.value = rfq
       createDialogOpen.value = true
     }
   }
   else if (route.query.from_ipr) {
-    const ipr = await iprStore.fetchIpr(route.query.from_ipr)
+    const ipr = await iprStore.fetchDetails(route.query.from_ipr)
     if (ipr) {
       prefillIpr.value = ipr
       createDialogOpen.value = true
@@ -165,43 +168,43 @@ const activeFilterChips = computed(() => {
   return chips
 })
 
-const removeFilterChip = key => {
-  filters[key] = null
+const removeFilterChip = filter => {
+  const k = typeof filter === 'object' ? filter?.key : filter
+  if (k) filters[k] = null
   page.value = 1
   loadList()
 }
 
 const kpiItems = computed(() => {
-  const sc = poStore.meta?.status_counts || {}
-  const total = Object.values(sc).reduce((s, n) => s + (Number(n) || 0), 0) || poStore.total
-  const totalValue = poStore.pos.reduce((s, p) => s + (Number(p.total_ttc) || 0), 0)
+  const ms = metaStats.value
+  const totalValue = poStore.list.reduce((s, p) => s + (Number(p.total_ttc) || 0), 0)
 
   return [
     {
       key: 'total',
       title: t('scp.po.kpi.total'),
-      value: total,
+      value: ms.total_pos ?? poStore.totalItems ?? 0,
       icon: 'tabler-shopping-cart',
       color: 'primary',
     },
     {
       key: 'pending',
       title: t('scp.ipr.kpi.pending_approval'),
-      value: sc.pending_approval ?? 0,
+      value: ms.pending_approval ?? 0,
       icon: 'tabler-clock',
       color: 'warning',
     },
     {
       key: 'awaiting_delivery',
       title: t('scp.po.kpi.awaiting_delivery'),
-      value: (sc.sent ?? 0) + (sc.acknowledged ?? 0) + (sc.in_delivery ?? 0),
+      value: ms.in_delivery ?? 0,
       icon: 'tabler-truck-delivery',
       color: 'info',
     },
     {
       key: 'received',
       title: t('scp.po.kpi.received'),
-      value: (sc.partially_received ?? 0) + (sc.fully_received ?? 0),
+      value: ms.fully_received ?? 0,
       icon: 'tabler-package-check',
       color: 'success',
     },
@@ -216,7 +219,7 @@ const kpiItems = computed(() => {
 })
 
 const headers = computed(() => [
-  { title: t('scp.common.reference'), key: 'po_number', sortable: false },
+  { title: t('scp.common.reference'), key: 'reference', sortable: false },
   { title: t('scp.common.supplier'), key: 'supplier', sortable: false },
   { title: t('scp.po.fields.committed_delivery_date'), key: 'committed_delivery_date', sortable: false },
   { title: t('scp.common.currency'), key: 'currency', sortable: false },
@@ -229,7 +232,7 @@ const openView = async item => {
   selectedPo.value = item
   viewDialogOpen.value = true
 
-  const full = await poStore.fetchPo(item.id)
+  const full = await poStore.fetchDetails(item.id)
   if (full) selectedPo.value = full
 }
 
@@ -254,39 +257,63 @@ const handleDelete = async () => {
   if (!selectedPo.value?.id) return
   deleting.value = true
   try {
-    await poStore.deletePo(selectedPo.value.id)
-    showSuccess(t('scp.po.snackbar.deleted_success'))
+    await poStore.deleteItem(selectedPo.value.id)
+    success(t('scp.po.snackbar.deleted_success'))
     deleteDialogOpen.value = false
     await loadList()
   }
   catch (err) {
-    showError(err?.data?.message || t('scp.po.snackbar.error_delete'))
+    showApiError(err, t('scp.po.snackbar.error_delete'))
   }
   finally {
     deleting.value = false
   }
 }
 
-const rowExtraActions = item => {
-  const actions = []
+const getRowActions = item => {
+  const actions = [
+    { label: t('scp.action.view'), icon: 'tabler-eye', emit: 'view' },
+    { label: t('scp.action.edit'), icon: 'tabler-edit', emit: 'edit' },
+  ]
+
   if (['sent', 'acknowledged', 'in_delivery', 'partially_received'].includes(item.status)) {
     actions.push({
-      id: 'receive_grn',
-      title: t('scp.po.actions.create_grn'),
+      label: t('scp.po.actions.create_grn'),
       icon: 'tabler-package-import',
+      emit: 'receive_grn',
       color: 'success',
       handler: () => openReceiveGrn(item),
     })
   }
   actions.push({
-    id: 'match',
-    title: t('scp.action.open_match_page'),
+    label: t('scp.action.open_match_page'),
     icon: 'tabler-git-compare',
+    emit: 'match',
     color: 'info',
     handler: () => openMatchPage(item),
   })
+  if (['draft', 'cancelled'].includes(item.status)) {
+    actions.push({
+      label: t('scp.action.delete'),
+      icon: 'tabler-trash',
+      emit: 'delete',
+      color: 'error',
+      dividerBefore: true,
+    })
+  }
 
   return actions
+}
+
+const handleRowAction = (item, act) => {
+  if (typeof act === 'object' && typeof act?.handler === 'function') {
+    act.handler()
+
+    return
+  }
+  const found = getRowActions(item).find(a => a.emit === act)
+
+  found?.handler?.()
 }
 
 const onCreated = created => {
@@ -337,7 +364,8 @@ const onCreated = created => {
     <WpPageToolbar
       v-model:search="searchQuery"
       :search-placeholder="t('scp.po.search_placeholder')"
-      :active-filters-count="activeFilterChips.length"
+      show-filter
+      :active-filter-count="activeFilterChips.length"
       @open-filters="openFilterDialog"
       @refresh="loadList"
     />
@@ -345,40 +373,41 @@ const onCreated = created => {
     <WpActiveFilters
       v-if="activeFilterChips.length"
       :filters="activeFilterChips"
+      :label-map="{ status: t('scp.common.status'), supplier_id: t('scp.common.supplier'), site_id: t('scp.common.warehouse') }"
       class="mb-4"
       @remove="removeFilterChip"
       @clear-all="resetFilters"
     />
 
     <WpResponsiveList
-      :items="poStore.pos"
+      :items="poStore.list"
       :headers="headers"
       :loading="poStore.loading"
-      :total-items="poStore.total"
+      :total-items="poStore.totalItems"
       :page="page"
       :items-per-page="perPage"
       :show-select="false"
       @update:page="page = $event"
       @update:items-per-page="perPage = $event"
     >
-      <template #item.po_number="{ item }">
+      <template #item.reference="{ item }">
         <RouterLink
           :to="`/supply-chain-procurement/po/edit/${item.id}`"
           class="font-weight-bold text-primary text-decoration-none"
         >
-          {{ item.po_number }}
+          {{ item.reference }}
         </RouterLink>
       </template>
 
       <template #item.supplier="{ item }">
         <div class="font-weight-medium">
-          {{ item.supplier?.legal_name || item.supplier?.trade_name || '—' }}
+          {{ resolveSupplierName(item.supplier) }}
         </div>
         <div
-          v-if="item.supplier?.supplier_code"
+          v-if="item.supplier?.supplier_id"
           class="text-caption text-medium-emphasis"
         >
-          {{ item.supplier.supplier_code }}
+          {{ item.supplier.supplier_id }}
         </div>
       </template>
 
@@ -412,39 +441,25 @@ const onCreated = created => {
 
       <template #item.actions="{ item }">
         <WpRowActions
-          can-view
-          can-edit
-          :can-delete="['draft', 'cancelled'].includes(item.status)"
-          :extra-actions="rowExtraActions(item)"
+          :actions="getRowActions(item)"
           @view="openView(item)"
           @edit="openEdit(item)"
           @delete="confirmDelete(item)"
+          @action="act => handleRowAction(item, act)"
         />
       </template>
 
       <template #mobile-card="{ item }">
-        <WpMobileCard @click="openEdit(item)">
-          <template #header>
-            <div>
-              <div class="font-weight-bold text-primary">
-                {{ item.po_number }}
-              </div>
-              <div class="text-body-2 font-weight-medium">
-                {{ item.supplier?.legal_name || item.supplier?.trade_name || '—' }}
-              </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ formatDate(item.committed_delivery_date) }}
-              </div>
-            </div>
-            <WpStatusChip
-              :status="item.status"
-              :label="statusLabel(item.status)"
-              :color="resolveStatusVariant(item.status)"
-              dot
-            />
-          </template>
-
-          <div class="d-flex align-center justify-space-between mt-2">
+        <WpMobileCard
+          :title="item.reference"
+          :subtitle="`${resolveSupplierName(item.supplier)} · ${formatDate(item.committed_delivery_date)}`"
+          :status="item.status"
+          :status-color="resolveStatusVariant(item.status)"
+          :status-label="statusLabel(item.status)"
+          clickable
+          @click="openEdit(item)"
+        >
+          <template #badges>
             <VChip
               size="x-small"
               label
@@ -453,20 +468,26 @@ const onCreated = created => {
             >
               {{ item.currency || 'TND' }}
             </VChip>
-            <span class="text-body-1 font-weight-bold text-primary">
-              {{ formatMoney(item.total_ttc || 0, { currency: item.currency }) }}
-            </span>
-          </div>
+          </template>
+
+          <template #content>
+            <div class="d-flex align-center justify-space-between">
+              <span class="text-caption text-medium-emphasis">
+                {{ t('wp.docs.totals.grand_total') }}
+              </span>
+              <span class="text-body-1 font-weight-bold text-primary">
+                {{ formatMoney(item.total_ttc || 0, { currency: item.currency }) }}
+              </span>
+            </div>
+          </template>
 
           <template #actions>
             <WpRowActions
-              can-view
-              can-edit
-              :can-delete="['draft', 'cancelled'].includes(item.status)"
-              :extra-actions="rowExtraActions(item)"
+              :actions="getRowActions(item)"
               @view="openView(item)"
               @edit="openEdit(item)"
               @delete="confirmDelete(item)"
+              @action="act => handleRowAction(item, act)"
             />
           </template>
         </WpMobileCard>
@@ -529,7 +550,7 @@ const onCreated = created => {
 
     <WpDeleteDialog
       v-model="deleteDialogOpen"
-      :item-name="selectedPo?.po_number"
+      :item-name="selectedPo?.reference"
       :loading="deleting"
       @confirm="handleDelete"
     />

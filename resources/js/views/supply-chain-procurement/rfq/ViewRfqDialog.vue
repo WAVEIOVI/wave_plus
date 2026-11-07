@@ -21,6 +21,7 @@ const {
   resolveStatusVariant,
   formatDate,
   resolveLineItemName,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const lines = computed(() => props.rfq?.lines || [])
@@ -31,7 +32,7 @@ const responses = computed(() => props.rfq?.responses || [])
 <template>
   <WpDetailDialog
     :model-value="modelValue"
-    :title="rfq?.rfq_number || t('scp.rfq.title')"
+    :title="rfq?.reference || t('scp.rfq.title')"
     :subtitle="rfq?.title || t('scp.rfq.subtitle')"
     :loading="loading"
     size="large"
@@ -108,7 +109,7 @@ const responses = computed(() => props.rfq?.responses || [])
         >
           <WpInfoItem
             :label="t('scp.rfq.fields.awarded_supplier')"
-            :value="rfq.awarded_supplier?.legal_name || rfq.awarded_supplier?.trade_name || '—'"
+            :value="rfq.awarded_to ? resolveSupplierName(rfq.awarded_to) : '—'"
             icon="tabler-award"
           />
         </VCol>

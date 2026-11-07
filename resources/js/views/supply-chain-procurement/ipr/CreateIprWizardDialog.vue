@@ -88,11 +88,14 @@ const mapCatalogToIprLine = (item, quantity = 1) => {
   return {
     is_ad_hoc: false,
     catalog_item_id: item.id,
+    variant_id: item.variant_id || null,
     item_name: item.item_name || item.name || item.sku,
     sku: item.sku || '',
     unit: item.unit || '',
     quantity: qty,
     qty_requested: qty,
+    qty_current_stock: Number(item.current_stock ?? 0) || 0,
+    suggested_supplier_id: item.preferred_supplier_id || item.preferred_supplier?.id || null,
     unit_price: unitCost,
     estimated_unit_cost: unitCost,
     line_total: qty * unitCost,
@@ -120,15 +123,17 @@ const handleSubmit = async form => {
     lines: (form.lines || []).map(l => ({
       is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
       catalog_item_id: l.catalog_item_id || null,
+      variant_id: l.variant_id || null,
       ad_hoc_name: !l.catalog_item_id ? (l.item_name || l.ad_hoc_name || l.description || 'Ad-hoc Item') : null,
       ad_hoc_sku: !l.catalog_item_id ? (l.sku || l.ad_hoc_sku || null) : null,
-      ad_hoc_description: l.description || null,
       qty_requested: Number(l.quantity ?? l.qty_requested ?? 1) || 1,
+      qty_current_stock: l.qty_current_stock !== undefined && l.qty_current_stock !== null ? Number(l.qty_current_stock) : null,
+      suggested_supplier_id: l.suggested_supplier_id || null,
       estimated_unit_cost: Number(l.unit_price ?? l.estimated_unit_cost ?? 0) || 0,
     })),
   }
 
-  const created = await iprStore.createIpr(payload)
+  const created = await iprStore.create(payload)
 
   emit('created', created)
 

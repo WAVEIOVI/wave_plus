@@ -172,32 +172,76 @@ export function useProcurementHelpers() {
     { value: 'fully_rejected', title: statusLabel('fully_rejected') },
   ])
 
+  // ── Supplier name helper ─────────────────────────────────────────────────
+  /**
+   * Resolve a human-readable display name from a SupplierResource object.
+   * SupplierResource returns legal_name / commercial_name as translatable JSON
+   * objects ({ en, fr, ar }) and uses supplier_id (not supplier_code).
+   *
+   * @param {object|null} supplier
+   * @returns {string}
+   */
+  const resolveSupplierName = supplier => {
+    if (!supplier) return '—'
+
+    return (
+      localizedValue(supplier.legal_name)
+      || localizedValue(supplier.commercial_name)
+      || supplier.name
+      || supplier.supplier_id
+      || '—'
+    )
+  }
+
   // ── Catalog Item Picker Adapter ──────────────────────────────────────────
+  /**
+   * Fetch catalog items for the picker, mapping CatalogItemResource fields.
+   *
+   * CatalogItemController uses Spatie QueryBuilder:
+   *   - Allowed filters: filter[category_id], filter[item_type], filter[status]
+   *   - Search: `q` or `search` param (NOT filter[search] — that causes HTTP 400)
+   *   - Includes: uom, variants.optionValues, variants.stockItems, preferred_supplier
+   *
+   * @param {object} params
+   * @returns {Promise<{ items: object[], total: number }>}
+   */
   const fetchCatalogItemsForPicker = async (params = {}) => {
     const query = {
       per_page: params.per_page || 20,
       page: params.page || 1,
+      include: 'uom,variants.optionValues,variants.stockItems,preferred_supplier',
     }
 
-    if (params.q) query['filter[search]'] = params.q
+    if (params.q) query.q = params.q
     if (params.category) query['filter[category_id]'] = params.category
+    if (params.item_type) query['filter[item_type]'] = params.item_type
 
     const res = await catalogStore.fetchItems(query)
     const rawItems = Array.isArray(res?.data) ? res.data : catalogStore.items
 
-    const items = rawItems.map(item => ({
-      ...item,
-      id: item.id,
-      catalog_item_id: item.id,
-      name: item.name,
-      item_name: localizedValue(item.name, item.sku || ''),
-      sku: item.sku || '',
-      barcode: item.barcode || item.ean || '',
-      unit: localizedValue(item.unit?.name, item.unit?.symbol || item.unit?.code || ''),
-      unit_id: item.unit_id || item.unit?.id || null,
-      unit_price: Number(item.purchase_price_ht ?? item.cost_price ?? item.base_price_ht ?? item.price_ht ?? 0) || 0,
-      tax_rate: Number(item.tax_rate?.rate ?? item.tax_rate_pct ?? 19) || 0,
-    }))
+    const items = rawItems.map(item => {
+      const defaultVariant = item.variants?.find(v => v.is_default) || item.variants?.[0] || null
+
+      return {
+        ...item,
+        id: item.id,
+        catalog_item_id: item.id,
+        name: item.name,
+        code: item.code || '',
+        item_name: localizedValue(item.name, item.code || ''),
+        defaultVariant,
+        variant_id: defaultVariant?.id || null,
+        sku: defaultVariant?.sku || item.code || '',
+        barcode: defaultVariant?.barcode || item.barcode || item.ean || '',
+        image_url: item.image || '',
+        unit: localizedValue(item.uom?.name, item.uom?.code || ''),
+        unit_id: item.uom_id || item.uom?.id || null,
+        unit_price: Number(defaultVariant?.cost_price ?? defaultVariant?.price ?? 0) || 0,
+        tax_rate: Number(item.tax_rate?.rate ?? item.tax_rate_pct ?? 19) || 0,
+        current_stock: Number(item.current_stock ?? 0) || 0,
+        variants: item.variants || [],
+      }
+    })
 
     return {
       items,
@@ -205,14 +249,31 @@ export function useProcurementHelpers() {
     }
   }
 
-  // ── Lookups (Users, Suppliers, Warehouses) ──────────────────────────────
+  // ── Lookups (Users, Suppliers, Warehouses/Sites) ─────────────────────────
+
+  /**
+   * Ensure users are loaded. Falls back gracefully if the calling user does not
+   * have access to /admin/users (403), and always includes currentUser in
+   * userOptions so forms can resolve the current user's name.
+   */
   const ensureUsers = async () => {
     if (userStore.users.length) return userStore.users
     try {
       await userStore.fetchUsers({ per_page: 100 })
     }
     catch {
-      // Fall back to current logged-in user if user lacks permission to list all users
+      // Non-admin users may get 403 on /admin/users.
+      // Fall back: attempt /bp/users via supplierStore.fetchUsers()
+      try {
+        const bpUsers = await supplierStore.fetchUsers()
+
+        if (Array.isArray(bpUsers) && bpUsers.length) {
+          userStore.users = bpUsers
+        }
+      }
+      catch {
+        // Silently ignore — currentUser will still be surfaced via userOptions
+      }
     }
 
     return userStore.users
@@ -224,23 +285,58 @@ export function useProcurementHelpers() {
       await supplierStore.fetchSuppliers({ per_page: 100 })
     }
     catch {
-      // Ignore if already handled
+      // Fall back to lightweight options endpoint
+      try {
+        await supplierStore.fetchSupplierOptions({ limit: 150 })
+      }
+      catch {
+        // Ignore if already handled
+      }
     }
 
     return supplierStore.suppliers
   }
 
+  /**
+   * Ensure warehouse sites are loaded via `inventoryStore.fetchSites`.
+   */
   const ensureWarehouses = async () => {
-    if (inventoryStore.warehouses.length) return inventoryStore.warehouses
+    if (inventoryStore.sites.length) return inventoryStore.sites
     try {
-      await inventoryStore.fetchWarehouses({ per_page: 100 })
+      await inventoryStore.fetchSites({ per_page: 100 })
     }
     catch {
       // Ignore
     }
 
-    return inventoryStore.warehouses
+    return inventoryStore.sites
   }
+
+  // Alias: ensureSites is the same as ensureWarehouses
+  const ensureSites = ensureWarehouses
+
+  /**
+   * Ensure zones and locations for a specific site are loaded.
+   * GRN pages need valid WarehouseLocation IDs (grn_lines.storage_location_id)
+   * filtered by WarehouseZone, not raw site_id.
+   *
+   * @param {number|string} siteId
+   */
+  const ensureSiteLocations = async siteId => {
+    if (!siteId) return
+
+    try {
+      await Promise.all([
+        inventoryStore.fetchZones({ site_id: siteId, per_page: 100 }),
+        inventoryStore.fetchLocations({ site_id: siteId, per_page: 200 }),
+      ])
+    }
+    catch {
+      // Ignore — UI will show empty options
+    }
+  }
+
+  // ── Computed option lists ────────────────────────────────────────────────
 
   const userOptions = computed(() => {
     const list = userStore.users.map(u => ({
@@ -260,23 +356,67 @@ export function useProcurementHelpers() {
     return list
   })
 
+  /**
+   * Supplier options mapped from the real SupplierResource contract.
+   * SupplierResource returns legal_name / commercial_name as translatable JSON,
+   * supplier_id (not supplier_code), primary_email (not email).
+   */
   const supplierOptions = computed(() =>
-    supplierStore.suppliers.map(s => ({
+    (supplierStore.suppliers || []).map(s => ({
       value: s.id,
-      title: s.legal_name || s.trade_name || s.supplier_code || String(s.id),
-      subtitle: s.supplier_code || s.email || '',
+      title: resolveSupplierName(s),
+      subtitle: s.supplier_id || s.primary_email || '',
       raw: s,
     })),
   )
 
+  /**
+   * Warehouse site options. useInventoryStore exposes `sites`, not `warehouses`.
+   */
   const warehouseOptions = computed(() =>
-    inventoryStore.warehouses.map(w => ({
+    (inventoryStore.sites || []).map(w => ({
       value: w.id,
       title: localizedValue(w.name, w.code || String(w.id)),
       subtitle: w.code || '',
       raw: w,
     })),
   )
+
+  // Alias: siteOptions = warehouseOptions
+  const siteOptions = warehouseOptions
+
+  /**
+   * Zone options (optionally filtered by site_id from the loaded zones list).
+   *
+   * @param {number|string|null} [siteId]
+   */
+  const zoneOptions = computed(() =>
+    (inventoryStore.zones || []).map(z => ({
+      value: z.id,
+      title: localizedValue(z.name, z.code || String(z.id)),
+      subtitle: z.code || '',
+      raw: z,
+    })),
+  )
+
+  /**
+   * Location options, optionally filtered by zone.
+   *
+   * @param {number|string|null} [zoneId]
+   * @returns {object[]}
+   */
+  const locationOptions = (zoneId = null) => {
+    const locations = inventoryStore.locations || []
+
+    return locations
+      .filter(l => zoneId == null || l.zone_id === zoneId || l.warehouse_zone_id === zoneId)
+      .map(l => ({
+        value: l.id,
+        title: localizedValue(l.name, l.code || l.barcode || String(l.id)),
+        subtitle: l.code || l.barcode || '',
+        raw: l,
+      }))
+  }
 
   // ── Formatting helpers ──────────────────────────────────────────────────
   const formatDate = value => {
@@ -295,25 +435,34 @@ export function useProcurementHelpers() {
     return new Intl.DateTimeFormat(locale.value || 'fr', { dateStyle: 'medium', timeStyle: 'short' }).format(d)
   }
 
+  /**
+   * Format a supplier (SupplierResource) for display in a card/header.
+   * Maps supplier_id (not supplier_code), primary_email, primary_phone.
+   */
   const formatPartnerForCard = partner => {
     if (!partner) return null
 
     return {
       id: partner.id,
-      name: partner.legal_name || partner.trade_name || partner.name || partner.supplier_code || '—',
-      code: partner.supplier_code || partner.code || '',
-      email: partner.email || partner.primary_contact?.email || '',
-      phone: partner.phone || partner.mobile || partner.primary_contact?.phone || '',
+      name: resolveSupplierName(partner),
+      code: partner.supplier_id || partner.code || '',
+      email: partner.primary_email || partner.email || partner.primary_contact?.email || '',
+      phone: partner.primary_phone || partner.phone || partner.mobile || partner.primary_contact?.phone || '',
       tax_id: partner.tax_id || partner.matricule_fiscal || '',
       status: partner.status || 'active',
       raw: partner,
     }
   }
 
+  /**
+   * Resolve a human-readable item name from a document line.
+   * Handles catalog_item.name (translatable JSON), variant, ad-hoc fields,
+   * description snapshots, and plain SKU fallbacks.
+   */
   const resolveLineItemName = line => {
     if (!line) return '—'
-    if (line.item_name) return localizedValue(line.item_name, line.sku || '')
-    if (line.catalog_item?.name) return localizedValue(line.catalog_item.name, line.catalog_item.sku || '')
+    if (line.item_name) return localizedValue(line.item_name, line.sku || line.ad_hoc_sku || '')
+    if (line.catalog_item?.name) return localizedValue(line.catalog_item.name, line.catalog_item.code || line.catalog_item.sku || '')
     if (line.ad_hoc_name) return line.ad_hoc_name
     if (line.description_snapshot) return line.description_snapshot
     if (line.description_for_supplier) return line.description_for_supplier
@@ -322,10 +471,23 @@ export function useProcurementHelpers() {
     return line.sku || line.ad_hoc_sku || '—'
   }
 
+  /**
+   * Resolve the SKU/code for a document line.
+   * Handles variant SKU, catalog_item code, ad-hoc SKU, supplier reference.
+   */
   const resolveLineItemSku = line => {
     if (!line) return ''
 
-    return line.sku || line.catalog_item?.sku || line.ad_hoc_sku || line.supplier_reference || ''
+    return (
+      line.sku
+      || line.variant?.sku
+      || line.catalog_variant?.sku
+      || line.catalog_item?.sku
+      || line.catalog_item?.code
+      || line.ad_hoc_sku
+      || line.supplier_reference
+      || ''
+    )
   }
 
   return {
@@ -352,13 +514,19 @@ export function useProcurementHelpers() {
     currencySelectOptions,
     qcResultOptions,
     overallQcResultOptions,
+    resolveSupplierName,
     fetchCatalogItemsForPicker,
     ensureUsers,
     ensureSuppliers,
     ensureWarehouses,
+    ensureSites,
+    ensureSiteLocations,
     userOptions,
     supplierOptions,
     warehouseOptions,
+    siteOptions,
+    zoneOptions,
+    locationOptions,
     formatDate,
     formatDateTime,
     formatPartnerForCard,
@@ -366,4 +534,3 @@ export function useProcurementHelpers() {
     resolveLineItemSku,
   }
 }
-

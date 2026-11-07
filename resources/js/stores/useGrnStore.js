@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import { $api } from '@/utils/api'
 import { defineStore } from 'pinia'
 import { ref, toRaw } from 'vue'
@@ -7,7 +8,11 @@ import { ref, toRaw } from 'vue'
 // ──────────────────────────────────────────────────
 
 /** Serialize reactive data for API payload — strips Vue proxies safely */
-const deepClone = data => data instanceof FormData ? data : JSON.parse(JSON.stringify(toRaw(data)))
+const deepClone = data => {
+  const raw = toRaw(data)
+
+  return raw instanceof FormData ? raw : JSON.parse(JSON.stringify(raw))
+}
 
 /**
  * Extracts error message and validation errors from an API response.
@@ -164,9 +169,15 @@ export const useGrnStore = defineStore('grn', () => {
     validationErrors.value = null
 
     try {
+      const body = deepClone(data)
+      const isFormData = body instanceof FormData
+      if (isFormData && !body.has('_method')) {
+        body.append('_method', 'PUT')
+      }
+
       const response = await $api(`/procurement/grns/${id}`, {
-        method: data instanceof FormData ? 'POST' : 'PUT',
-        body: deepClone(data),
+        method: isFormData ? 'POST' : 'PUT',
+        body,
       })
       
       return response.data || response

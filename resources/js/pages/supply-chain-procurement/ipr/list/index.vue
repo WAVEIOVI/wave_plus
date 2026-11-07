@@ -27,7 +27,7 @@ const route = useRoute()
 const router = useRouter()
 const iprStore = useIprStore()
 const { format: formatMoney } = useCurrency()
-const { showSuccess, showError } = useAppSnackbar()
+const { success, showApiError } = useAppSnackbar()
 
 const {
   statusLabel,
@@ -62,16 +62,18 @@ const draftFilters = reactive({
   urgency: null,
 })
 
+const metaStats = ref({})
+
 const loadList = async () => {
   await Promise.all([
-    iprStore.fetchIprs({
+    iprStore.fetchList({
       page: page.value,
-      perPage: perPage.value,
-      q: searchQuery.value.trim(),
-      status: filters.status,
-      urgency: filters.urgency,
+      per_page: perPage.value,
+      q: searchQuery.value.trim() || undefined,
+      'filter[status]': filters.status || undefined,
+      'filter[urgency]': filters.urgency || undefined,
     }),
-    iprStore.fetchMeta(),
+    iprStore.fetchMeta().then(meta => { metaStats.value = meta || {} }).catch(() => {}),
   ])
 }
 
@@ -129,50 +131,56 @@ const activeFilterChips = computed(() => {
   return chips
 })
 
-const removeFilterChip = key => {
-  filters[key] = null
+const removeFilterChip = filter => {
+  const k = typeof filter === 'object' ? filter?.key : filter
+  if (k) filters[k] = null
   page.value = 1
   loadList()
 }
 
 const kpiItems = computed(() => {
-  const sc = iprStore.meta?.status_counts || {}
-  const total = Object.values(sc).reduce((s, n) => s + (Number(n) || 0), 0) || iprStore.total
+  const ms = metaStats.value
 
   return [
     {
       key: 'total',
       title: t('scp.ipr.kpi.total'),
-      value: total,
+      value: ms.total_iprs ?? iprStore.totalItems ?? 0,
       icon: 'tabler-clipboard-list',
       color: 'primary',
     },
     {
       key: 'pending',
       title: t('scp.ipr.kpi.pending_approval'),
-      value: sc.pending_approval ?? 0,
+      value: ms.pending_approval ?? 0,
       icon: 'tabler-clock',
       color: 'warning',
     },
     {
       key: 'approved',
       title: t('scp.ipr.kpi.approved'),
-      value: sc.approved ?? 0,
+      value: ms.urgent_requests ?? 0,
       icon: 'tabler-circle-check',
       color: 'success',
     },
     {
       key: 'converted',
       title: t('scp.ipr.kpi.converted'),
-      value: (sc.converted_to_po ?? 0) + (sc.merged ?? 0),
+      value: ms.converted_to_po ?? 0,
       icon: 'tabler-transform',
       color: 'info',
     },
   ]
 })
 
+const computeIprTotal = item =>
+  (item?.lines || []).reduce(
+    (s, l) => s + (Number(l.estimated_total_ht) || (Number(l.qty_requested) || 0) * (Number(l.estimated_unit_cost) || 0)),
+    0,
+  )
+
 const headers = computed(() => [
-  { title: t('scp.common.reference'), key: 'ipr_number', sortable: false },
+  { title: t('scp.common.reference'), key: 'reference', sortable: false },
   { title: t('scp.ipr.fields.requested_by'), key: 'requester', sortable: false },
   { title: t('scp.ipr.fields.trigger_source'), key: 'trigger_source', sortable: false },
   { title: t('scp.ipr.fields.urgency'), key: 'urgency', sortable: false },
@@ -187,7 +195,7 @@ const openView = async item => {
   selectedIpr.value = item
   viewDialogOpen.value = true
 
-  const full = await iprStore.fetchIpr(item.id)
+  const full = await iprStore.fetchDetails(item.id)
   if (full) selectedIpr.value = full
 }
 
@@ -209,13 +217,13 @@ const handleDelete = async () => {
   if (!selectedIpr.value?.id) return
   deleting.value = true
   try {
-    await iprStore.deleteIpr(selectedIpr.value.id)
-    showSuccess(t('scp.ipr.snackbar.deleted_success'))
+    await iprStore.deleteItem(selectedIpr.value.id)
+    success(t('scp.ipr.snackbar.deleted_success'))
     deleteDialogOpen.value = false
     await loadList()
   }
   catch (err) {
-    showError(err?.data?.message || t('scp.ipr.snackbar.error_delete'))
+    showApiError(err, t('scp.ipr.snackbar.error_delete'))
   }
   finally {
     deleting.value = false
@@ -224,46 +232,70 @@ const handleDelete = async () => {
 
 const quickStatusUpdate = async (item, status) => {
   try {
-    await iprStore.updateStatus(item.id, status)
-    showSuccess(t('scp.ipr.snackbar.status_updated'))
+    await iprStore.updateStatus(item.id, { status })
+    success(t('scp.ipr.snackbar.status_updated'))
     await loadList()
   }
   catch (err) {
-    showError(err?.data?.message || t('scp.ipr.snackbar.error_status'))
+    showApiError(err, t('scp.ipr.snackbar.error_status'))
   }
 }
 
-const rowExtraActions = item => {
-  const actions = []
+const getRowActions = item => {
+  const actions = [
+    { label: t('scp.action.view'), icon: 'tabler-eye', emit: 'view' },
+    { label: t('scp.action.edit'), icon: 'tabler-edit', emit: 'edit' },
+  ]
+
   if (item.status === 'draft') {
     actions.push({
-      id: 'submit',
-      title: t('scp.ipr.actions.submit_approval'),
+      label: t('scp.ipr.actions.submit_approval'),
       icon: 'tabler-send',
+      emit: 'submit',
       color: 'primary',
       handler: () => quickStatusUpdate(item, 'pending_approval'),
     })
   }
   if (item.status === 'pending_approval') {
     actions.push({
-      id: 'approve',
-      title: t('scp.ipr.actions.approve'),
+      label: t('scp.ipr.actions.approve'),
       icon: 'tabler-check',
+      emit: 'approve',
       color: 'success',
       handler: () => quickStatusUpdate(item, 'approved'),
     })
   }
   if (item.status === 'approved') {
     actions.push({
-      id: 'convert',
-      title: t('scp.ipr.actions.convert'),
+      label: t('scp.ipr.actions.convert'),
       icon: 'tabler-transform',
+      emit: 'convert',
       color: 'info',
       handler: () => openConvert(item),
     })
   }
+  if (['draft', 'cancelled'].includes(item.status)) {
+    actions.push({
+      label: t('scp.action.delete'),
+      icon: 'tabler-trash',
+      emit: 'delete',
+      color: 'error',
+      dividerBefore: true,
+    })
+  }
 
   return actions
+}
+
+const handleRowAction = (item, act) => {
+  if (typeof act === 'object' && typeof act?.handler === 'function') {
+    act.handler()
+
+    return
+  }
+  const found = getRowActions(item).find(a => a.emit === act)
+
+  found?.handler?.()
 }
 
 const onCreated = created => {
@@ -312,7 +344,8 @@ const onCreated = created => {
     <WpPageToolbar
       v-model:search="searchQuery"
       :search-placeholder="t('scp.ipr.search_placeholder')"
-      :active-filters-count="activeFilterChips.length"
+      show-filter
+      :active-filter-count="activeFilterChips.length"
       @open-filters="openFilterDialog"
       @refresh="loadList"
     />
@@ -320,40 +353,41 @@ const onCreated = created => {
     <WpActiveFilters
       v-if="activeFilterChips.length"
       :filters="activeFilterChips"
+      :label-map="{ status: t('scp.common.status'), urgency: t('scp.ipr.fields.urgency') }"
       class="mb-4"
       @remove="removeFilterChip"
       @clear-all="resetFilters"
     />
 
     <WpResponsiveList
-      :items="iprStore.iprs"
+      :items="iprStore.list"
       :headers="headers"
       :loading="iprStore.loading"
-      :total-items="iprStore.total"
+      :total-items="iprStore.totalItems"
       :page="page"
       :items-per-page="perPage"
       :show-select="false"
       @update:page="page = $event"
       @update:items-per-page="perPage = $event"
     >
-      <template #item.ipr_number="{ item }">
+      <template #item.reference="{ item }">
         <RouterLink
           :to="`/supply-chain-procurement/ipr/edit/${item.id}`"
           class="font-weight-bold text-primary text-decoration-none"
         >
-          {{ item.ipr_number }}
+          {{ item.reference }}
         </RouterLink>
       </template>
 
       <template #item.requester="{ item }">
         <div class="font-weight-medium">
-          {{ item.requester?.name || '—' }}
+          {{ item.requested_by_user?.name || '—' }}
         </div>
         <div
-          v-if="item.assignee?.name"
+          v-if="item.assigned_to_user?.name"
           class="text-caption text-medium-emphasis"
         >
-          → {{ item.assignee.name }}
+          → {{ item.assigned_to_user.name }}
         </div>
       </template>
 
@@ -389,7 +423,7 @@ const onCreated = created => {
       </template>
 
       <template #item.total_estimated_cost="{ item }">
-        <span class="font-weight-bold">{{ formatMoney(item.total_estimated_cost || 0) }}</span>
+        <span class="font-weight-bold">{{ formatMoney(computeIprTotal(item)) }}</span>
       </template>
 
       <template #item.status="{ item }">
@@ -403,36 +437,25 @@ const onCreated = created => {
 
       <template #item.actions="{ item }">
         <WpRowActions
-          can-view
-          can-edit
-          :can-delete="['draft', 'cancelled'].includes(item.status)"
-          :extra-actions="rowExtraActions(item)"
+          :actions="getRowActions(item)"
           @view="openView(item)"
           @edit="openEdit(item)"
           @delete="confirmDelete(item)"
+          @action="act => handleRowAction(item, act)"
         />
       </template>
 
       <template #mobile-card="{ item }">
-        <WpMobileCard @click="openEdit(item)">
-          <template #header>
-            <div>
-              <div class="font-weight-bold text-primary">
-                {{ item.ipr_number }}
-              </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ item.requester?.name || '—' }} · {{ formatDate(item.needed_by_date) }}
-              </div>
-            </div>
-            <WpStatusChip
-              :status="item.status"
-              :label="statusLabel(item.status)"
-              :color="resolveStatusVariant(item.status)"
-              dot
-            />
-          </template>
-
-          <div class="d-flex flex-wrap align-center justify-space-between gap-2 mt-2">
+        <WpMobileCard
+          :title="item.reference"
+          :subtitle="`${item.requested_by_user?.name || '—'} · ${formatDate(item.needed_by_date)}`"
+          :status="item.status"
+          :status-color="resolveStatusVariant(item.status)"
+          :status-label="statusLabel(item.status)"
+          clickable
+          @click="openEdit(item)"
+        >
+          <template #badges>
             <VChip
               size="x-small"
               label
@@ -441,20 +464,26 @@ const onCreated = created => {
             >
               {{ urgencyLabel(item.urgency) }}
             </VChip>
-            <span class="text-body-2 font-weight-bold">
-              {{ formatMoney(item.total_estimated_cost || 0) }}
-            </span>
-          </div>
+          </template>
+
+          <template #content>
+            <div class="d-flex align-center justify-space-between">
+              <span class="text-caption text-medium-emphasis">
+                {{ item.lines_count ?? item.lines?.length ?? 0 }} {{ t('scp.common.lines') }}
+              </span>
+              <span class="text-body-2 font-weight-bold">
+                {{ formatMoney(computeIprTotal(item)) }}
+              </span>
+            </div>
+          </template>
 
           <template #actions>
             <WpRowActions
-              can-view
-              can-edit
-              :can-delete="['draft', 'cancelled'].includes(item.status)"
-              :extra-actions="rowExtraActions(item)"
+              :actions="getRowActions(item)"
               @view="openView(item)"
               @edit="openEdit(item)"
               @delete="confirmDelete(item)"
+              @action="act => handleRowAction(item, act)"
             />
           </template>
         </WpMobileCard>
@@ -514,7 +543,7 @@ const onCreated = created => {
     <!-- Delete Confirmation -->
     <WpDeleteDialog
       v-model="deleteDialogOpen"
-      :item-name="selectedIpr?.ipr_number"
+      :item-name="selectedIpr?.reference"
       :loading="deleting"
       @confirm="handleDelete"
     />

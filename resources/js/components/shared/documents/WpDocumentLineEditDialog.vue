@@ -96,6 +96,9 @@ const reset = () => {
     notes: src.notes ?? '',
     required_date: src.required_date ?? '',
     unit: src.unit ?? '',
+    is_ad_hoc: src.is_ad_hoc ?? false,
+    ad_hoc_name: src.ad_hoc_name ?? '',
+    ad_hoc_sku: src.ad_hoc_sku ?? '',
   })
 }
 
@@ -104,6 +107,7 @@ watch(() => props.modelValue, open => {
 }, { immediate: true })
 
 const itemName = computed(() => form.item_name || form.name || form.sku || '')
+const isAdHoc = computed(() => Boolean(form.is_ad_hoc) || (!form.catalog_item_id && !form.item_name && !form.name))
 const total = computed(() => computeLineTotal(form))
 const formattedTotal = computed(() => format(total.value, props.currency ? { currency: props.currency } : {}))
 
@@ -115,6 +119,12 @@ const submit = () => {
     if (k in next) next[k] = Number(next[k]) || 0
   })
   if ('qty' in props.line && !('quantity' in props.line)) next.qty = next.quantity
+  // Carry through ad-hoc fields explicitly
+  next.is_ad_hoc = Boolean(form.is_ad_hoc)
+  if (form.is_ad_hoc) {
+    next.ad_hoc_name = form.ad_hoc_name ?? ''
+    next.ad_hoc_sku = form.ad_hoc_sku ?? ''
+  }
   emit('save', next, props.index)
 }
 </script>
@@ -134,7 +144,24 @@ const submit = () => {
         v-if="show('item')"
         cols="12"
       >
+        <!-- Ad-hoc / Custom item toggle (shown when item field is visible and not force-readonly) -->
+        <div
+          v-if="!cfg.item.readonly"
+          class="d-flex align-center gap-2 mb-3"
+        >
+          <VSwitch
+            v-model="form.is_ad_hoc"
+            :label="t('wp.docs.line.ad_hoc_toggle')"
+            density="compact"
+            hide-details
+            color="primary"
+            class="flex-shrink-0"
+          />
+        </div>
+
+        <!-- Catalog item display / picker trigger (when not ad-hoc) -->
         <VTextField
+          v-if="!form.is_ad_hoc"
           :model-value="itemName"
           :label="labelOf('item')"
           readonly
@@ -153,10 +180,27 @@ const submit = () => {
               color="primary"
               @click.stop="emit('select-item')"
             >
-              {{ t('wp.docs.line.change_item') }}
+              {{ itemName ? t('wp.docs.line.change_item') : t('wp.docs.line.select_item') }}
             </VBtn>
           </template>
         </VTextField>
+
+        <!-- Ad-hoc item inputs (when is_ad_hoc) -->
+        <template v-else>
+          <VTextField
+            v-model="form.ad_hoc_name"
+            :label="t('wp.docs.line.ad_hoc_name')"
+            prepend-inner-icon="tabler-pencil"
+            :error-messages="errorOf('ad_hoc_name') || errorOf('catalog_item_id')"
+            class="mb-3"
+          />
+          <VTextField
+            v-model="form.ad_hoc_sku"
+            :label="t('wp.docs.line.ad_hoc_sku')"
+            prepend-inner-icon="tabler-barcode"
+            :error-messages="errorOf('ad_hoc_sku')"
+          />
+        </template>
       </VCol>
 
       <VCol

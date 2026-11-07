@@ -26,7 +26,7 @@ const route = useRoute()
 const router = useRouter()
 const grnStore = useGrnStore()
 const poStore = usePoStore()
-const { showSuccess, showError } = useAppSnackbar()
+const { success, showApiError } = useAppSnackbar()
 
 const {
   statusLabel,
@@ -35,6 +35,7 @@ const {
   supplierOptions,
   ensureSuppliers,
   formatDate,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const searchQuery = ref('')
@@ -60,19 +61,19 @@ const draftFilters = reactive({
 })
 
 const loadList = async () => {
-  await grnStore.fetchGrns({
+  await grnStore.fetchList({
     page: page.value,
-    perPage: perPage.value,
-    q: searchQuery.value.trim(),
-    status: filters.status,
-    supplier_id: filters.supplier_id,
+    per_page: perPage.value,
+    q: searchQuery.value.trim() || undefined,
+    'filter[status]': filters.status || undefined,
+    'filter[supplier_id]': filters.supplier_id || undefined,
   })
 }
 
 onMounted(async () => {
   ensureSuppliers()
   if (route.query.from_po) {
-    const po = await poStore.fetchPo(route.query.from_po)
+    const po = await poStore.fetchDetails(route.query.from_po)
     if (po) {
       prefillPo.value = po
       createDialogOpen.value = true
@@ -133,14 +134,15 @@ const activeFilterChips = computed(() => {
   return chips
 })
 
-const removeFilterChip = key => {
-  filters[key] = null
+const removeFilterChip = filter => {
+  const k = typeof filter === 'object' ? filter?.key : filter
+  if (k) filters[k] = null
   page.value = 1
   loadList()
 }
 
 const kpiItems = computed(() => {
-  const list = grnStore.grns || []
+  const list = grnStore.list || []
   const draftCount = list.filter(g => ['draft', 'under_qc'].includes(g.status)).length
   const confirmedCount = list.filter(g => ['confirmed', 'stocked'].includes(g.status)).length
   const discrepancyCount = list.filter(g => ['partially_rejected', 'fully_rejected'].includes(g.status)).length
@@ -149,7 +151,7 @@ const kpiItems = computed(() => {
     {
       key: 'total',
       title: t('scp.grn.kpi.total'),
-      value: grnStore.total || list.length,
+      value: grnStore.totalItems || list.length,
       icon: 'tabler-package-import',
       color: 'primary',
     },
@@ -178,7 +180,7 @@ const kpiItems = computed(() => {
 })
 
 const headers = computed(() => [
-  { title: t('scp.common.reference'), key: 'grn_number', sortable: false },
+  { title: t('scp.common.reference'), key: 'reference', sortable: false },
   { title: t('scp.grn.fields.linked_po'), key: 'purchase_order', sortable: false },
   { title: t('scp.common.supplier'), key: 'supplier', sortable: false },
   { title: t('scp.grn.fields.received_at'), key: 'received_at', sortable: false },
@@ -192,7 +194,7 @@ const openView = async item => {
   selectedGrn.value = item
   viewDialogOpen.value = true
 
-  const full = await grnStore.fetchGrn(item.id)
+  const full = await grnStore.fetchDetails(item.id)
   if (full) selectedGrn.value = full
 }
 
@@ -209,17 +211,47 @@ const handleDelete = async () => {
   if (!selectedGrn.value?.id) return
   deleting.value = true
   try {
-    await grnStore.deleteGrn(selectedGrn.value.id)
-    showSuccess(t('scp.grn.snackbar.deleted_success'))
+    await grnStore.deleteItem(selectedGrn.value.id)
+    success(t('scp.grn.snackbar.deleted_success'))
     deleteDialogOpen.value = false
     await loadList()
   }
   catch (err) {
-    showError(err?.data?.message || t('scp.grn.snackbar.error_delete'))
+    showApiError(err, t('scp.grn.snackbar.error_delete'))
   }
   finally {
     deleting.value = false
   }
+}
+
+const getRowActions = item => {
+  const actions = [
+    { label: t('scp.action.view'), icon: 'tabler-eye', emit: 'view' },
+    { label: t('scp.action.edit'), icon: 'tabler-edit', emit: 'edit' },
+  ]
+
+  if (item.status !== 'confirmed' && item.status !== 'stocked') {
+    actions.push({
+      label: t('scp.action.delete'),
+      icon: 'tabler-trash',
+      emit: 'delete',
+      color: 'error',
+      dividerBefore: true,
+    })
+  }
+
+  return actions
+}
+
+const handleRowAction = (item, act) => {
+  if (typeof act === 'object' && typeof act?.handler === 'function') {
+    act.handler()
+
+    return
+  }
+  const found = getRowActions(item).find(a => a.emit === act)
+
+  found?.handler?.()
 }
 
 const onCreated = created => {
@@ -269,7 +301,8 @@ const onCreated = created => {
     <WpPageToolbar
       v-model:search="searchQuery"
       :search-placeholder="t('scp.grn.search_placeholder')"
-      :active-filters-count="activeFilterChips.length"
+      show-filter
+      :active-filter-count="activeFilterChips.length"
       @open-filters="openFilterDialog"
       @refresh="loadList"
     />
@@ -277,28 +310,29 @@ const onCreated = created => {
     <WpActiveFilters
       v-if="activeFilterChips.length"
       :filters="activeFilterChips"
+      :label-map="{ status: t('scp.common.status'), supplier_id: t('scp.common.supplier') }"
       class="mb-4"
       @remove="removeFilterChip"
       @clear-all="resetFilters"
     />
 
     <WpResponsiveList
-      :items="grnStore.grns"
+      :items="grnStore.list"
       :headers="headers"
       :loading="grnStore.loading"
-      :total-items="grnStore.total"
+      :total-items="grnStore.totalItems"
       :page="page"
       :items-per-page="perPage"
       :show-select="false"
       @update:page="page = $event"
       @update:items-per-page="perPage = $event"
     >
-      <template #item.grn_number="{ item }">
+      <template #item.reference="{ item }">
         <RouterLink
           :to="`/supply-chain-procurement/grn/edit/${item.id}`"
           class="font-weight-bold text-primary text-decoration-none"
         >
-          {{ item.grn_number }}
+          {{ item.reference }}
         </RouterLink>
       </template>
 
@@ -308,7 +342,7 @@ const onCreated = created => {
           :to="`/supply-chain-procurement/po/edit/${item.purchase_order?.id || item.po_id}`"
           class="text-body-2 font-weight-medium text-decoration-none"
         >
-          {{ item.purchase_order?.po_number || 'PO' }}
+          {{ item.purchase_order?.reference || 'PO' }}
         </RouterLink>
         <span
           v-else
@@ -318,7 +352,7 @@ const onCreated = created => {
 
       <template #item.supplier="{ item }">
         <div class="font-weight-medium">
-          {{ item.supplier?.legal_name || item.supplier?.trade_name || '—' }}
+          {{ resolveSupplierName(item.supplier) }}
         </div>
       </template>
 
@@ -352,45 +386,57 @@ const onCreated = created => {
 
       <template #item.actions="{ item }">
         <WpRowActions
-          can-view
-          can-edit
-          :can-delete="item.status !== 'confirmed' && item.status !== 'stocked'"
+          :actions="getRowActions(item)"
           @view="openView(item)"
           @edit="openEdit(item)"
           @delete="confirmDelete(item)"
+          @action="act => handleRowAction(item, act)"
         />
       </template>
 
       <template #mobile-card="{ item }">
-        <WpMobileCard @click="openEdit(item)">
-          <template #header>
-            <div>
-              <div class="font-weight-bold text-primary">
-                {{ item.grn_number }}
-              </div>
-              <div class="text-body-2 font-weight-medium">
-                {{ item.supplier?.legal_name || item.supplier?.trade_name || '—' }}
-              </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ item.purchase_order?.po_number || '' }} · {{ formatDate(item.received_at) }}
-              </div>
+        <WpMobileCard
+          :title="item.reference"
+          :subtitle="`${resolveSupplierName(item.supplier)} · ${formatDate(item.received_at)}`"
+          :status="item.status"
+          :status-color="resolveStatusVariant(item.status)"
+          :status-label="statusLabel(item.status)"
+          clickable
+          @click="openEdit(item)"
+        >
+          <template #badges>
+            <VChip
+              v-if="item.purchase_order?.reference"
+              size="x-small"
+              label
+              variant="tonal"
+              color="primary"
+            >
+              {{ item.purchase_order.reference }}
+            </VChip>
+          </template>
+
+          <template #content>
+            <div class="d-flex align-center justify-space-between">
+              <span class="text-caption text-medium-emphasis">
+                {{ item.lines?.length ?? item.lines_count ?? 0 }} {{ t('scp.common.lines') }}
+              </span>
+              <span
+                v-if="item.supplier_delivery_note_ref"
+                class="text-caption font-weight-medium"
+              >
+                {{ item.supplier_delivery_note_ref }}
+              </span>
             </div>
-            <WpStatusChip
-              :status="item.status"
-              :label="statusLabel(item.status)"
-              :color="resolveStatusVariant(item.status)"
-              dot
-            />
           </template>
 
           <template #actions>
             <WpRowActions
-              can-view
-              can-edit
-              :can-delete="item.status !== 'confirmed' && item.status !== 'stocked'"
+              :actions="getRowActions(item)"
               @view="openView(item)"
               @edit="openEdit(item)"
               @delete="confirmDelete(item)"
+              @action="act => handleRowAction(item, act)"
             />
           </template>
         </WpMobileCard>
@@ -440,7 +486,7 @@ const onCreated = created => {
 
     <WpDeleteDialog
       v-model="deleteDialogOpen"
-      :item-name="selectedGrn?.grn_number"
+      :item-name="selectedGrn?.reference"
       :loading="deleting"
       @confirm="handleDelete"
     />

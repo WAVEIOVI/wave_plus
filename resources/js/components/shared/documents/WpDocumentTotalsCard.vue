@@ -41,7 +41,8 @@ const taxRows = computed(() => (Array.isArray(props.totals?.tax_breakdown) ? pro
 
 const taxTotal = computed(() => {
   if (has('tax_total')) return Number(props.totals.tax_total)
-  if (taxRows.value.length) return taxRows.value.reduce((sum, row) => sum + (Number(row.amount) || 0), 0)
+  // taxBreakdown rows from computeDocumentTotals use `row.tax`; backend/legacy rows may use `row.amount`
+  if (taxRows.value.length) return taxRows.value.reduce((sum, row) => sum + Number(row.tax ?? row.amount ?? 0), 0)
 
   return null
 })
@@ -98,7 +99,7 @@ const budgetDelta = computed(() => Math.abs(budget.value - used.value))
             >({{ money(row.base) }})</span>
           </dt>
           <dd class="font-weight-medium">
-            {{ money(row.amount) }}
+            {{ money(row.tax ?? row.amount ?? 0) }}
           </dd>
         </div>
       </template>

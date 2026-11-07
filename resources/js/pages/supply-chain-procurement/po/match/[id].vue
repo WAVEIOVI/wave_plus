@@ -33,6 +33,7 @@ const {
   formatDate,
   resolveLineItemName,
   resolveLineItemSku,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const poId = computed(() => route.params.id)
@@ -42,7 +43,7 @@ const loading = ref(false)
 const loadPo = async () => {
   loading.value = true
   try {
-    po.value = await poStore.fetchPo(poId.value)
+    po.value = await poStore.fetchDetails(poId.value)
   }
   finally {
     loading.value = false
@@ -62,7 +63,7 @@ const matchRows = computed(() => {
     grns.value.forEach(g => {
       ;(g.lines || []).forEach(gl => {
         if (gl.po_line_id === poLine.id) {
-          grnLines.push({ ...gl, grn_number: g.grn_number, grn_status: g.status, grn_id: g.id })
+          grnLines.push({ ...gl, reference: g.reference, grn_status: g.status, grn_id: g.id })
         }
       })
     })
@@ -117,13 +118,13 @@ const varianceCount = computed(() => matchRows.value.filter(r => ['over_received
 <template>
   <div>
     <WpPageHeader
-      :title="`${t('scp.grn.match.title')} — ${po?.po_number || ''}`"
-      :subtitle="t('scp.grn.match.subtitle')"
+      :title="`${t('scp.grn.match.title')} — ${po?.reference || ''}`"
+      :subtitle="po?.supplier ? `${resolveSupplierName(po.supplier)} · ${t('scp.grn.match.subtitle')}` : t('scp.grn.match.subtitle')"
       icon="tabler-git-compare"
       :breadcrumbs="[
         { title: t('scp.nav.title'), to: '/supply-chain-procurement' },
         { title: t('scp.nav.po'), to: '/supply-chain-procurement/po/list' },
-        { title: po?.po_number || 'PO', to: `/supply-chain-procurement/po/edit/${poId}` },
+        { title: po?.reference || 'PO', to: `/supply-chain-procurement/po/edit/${poId}` },
         { title: t('scp.grn.match.title') },
       ]"
     >
@@ -196,7 +197,7 @@ const varianceCount = computed(() => matchRows.value.filter(r => ['over_received
           class="cursor-pointer"
           @click="router.push(`/supply-chain-procurement/grn/edit/${g.id}`)"
         >
-          <strong>{{ g.grn_number }}</strong>
+          <strong>{{ g.reference }}</strong>
           <span class="ms-1">({{ statusLabel(g.status) }} · {{ formatDate(g.received_at) }})</span>
         </VChip>
       </div>
@@ -214,35 +215,20 @@ const varianceCount = computed(() => matchRows.value.filter(r => ['over_received
         <WpMobileCard
           v-for="row in matchRows"
           :key="row.id"
+          :title="row.item_name"
+          :subtitle="row.sku"
+          :status="row.matchStatus"
+          :status-color="row.matchColor"
+          :status-label="t(`scp.po.match.status_${row.matchStatus}`)"
         >
-          <template #header>
-            <div>
-              <div class="font-weight-bold text-body-2">
-                {{ row.item_name }}
-              </div>
-              <div
-                v-if="row.sku"
-                class="text-caption text-medium-emphasis"
-              >
-                {{ row.sku }}
-              </div>
+          <template #content>
+            <div class="d-flex flex-wrap justify-space-between gap-2 text-caption">
+              <span>{{ t('scp.grn.qty.ordered') }}: <strong>{{ row.orderedQty }}</strong></span>
+              <span>{{ t('scp.grn.qty.received') }}: <strong>{{ row.receivedQty }}</strong></span>
+              <span>{{ t('scp.grn.qty.accepted') }}: <strong class="text-success">{{ row.acceptedQty }}</strong></span>
+              <span v-if="row.rejectedQty > 0">{{ t('scp.grn.qty.rejected') }}: <strong class="text-error">{{ row.rejectedQty }}</strong></span>
             </div>
-            <VChip
-              size="small"
-              label
-              variant="tonal"
-              :color="row.matchColor"
-            >
-              {{ t(`scp.po.match.status_${row.matchStatus}`) }}
-            </VChip>
           </template>
-
-          <div class="d-flex flex-wrap justify-space-between gap-2 mt-2 text-caption">
-            <span>{{ t('scp.grn.qty.ordered') }}: <strong>{{ row.orderedQty }}</strong></span>
-            <span>{{ t('scp.grn.qty.received') }}: <strong>{{ row.receivedQty }}</strong></span>
-            <span>{{ t('scp.grn.qty.accepted') }}: <strong class="text-success">{{ row.acceptedQty }}</strong></span>
-            <span v-if="row.rejectedQty > 0">{{ t('scp.grn.qty.rejected') }}: <strong class="text-error">{{ row.rejectedQty }}</strong></span>
-          </div>
         </WpMobileCard>
       </div>
 

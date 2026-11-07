@@ -32,7 +32,7 @@ const handleConfirm = () => {
   <WpFormDialog
     :model-value="modelValue"
     :title="t('scp.ipr.convert.title')"
-    :subtitle="ipr?.ipr_number"
+    :subtitle="ipr?.reference"
     icon="tabler-transform"
     size="small"
     :submit-label="t('scp.ipr.convert.proceed')"

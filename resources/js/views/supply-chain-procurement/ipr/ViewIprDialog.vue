@@ -29,12 +29,19 @@ const {
 
 const lines = computed(() => props.ipr?.lines || [])
 const canConvert = computed(() => props.ipr?.status === 'approved')
+
+const estimatedTotal = computed(() =>
+  lines.value.reduce(
+    (s, l) => s + (Number(l.estimated_total_ht) || (Number(l.qty_requested) || 0) * (Number(l.estimated_unit_cost) || 0)),
+    0,
+  ),
+)
 </script>
 
 <template>
   <WpDetailDialog
     :model-value="modelValue"
-    :title="ipr?.ipr_number || t('scp.ipr.title')"
+    :title="ipr?.reference || t('scp.ipr.title')"
     :subtitle="t('scp.ipr.subtitle')"
     :loading="loading"
     size="large"
@@ -99,7 +106,7 @@ const canConvert = computed(() => props.ipr?.status === 'approved')
         >
           <WpInfoItem
             :label="t('scp.ipr.fields.requested_by')"
-            :value="ipr.requester?.name || '—'"
+            :value="ipr.requested_by_user?.name || '—'"
             icon="tabler-user"
           />
         </VCol>
@@ -121,7 +128,7 @@ const canConvert = computed(() => props.ipr?.status === 'approved')
         >
           <WpInfoItem
             :label="t('scp.ipr.fields.estimated_total')"
-            :value="formatMoney(ipr.total_estimated_cost || 0)"
+            :value="formatMoney(estimatedTotal)"
             icon="tabler-coins"
           />
         </VCol>
@@ -191,7 +198,7 @@ const canConvert = computed(() => props.ipr?.status === 'approved')
                 {{ formatMoney(line.estimated_unit_cost || 0) }}
               </td>
               <td class="text-end font-weight-bold">
-                {{ formatMoney((Number(line.qty_requested) || 0) * (Number(line.estimated_unit_cost) || 0)) }}
+                {{ formatMoney(Number(line.estimated_total_ht) || (Number(line.qty_requested) || 0) * (Number(line.estimated_unit_cost) || 0)) }}
               </td>
             </tr>
           </tbody>

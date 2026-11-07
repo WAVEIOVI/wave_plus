@@ -20,15 +20,19 @@ const poStore = usePoStore()
 const {
   currentUserId,
   userOptions,
-  warehouseOptions,
   qcResultOptions,
   overallQcResultOptions,
   ensureUsers,
   ensureWarehouses,
+  ensureSiteLocations,
+  locationOptions,
   resolveLineItemName,
+  resolveLineItemSku,
+  resolveSupplierName,
 } = useProcurementHelpers()
 
 const receivablePos = ref([])
+const siteLocationOptions = computed(() => locationOptions())
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
 
@@ -37,12 +41,15 @@ const buildGrnLinesFromPo = (po, defaultLocationId = null) =>
     const ordered = Number(l.qty_ordered) || 0
     const alreadyReceived = Number(l.qty_received) || 0
     const remaining = Math.max(0.01, ordered - alreadyReceived)
+    const isAdHoc = Boolean(l.is_ad_hoc || !l.catalog_item_id)
 
     return {
       po_line_id: l.id,
-      is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
+      is_ad_hoc: isAdHoc,
       catalog_item_id: l.catalog_item_id || null,
-      ad_hoc_name: !l.catalog_item_id ? resolveLineItemName(l) : null,
+      catalog_variant_id: l.variant_id || l.catalog_variant_id || null,
+      ad_hoc_name: isAdHoc ? (l.ad_hoc_name || resolveLineItemName(l)) : null,
+      ad_hoc_sku: isAdHoc ? (l.ad_hoc_sku || resolveLineItemSku(l) || null) : null,
       item_name: resolveLineItemName(l),
       qty_ordered: ordered,
       qty_already_received: alreadyReceived,
@@ -50,7 +57,7 @@ const buildGrnLinesFromPo = (po, defaultLocationId = null) =>
       qty_accepted: remaining,
       qty_rejected: 0,
       unit_cost_ht: Number(l.unit_price_ht) || 0,
-      storage_location_id: defaultLocationId || po?.site_id || null,
+      storage_location_id: defaultLocationId || null,
       lot_number: '',
       expiry_date: '',
       qc_result: 'passed',
@@ -63,9 +70,16 @@ watch(
   async open => {
     if (!open) return
     await Promise.all([ensureUsers(), ensureWarehouses()])
+    if (props.prefillPo?.site_id) {
+      await ensureSiteLocations(props.prefillPo.site_id)
+    }
     try {
-      const res = await poStore.fetchPos({ perPage: 50 })
-      const all = res?.items || poStore.pos || []
+      const res = await poStore.fetchList({
+        'filter[status]': 'sent,acknowledged,in_delivery,partially_received',
+        per_page: 50,
+      })
+
+      const all = res?.data || poStore.list || []
 
       receivablePos.value = all.filter(p =>
         ['sent', 'acknowledged', 'in_delivery', 'partially_received'].includes(p.status),
@@ -81,13 +95,13 @@ watch(
 const receivablePoOptions = computed(() => {
   const list = receivablePos.value.map(p => ({
     value: p.id,
-    title: `${p.po_number} — ${p.supplier?.legal_name || p.supplier?.trade_name || ''}`.trim(),
+    title: `${p.reference} — ${resolveSupplierName(p.supplier)}`.trim(),
   }))
 
   if (props.prefillPo?.id && !list.some(o => o.value === props.prefillPo.id)) {
     list.unshift({
       value: props.prefillPo.id,
-      title: `${props.prefillPo.po_number} — ${props.prefillPo.supplier?.legal_name || ''}`.trim(),
+      title: `${props.prefillPo.reference} — ${resolveSupplierName(props.prefillPo.supplier)}`.trim(),
     })
   }
 
@@ -96,16 +110,17 @@ const receivablePoOptions = computed(() => {
 
 const initialValues = computed(() => {
   const po = props.prefillPo
-  const defaultLoc = po?.site_id || warehouseOptions.value[0]?.value || null
+  const defaultLoc = siteLocationOptions.value[0]?.value || null
 
   return {
     po_id: po?.id || null,
     supplier_id: po?.supplier_id || po?.supplier?.id || null,
-    supplier_name: po?.supplier?.legal_name || po?.supplier?.trade_name || '',
+    supplier_name: po?.supplier ? resolveSupplierName(po.supplier) : '',
     received_by: currentUserId.value || userOptions.value[0]?.value || '',
     received_at: todayStr(),
     default_location_id: defaultLoc,
     supplier_delivery_note_ref: '',
+    delivery_note_file: null,
     allow_over_receive: false,
     is_partial_delivery: false,
     overall_qc_result: 'passed',
@@ -120,12 +135,16 @@ const onPoChanged = async (poId, form, setValue) => {
 
     return
   }
-  const fullPo = await poStore.fetchPo(poId)
+  const fullPo = await poStore.fetchDetails(poId)
   if (!fullPo) return
-  const loc = form.default_location_id || fullPo.site_id || warehouseOptions.value[0]?.value || null
+
+  if (fullPo.site_id) {
+    await ensureSiteLocations(fullPo.site_id)
+  }
+  const loc = siteLocationOptions.value[0]?.value || null
 
   setValue('supplier_id', fullPo.supplier_id || fullPo.supplier?.id || null)
-  setValue('supplier_name', fullPo.supplier?.legal_name || fullPo.supplier?.trade_name || '')
+  setValue('supplier_name', fullPo.supplier ? resolveSupplierName(fullPo.supplier) : '')
   setValue('default_location_id', loc)
   setValue('lines', buildGrnLinesFromPo(fullPo, loc))
 }
@@ -192,33 +211,60 @@ const steps = computed(() => [
 ])
 
 const handleSubmit = async form => {
-  const payload = {
-    po_id: form.po_id,
-    supplier_id: form.supplier_id,
-    received_by: form.received_by || currentUserId.value,
-    received_at: form.received_at,
-    supplier_delivery_note_ref: form.supplier_delivery_note_ref || null,
-    allow_over_receive: Boolean(form.allow_over_receive),
-    is_partial_delivery: Boolean(form.is_partial_delivery),
-    overall_qc_result: form.overall_qc_result || 'passed',
-    lines: (form.lines || []).map(l => ({
-      po_line_id: l.po_line_id,
-      is_ad_hoc: Boolean(l.is_ad_hoc),
-      catalog_item_id: l.catalog_item_id || null,
-      ad_hoc_name: l.is_ad_hoc ? (l.ad_hoc_name || l.item_name || 'Ad-hoc Item') : null,
-      qty_received: Number(l.qty_received) || 0.01,
-      qty_accepted: Number(l.qty_accepted ?? l.qty_received) || 0,
-      qty_rejected: Number(l.qty_rejected) || 0,
-      unit_cost_ht: Number(l.unit_cost_ht) || 0,
-      storage_location_id: l.storage_location_id || form.default_location_id || null,
-      lot_number: l.lot_number || null,
-      expiry_date: l.expiry_date || null,
-      qc_result: l.qc_result || 'passed',
-      qc_notes: l.qc_notes || null,
-    })),
+  const mappedLines = (form.lines || []).map(l => ({
+    po_line_id: l.po_line_id,
+    is_ad_hoc: Boolean(l.is_ad_hoc),
+    catalog_item_id: l.catalog_item_id || null,
+    catalog_variant_id: l.variant_id || l.catalog_variant_id || null,
+    ad_hoc_name: l.is_ad_hoc ? (l.ad_hoc_name || l.item_name || 'Ad-hoc Item') : null,
+    ad_hoc_sku: l.is_ad_hoc ? (l.ad_hoc_sku || l.sku || null) : null,
+    qty_received: Number(l.qty_received) || 0.01,
+    qty_accepted: Number(l.qty_accepted ?? l.qty_received) || 0,
+    qty_rejected: Number(l.qty_rejected) || 0,
+    unit_cost_ht: Number(l.unit_cost_ht) || 0,
+    storage_location_id: l.storage_location_id || form.default_location_id || null,
+    lot_number: l.lot_number || null,
+    expiry_date: l.expiry_date || null,
+    qc_result: l.qc_result || 'passed',
+    qc_notes: l.qc_notes || null,
+  }))
+
+  let body
+  if (form.delivery_note_file instanceof File) {
+    body = new FormData()
+    body.append('po_id', form.po_id)
+    if (form.supplier_id) body.append('supplier_id', form.supplier_id)
+    body.append('received_by', form.received_by || currentUserId.value)
+    body.append('received_at', form.received_at)
+    if (form.supplier_delivery_note_ref) body.append('supplier_delivery_note_ref', form.supplier_delivery_note_ref)
+    body.append('allow_over_receive', form.allow_over_receive ? '1' : '0')
+    body.append('is_partial_delivery', form.is_partial_delivery ? '1' : '0')
+    body.append('overall_qc_result', form.overall_qc_result || 'passed')
+    body.append('delivery_note_file', form.delivery_note_file)
+
+    mappedLines.forEach((line, i) => {
+      Object.entries(line).forEach(([key, val]) => {
+        if (val !== null && val !== undefined) {
+          body.append(`lines[${i}][${key}]`, typeof val === 'boolean' ? (val ? '1' : '0') : String(val))
+        }
+      })
+    })
+  }
+  else {
+    body = {
+      po_id: form.po_id,
+      supplier_id: form.supplier_id,
+      received_by: form.received_by || currentUserId.value,
+      received_at: form.received_at,
+      supplier_delivery_note_ref: form.supplier_delivery_note_ref || null,
+      allow_over_receive: Boolean(form.allow_over_receive),
+      is_partial_delivery: Boolean(form.is_partial_delivery),
+      overall_qc_result: form.overall_qc_result || 'passed',
+      lines: mappedLines,
+    }
   }
 
-  const created = await grnStore.createGrn(payload)
+  const created = await grnStore.create(body)
 
   emit('created', created)
 
@@ -308,7 +354,7 @@ const handleSubmit = async form => {
         >
           <VAutocomplete
             :model-value="form.default_location_id"
-            :items="warehouseOptions"
+            :items="siteLocationOptions"
             item-title="title"
             item-value="value"
             :label="t('scp.grn.fields.storage_location')"
@@ -395,11 +441,12 @@ const handleSubmit = async form => {
             <td style="inline-size: 170px;">
               <VSelect
                 v-model="line.storage_location_id"
-                :items="warehouseOptions"
+                :items="siteLocationOptions"
                 item-title="title"
                 item-value="value"
                 density="compact"
                 hide-details
+                clearable
               />
             </td>
             <td style="inline-size: 150px;">
@@ -443,6 +490,17 @@ const handleSubmit = async form => {
             item-value="value"
             :label="t('scp.grn.fields.overall_qc_result')"
             @update:model-value="setValue('overall_qc_result', $event)"
+          />
+        </VCol>
+
+        <VCol cols="12">
+          <WpAttachmentField
+            :model-value="form.delivery_note_file"
+            :label="t('scp.grn.fields.delivery_note_file', 'Delivery Note File (PDF / Image)')"
+            category="certificate"
+            accept=".pdf,image/jpeg,image/png"
+            :max-size-mb="10"
+            @update:model-value="setValue('delivery_note_file', $event)"
           />
         </VCol>
 

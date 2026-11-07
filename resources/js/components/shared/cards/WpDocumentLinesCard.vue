@@ -106,6 +106,10 @@ const dialogOpen = ref(false)
 const dialogIndex = ref(null)
 const dialogLine = ref({})
 
+// Single-line catalog picker (opened from "Select from catalog" in line edit dialog)
+const linePickerOpen = ref(false)
+const linePickerIndex = ref(null)
+
 // Default columns if caller doesn't override
 const defaultColumns = [
   { key: 'item', title: 'Item / Product', align: 'start' },
@@ -239,6 +243,42 @@ const onDialogSave = next => {
     emitLines(props.lines.map((l, i) => (i === index ? next : l)))
   }
   dialogOpen.value = false
+}
+
+// Open single-line catalog picker when user clicks "Select from catalog" inside line dialog
+const onSelectItemFromDialog = index => {
+  emit('select-item', index)
+
+  // If we have fetchCatalogItems, open the per-line picker instead of deferring to parent
+  if (props.fetchCatalogItems) {
+    linePickerIndex.value = index
+    linePickerOpen.value = true
+  }
+}
+
+// Called when a single-line catalog pick is confirmed (single-select mode)
+const onLinePickerConfirm = entries => {
+  if (!entries?.length) return
+  const { item, quantity } = entries[0]
+  const index = linePickerIndex.value
+  const patch = buildLine(item, quantity ?? 1)
+
+  if (index !== null && index !== undefined && props.lines[index]) {
+
+    // Merge catalog data into existing line
+    const next = { ...props.lines[index], ...patch, quantity: quantity ?? props.lines[index].quantity ?? 1 }
+
+    emit('update-line', next, index)
+    emitLines(props.lines.map((l, i) => (i === index ? next : l)))
+
+    // Keep dialog open so user can review the patched line
+    dialogLine.value = next
+  }
+  else {
+    // Fallback: append as a new line
+    onBulkConfirm(entries)
+  }
+  linePickerOpen.value = false
 }
 
 // ── Catalog (bulk add / scan) ───────────────────────────────────────────────
@@ -844,9 +884,10 @@ const touchHeight = computed(() => (smAndDown.value ? 44 : undefined))
       :units="units"
       :currency="currency"
       @save="onDialogSave"
-      @select-item="emit('select-item', dialogIndex)"
+      @select-item="onSelectItemFromDialog(dialogIndex)"
     />
 
+    <!-- Bulk catalog picker (header "Bulk add" button) -->
     <WpCatalogItemPickerDialog
       v-if="pickerAvailable"
       v-model="pickerOpen"
@@ -854,6 +895,17 @@ const touchHeight = computed(() => (smAndDown.value ? 44 : undefined))
       :categories="catalogCategories"
       :title="t('wp.docs.lines.picker_title')"
       @confirm="onBulkConfirm"
+    />
+
+    <!-- Per-line catalog picker (opened from "Select from catalog" in line edit dialog) -->
+    <WpCatalogItemPickerDialog
+      v-if="pickerAvailable && linePickerOpen"
+      v-model="linePickerOpen"
+      :fetch-items="fetchCatalogItems"
+      :categories="catalogCategories"
+      :multiple="false"
+      :title="t('wp.docs.lines.picker_title')"
+      @confirm="onLinePickerConfirm"
     />
 
     <WpQrScannerDialog

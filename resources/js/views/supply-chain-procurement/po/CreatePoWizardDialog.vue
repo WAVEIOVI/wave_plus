@@ -1,6 +1,6 @@
 <script setup>
 /* eslint-disable camelcase */
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePoStore } from '@/stores/usePoStore'
 import { useSupplierStore } from '@/stores/useSupplierStore'
@@ -29,13 +29,66 @@ const {
   fetchCatalogItemsForPicker,
   resolveLineItemName,
   resolveLineItemSku,
+  resolveSupplierName,
 } = useProcurementHelpers()
+
+const supplierContacts = ref([])
+const supplierAddresses = ref([])
+
+const formatAddressLine = a => {
+  if (!a) return ''
+
+  return [a.street_address || a.address_line_1 || a.street, a.city, a.postal_code, a.country]
+    .filter(Boolean)
+    .join(', ') || a.label || String(a.id)
+}
+
+const supplierContactOptions = computed(() =>
+  supplierContacts.value.map(c => ({
+    value: c.id,
+    title: c.full_name || [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email || String(c.id),
+  })),
+)
+
+const supplierAddressOptions = computed(() =>
+  supplierAddresses.value.map(a => ({
+    value: a.id,
+    title: formatAddressLine(a),
+    raw: a,
+  })),
+)
+
+const loadSupplierDetails = async supplierId => {
+  if (!supplierId) {
+    supplierContacts.value = []
+    supplierAddresses.value = []
+
+    return
+  }
+
+  const [contactsRes, addressesRes] = await Promise.all([
+    supplierStore.fetchSupplierContacts(supplierId).catch(() => []),
+    supplierStore.fetchSupplierAddresses(supplierId).catch(() => []),
+  ])
+
+  supplierContacts.value = contactsRes?.data || (Array.isArray(contactsRes) ? contactsRes : [])
+  supplierAddresses.value = addressesRes?.data || (Array.isArray(addressesRes) ? addressesRes : [])
+}
 
 watch(
   () => props.modelValue,
   async open => {
     if (!open) return
     await Promise.all([ensureSuppliers(), ensureWarehouses()])
+
+    const initialSupplierId = props.prefillRfq?.awarded_to_supplier_id
+      || props.prefillRfq?.awarded_to?.id
+      || props.prefillRfq?.awarded_supplier?.id
+      || null
+
+    if (initialSupplierId) {
+      await loadSupplierDetails(initialSupplierId)
+    }
   },
   { immediate: true },
 )
@@ -45,8 +98,8 @@ const supplierSearchConfig = computed(() => ({
   items: supplierStore.suppliers,
   itemKey: 'id',
   fields: {
-    title: 'legal_name',
-    subtitle: 'supplier_code',
+    title: s => resolveSupplierName(s),
+    subtitle: 'supplier_id',
     badge: 'status',
   },
 }))
@@ -60,6 +113,7 @@ const mapCatalogToPoLine = (item, quantity = 1) => {
   return {
     is_ad_hoc: false,
     catalog_item_id: item.id,
+    variant_id: item.variant_id || null,
     item_name: item.item_name || item.name || item.sku,
     sku: item.sku || '',
     unit: item.unit || '',
@@ -85,8 +139,8 @@ const initialValues = computed(() => {
 
   if (rfq) {
     creation_path = 'from_rfq'
-    supplier_id = rfq.awarded_to_supplier_id || rfq.awarded_supplier?.id || null
-    supplierObj = rfq.awarded_supplier || supplierStore.suppliers.find(s => s.id === supplier_id) || null
+    supplier_id = rfq.awarded_to_supplier_id || rfq.awarded_to?.id || rfq.awarded_supplier?.id || null
+    supplierObj = rfq.awarded_to || rfq.awarded_supplier || supplierStore.suppliers.find(s => s.id === supplier_id) || null
 
     const awardedResp = (rfq.responses || []).find(r => r.supplier_id === supplier_id)
 
@@ -99,6 +153,9 @@ const initialValues = computed(() => {
       return {
         is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
         catalog_item_id: l.catalog_item_id || null,
+        variant_id: l.variant_id || null,
+        ad_hoc_name: l.ad_hoc_name || (!l.catalog_item_id ? resolveLineItemName(l) : null),
+        ad_hoc_sku: l.ad_hoc_sku || (!l.catalog_item_id ? resolveLineItemSku(l) : null),
         item_name: resolveLineItemName(l),
         sku: resolveLineItemSku(l),
         quantity: qty,
@@ -122,6 +179,9 @@ const initialValues = computed(() => {
       return {
         is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
         catalog_item_id: l.catalog_item_id || null,
+        variant_id: l.variant_id || null,
+        ad_hoc_name: l.ad_hoc_name || (!l.catalog_item_id ? resolveLineItemName(l) : null),
+        ad_hoc_sku: l.ad_hoc_sku || (!l.catalog_item_id ? resolveLineItemSku(l) : null),
         ipr_line_id: l.id || null,
         item_name: resolveLineItemName(l),
         sku: resolveLineItemSku(l),
@@ -143,6 +203,8 @@ const initialValues = computed(() => {
     ipr_ids: ipr?.id ? [ipr.id] : [],
     supplier_id,
     supplier: supplierObj,
+    supplier_contact_id: null,
+    supplier_address_id: null,
     site_id: warehouseOptions.value[0]?.value || null,
     delivery_address: '',
     currency: 'TND',
@@ -200,17 +262,46 @@ const steps = computed(() => [
   },
 ])
 
-const onSupplierSelected = (partner, setValue) => {
+const onSupplierSelected = async (partner, form, setValue) => {
+  const id = partner?.id || null
+
   setValue('supplier', partner)
-  setValue('supplier_id', partner?.id || null)
+  setValue('supplier_id', id)
+  setValue('supplier_contact_id', null)
+  setValue('supplier_address_id', null)
+  await loadSupplierDetails(id)
+  if (id && !form.delivery_address && supplierAddressOptions.value.length) {
+    const firstAddr = supplierAddressOptions.value[0]
+
+    setValue('supplier_address_id', firstAddr.value)
+    setValue('delivery_address', firstAddr.title)
+  }
 }
 
-const onSupplierIdSelected = (id, setValue) => {
+const onSupplierIdSelected = async (id, form, setValue) => {
   setValue('supplier_id', id)
 
   const found = supplierStore.suppliers.find(s => s.id === id) || null
 
   setValue('supplier', found)
+  setValue('supplier_contact_id', null)
+  setValue('supplier_address_id', null)
+  await loadSupplierDetails(id)
+  if (id && !form.delivery_address && supplierAddressOptions.value.length) {
+    const firstAddr = supplierAddressOptions.value[0]
+
+    setValue('supplier_address_id', firstAddr.value)
+    setValue('delivery_address', firstAddr.title)
+  }
+}
+
+const onSupplierAddressSelected = (addrId, form, setValue) => {
+  setValue('supplier_address_id', addrId)
+  if (!addrId) return
+  const opt = supplierAddressOptions.value.find(o => o.value === addrId)
+  if (opt && !form.delivery_address) {
+    setValue('delivery_address', opt.title)
+  }
 }
 
 const handleSubmit = async form => {
@@ -219,6 +310,8 @@ const handleSubmit = async form => {
     rfq_id: form.rfq_id || null,
     ipr_ids: Array.isArray(form.ipr_ids) && form.ipr_ids.length ? form.ipr_ids : null,
     supplier_id: form.supplier_id,
+    supplier_contact_id: form.supplier_contact_id || null,
+    supplier_address_id: form.supplier_address_id || null,
     site_id: form.site_id || null,
     delivery_address: form.delivery_address || null,
     currency: form.currency || 'TND',
@@ -233,7 +326,9 @@ const handleSubmit = async form => {
     lines: (form.lines || []).map(l => ({
       is_ad_hoc: Boolean(l.is_ad_hoc || !l.catalog_item_id),
       catalog_item_id: l.catalog_item_id || null,
+      variant_id: l.variant_id || null,
       ad_hoc_name: !l.catalog_item_id ? (l.item_name || l.ad_hoc_name || 'Ad-hoc Item') : null,
+      ad_hoc_sku: !l.catalog_item_id ? (l.sku || l.ad_hoc_sku || null) : null,
       ipr_line_id: l.ipr_line_id || null,
       description_snapshot: l.description || l.item_name || null,
       qty_ordered: Number(l.quantity ?? l.qty_ordered ?? 1) || 1,
@@ -243,7 +338,7 @@ const handleSubmit = async form => {
     })),
   }
 
-  const created = await poStore.createPo(payload)
+  const created = await poStore.create(payload)
 
   emit('created', created)
 
@@ -275,17 +370,17 @@ const handleSubmit = async form => {
             :partner-label="t('scp.common.supplier')"
             :fields="{
               name: 'legal_name',
-              tradeName: 'trade_name',
-              code: 'supplier_code',
+              tradeName: 'commercial_name',
+              code: 'supplier_id',
               status: 'status',
-              email: 'email',
-              phone: 'phone',
+              email: 'primary_email',
+              phone: 'primary_phone',
             }"
             :search-config="supplierSearchConfig"
             :select-dialog-props="{ confirmBehavior: 'immediate' }"
             clearable
-            @change="onSupplierSelected($event, setValue)"
-            @clear="onSupplierSelected(null, setValue)"
+            @change="onSupplierSelected($event, form, setValue)"
+            @clear="onSupplierSelected(null, form, setValue)"
           />
         </VCol>
 
@@ -301,7 +396,7 @@ const handleSubmit = async form => {
             :label="t('scp.common.supplier')"
             prepend-inner-icon="tabler-building-store"
             :error-messages="errors.supplier_id"
-            @update:model-value="onSupplierIdSelected($event, setValue)"
+            @update:model-value="onSupplierIdSelected($event, form, setValue)"
           />
         </VCol>
 
@@ -319,6 +414,40 @@ const handleSubmit = async form => {
             clearable
             :error-messages="errors.site_id"
             @update:model-value="setValue('site_id', $event)"
+          />
+        </VCol>
+
+        <VCol
+          v-if="supplierContactOptions.length"
+          cols="12"
+          sm="6"
+        >
+          <VSelect
+            :model-value="form.supplier_contact_id"
+            :items="supplierContactOptions"
+            item-title="title"
+            item-value="value"
+            :label="t('scp.po.fields.supplier_contact', 'Supplier Contact')"
+            prepend-inner-icon="tabler-user"
+            clearable
+            @update:model-value="setValue('supplier_contact_id', $event)"
+          />
+        </VCol>
+
+        <VCol
+          v-if="supplierAddressOptions.length"
+          cols="12"
+          sm="6"
+        >
+          <VSelect
+            :model-value="form.supplier_address_id"
+            :items="supplierAddressOptions"
+            item-title="title"
+            item-value="value"
+            :label="t('scp.po.fields.supplier_address', 'Supplier Address')"
+            prepend-inner-icon="tabler-address-book"
+            clearable
+            @update:model-value="onSupplierAddressSelected($event, form, setValue)"
           />
         </VCol>
 
